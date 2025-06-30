@@ -1,0 +1,108 @@
+import { config } from "dotenv";
+config();
+
+import http from "node:http";
+import cluster from "node:cluster";
+import os from "node:os";
+import express from "express";
+import cors from "cors";
+
+import { checkEnvVars } from "./utils/initUtils";
+
+checkEnvVars();
+
+const init = async () => {
+  const app = express();
+
+  app.use(
+    cors({
+      origin: [],
+      credentials: true,
+      allowedHeaders: [
+        "Authorization",
+        "Origin",
+        "Accept",
+        "Content-Type",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+        "Cache-Control",
+      ],
+    })
+  );
+
+  const server = http.createServer(app);
+
+  server.keepAliveTimeout = 120000; // 120 seconds
+  server.headersTimeout = 120000; // 120 seconds should >= keepAliveTimeout
+
+  app.get("/", (req, res) => {
+    res.send("Hello world");
+  });
+
+  const PORT = 8080;
+
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+if (process.env.NODE_ENV === "development") {
+  init();
+  registerShutdownHandlers();
+} else {
+  let numCPUs = os.cpus().length;
+
+  if (cluster.isPrimary) {
+    console.log(`Master ${process.pid} is running`);
+    console.log("Number of CPUs", numCPUs);
+
+    let numWorkers = 10;
+
+    for (let i = 0; i < numWorkers; ++i) {
+      cluster.fork();
+    }
+
+    cluster.on("exit", (worker, code, signal) => {
+      console.error(`WORKER DIED: ${worker.process.pid}`);
+      cluster.fork();
+    });
+  } else {
+    init();
+    registerShutdownHandlers();
+  }
+}
+
+function registerShutdownHandlers() {
+  process.on("SIGTERM", gracefulShutdown);
+  process.on("SIGINT", gracefulShutdown);
+  // Do NOT use process.on("exit", ...) for async cleanup!
+}
+
+async function gracefulShutdown() {
+  console.log("Shutting down worker, closing DB connections....");
+  try {
+    // TODO: add client.end()
+    console.log("DB connection closed. Exiting process.");
+    process.exit(0);
+  } catch (error) {
+    console.error("Error closing DB connection:", error);
+    process.exit(1);
+  }
+}
+
+// Close connections gracefully?
+const closeConnections = async () => {
+  console.log("Closing connections");
+};
+
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down gracefully");
+  await closeConnections();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, shutting down gracefully");
+  await closeConnections();
+  process.exit(0);
+});

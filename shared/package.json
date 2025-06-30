@@ -1,13 +1,32 @@
 {
-  "name": "shared",
+  "name": "@brain/shared",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "npx nodemon --watch . --ext ts --ignore dist --exec 'pnpm run build'"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.11.0"
+  "author": "Irere Emmanuel",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.11.0",
+  "devDependencies": {
+    "@types/node": "^24.0.7",
+    "cross-env": "^7.0.3",
+    "dotenv": "^17.0.0",
+    "drizzle-kit": "^0.31.4",
+    "nodemon": "^3.1.10",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.2"
+  }
 }

@@ -1,13 +1,33 @@
 {
-  "name": "server",
+  "name": "@brain/server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon --no-deprecation --exec tsx src/index.ts --ignore scripts --ignore tests",
+    "start": "tsx src/index.ts",
+    "prod:build": "tsc -b tsconfig.build.json && tsc-alias",
+    "prod:start": "node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "@brain/shared": "workspace:*",
+    "better-auth": "^1.2.12",
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "drizzle-orm": "^0.44.2",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "ws": "^8.18.3",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "nodemon": "^3.1.10",
+    "tsx": "^4.20.3"
+  }
 }
