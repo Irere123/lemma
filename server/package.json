@@ -1,7 +1,7 @@
 {
   "name": "@brain/server",
   "version": "1.0.0",
-  "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --no-deprecation --exec tsx src/index.ts --ignore scripts --ignore tests",
@@ -21,6 +21,7 @@
     "drizzle-orm": "^0.44.2",
     "express": "^5.1.0",
     "pg": "^8.16.3",
+    "postgres": "^3.4.7",
     "ws": "^8.18.3",
     "zod": "^3.25.67"
   },

@@ -6,8 +6,11 @@ import cluster from "node:cluster";
 import os from "node:os";
 import express from "express";
 import cors from "cors";
+import { toNodeHandler } from "better-auth/node";
 
 import { checkEnvVars } from "./utils/initUtils";
+import { client } from "./db/initDrizzle";
+import { auth } from "./utils/auth";
 
 checkEnvVars();
 
@@ -16,7 +19,7 @@ const init = async () => {
 
   app.use(
     cors({
-      origin: [],
+      origin: ["http://localhost:3000"],
       credentials: true,
       allowedHeaders: [
         "Authorization",
@@ -29,6 +32,8 @@ const init = async () => {
       ],
     })
   );
+
+  app.all("/api/auth/*splat", toNodeHandler(auth));
 
   const server = http.createServer(app);
 
@@ -81,7 +86,7 @@ function registerShutdownHandlers() {
 async function gracefulShutdown() {
   console.log("Shutting down worker, closing DB connections....");
   try {
-    // TODO: add client.end()
+    await client.end();
     console.log("DB connection closed. Exiting process.");
     process.exit(0);
   } catch (error) {
@@ -93,6 +98,7 @@ async function gracefulShutdown() {
 // Close connections gracefully?
 const closeConnections = async () => {
   console.log("Closing connections");
+  await client.end();
 };
 
 process.on("SIGTERM", async () => {
