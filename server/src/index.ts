@@ -8,9 +8,9 @@ import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 
-import { checkEnvVars } from "./utils/initUtils";
-import { client } from "./db/initDrizzle";
-import { auth } from "./utils/auth";
+import { checkEnvVars } from "./utils/initUtils.js";
+import { client } from "./db/initDrizzle.js";
+import { auth } from "./utils/auth.js";
 
 checkEnvVars();
 

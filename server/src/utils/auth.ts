@@ -1,4 +1,4 @@
-import { db } from "@/db/initDrizzle";
+import { db } from "@/db/initDrizzle.js";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
