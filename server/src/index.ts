@@ -6,11 +6,13 @@ import cluster from "node:cluster";
 import os from "node:os";
 import express from "express";
 import cors from "cors";
-import { toNodeHandler } from "better-auth/node";
+import mainRouter from "./internal/mainRouter.js";
 
+import { toNodeHandler } from "better-auth/node";
 import { checkEnvVars } from "./utils/initUtils.js";
-import { client } from "./db/initDrizzle.js";
+import { client, db } from "./db/initDrizzle.js";
 import { auth } from "./utils/auth.js";
+import { generateId } from "./utils/genUtils.js";
 
 checkEnvVars();
 
@@ -40,9 +42,15 @@ const init = async () => {
   server.keepAliveTimeout = 120000; // 120 seconds
   server.headersTimeout = 120000; // 120 seconds should >= keepAliveTimeout
 
-  app.get("/", (req, res) => {
-    res.send("Hello world");
+  app.use(async (req: any, res: any, next: any) => {
+    req.db = db;
+    req.id = req.headers["rndr-id"] || generateId("local_req");
+    req.timestamp = Date.now();
+
+    next();
   });
+
+  app.use(mainRouter);
 
   const PORT = 8080;
 
