@@ -13,6 +13,7 @@ import { checkEnvVars } from "./utils/initUtils.js";
 import { client, db } from "./db/initDrizzle.js";
 import { auth } from "./utils/auth.js";
 import { generateId } from "./utils/genUtils.js";
+import { logger } from "./external/logtail/index.js";
 
 checkEnvVars();
 
@@ -47,6 +48,31 @@ const init = async () => {
     req.id = req.headers["rndr-id"] || generateId("local_req");
     req.timestamp = Date.now();
 
+    const reqContext = {
+      id: req.id,
+      method: req.method,
+      url: req.originalUrl,
+      timestamp: req.timestamp,
+    };
+
+    req.logtail = logger.child({
+      context: {
+        req: reqContext,
+      },
+    });
+
+    req.logger = req.logtail;
+
+    next();
+  });
+
+  app.use(express.json());
+  app.use(async (req: any, res, next) => {
+    req.logtail.info(`${req.method} ${req.originalUrl}`, {
+      context: {
+        body: req.body,
+      },
+    });
     next();
   });
 
