@@ -6,7 +6,7 @@ import cluster from "node:cluster";
 import os from "node:os";
 import express from "express";
 import cors from "cors";
-import mainRouter from "./internal/mainRouter.js";
+import mainRestRouter from "./internal/rest/index.js";
 
 import { toNodeHandler } from "better-auth/node";
 import { checkEnvVars } from "./utils/initUtils.js";
@@ -50,7 +50,7 @@ const init = async () => {
     next();
   });
 
-  app.use(mainRouter);
+  app.use(mainRestRouter);
 
   const PORT = 8080;
 
