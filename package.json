@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "workspaces": [
+    "web",
+    "api",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "concurrently \"cd server && npm run dev\""
   },
