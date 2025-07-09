@@ -1,0 +1,28 @@
+{
+  "name": "@brain/email",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "exports": {
+    "./emails/*": "./emails/*.tsx"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "typecheck": "tsc --noEmit",
+    "dev": "email dev -p 3003",
+    "build": "email build",
+    "start": "email start"
+  },
+  "dependencies": {
+    "@react-email/components": "0.2.0",
+    "@react-email/render": "1.1.3",
+    "@react-email/tailwind": "1.1.0",
+    "date-fns": "^4.1.0",
+    "react-email": "4.1.0",
+    "responsive-react-email": "^0.0.5"
+  },
+  "devDependencies": {
+    "@react-email/preview-server": "4.1.0",
+    "typescript": "^5.8.3"
+  }
+}
