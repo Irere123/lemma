@@ -13,3 +13,6 @@ export const campaignLinks = pgTable(
   },
   (table) => [index("campaign_id_idx").on(table.campaignId)]
 );
+
+export type CampaignLink = typeof campaignLinks.$inferSelect;
+export type CampignLinkInsert = typeof campaignLinks.$inferInsert;

@@ -45,3 +45,9 @@ export const unsubscribeEvents = pgTable(
     index("campaign_id_idx").on(table.campaignId),
   ]
 );
+
+// Types
+export type UnSubscribeEvent = typeof unsubscribeEvents.$inferSelect;
+export type ClickEvent = typeof clickEvents.$inferSelect;
+export type UnSubscribeEventInsert = typeof unsubscribeEvents.$inferInsert;
+export type ClickEventInsert = typeof clickEvents.$inferInsert;
