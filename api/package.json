@@ -4,7 +4,9 @@
     "./trpc/routers/_app": "./src/trpc/routers/_app.ts"
   },
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "db:gen": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@hono/trpc-server": "^0.4.0",

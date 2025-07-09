@@ -41,8 +41,8 @@ export const unsubscribeEvents = pgTable(
     reason: text(),
   },
   (table) => [
-    index("subscriber_id_idx").on(table.subscriberId),
-    index("campaign_id_idx").on(table.campaignId),
+    index("subscriber_rel_id_idx").on(table.subscriberId),
+    index("campaign_rel_id_idx").on(table.campaignId),
   ]
 );
 
