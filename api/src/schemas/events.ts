@@ -21,7 +21,7 @@ export const clickEvents = pgTable(
   },
   (table) => [
     index("subscriber_id_idx").on(table.subscriberId),
-    index("link_id_idx").on(table.linkId),
+    index("campaign_link_id_idx").on(table.linkId),
   ]
 );
 

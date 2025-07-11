@@ -84,16 +84,25 @@ CREATE TABLE "subscribers" (
 	CONSTRAINT "unique_subscriber_constraint" UNIQUE("email","token")
 );
 --> statement-breakpoint
+CREATE TABLE "campaign_links" (
+	"id" text PRIMARY KEY NOT NULL,
+	"campaign_id" text NOT NULL,
+	"url" text NOT NULL,
+	"label" text
+);
+--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "click_events" ADD CONSTRAINT "click_events_subscriber_id_subscribers_id_fk" FOREIGN KEY ("subscriber_id") REFERENCES "public"."subscribers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "click_events" ADD CONSTRAINT "click_events_link_id_campaign_links_id_fk" FOREIGN KEY ("link_id") REFERENCES "public"."campaign_links"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "unsubscribe_events" ADD CONSTRAINT "unsubscribe_events_subscriber_id_subscribers_id_fk" FOREIGN KEY ("subscriber_id") REFERENCES "public"."subscribers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "unsubscribe_events" ADD CONSTRAINT "unsubscribe_events_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "campaign_links" ADD CONSTRAINT "campaign_links_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "subscriber_id_idx" ON "click_events" USING btree ("subscriber_id");--> statement-breakpoint
-CREATE INDEX "link_id_idx" ON "click_events" USING btree ("link_id");--> statement-breakpoint
+CREATE INDEX "campaign_link_id_idx" ON "click_events" USING btree ("link_id");--> statement-breakpoint
 CREATE INDEX "subscriber_rel_id_idx" ON "unsubscribe_events" USING btree ("subscriber_id");--> statement-breakpoint
 CREATE INDEX "campaign_rel_id_idx" ON "unsubscribe_events" USING btree ("campaign_id");--> statement-breakpoint
 CREATE INDEX "email_idx" ON "subscribers" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "token_idx" ON "subscribers" USING btree ("token");--> statement-breakpoint
-CREATE INDEX "confirmed_idx" ON "subscribers" USING btree ("is_confirmed");
+CREATE INDEX "confirmed_idx" ON "subscribers" USING btree ("is_confirmed");--> statement-breakpoint
+CREATE INDEX "cmpg_link_id_idx" ON "campaign_links" USING btree ("campaign_id");
