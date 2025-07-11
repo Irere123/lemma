@@ -18,4 +18,11 @@ export const checkEnvVars = () => {
     console.error(`GITHUB_CLIENT_SECRET or GITHUB_CLIENT_ID is not set`);
     process.exit(1);
   }
+
+  if (!process.env.ALLOWED_API_ORIGINS) {
+    console.error(
+      `ALLOWED_API_ORIGINS is not set. (eg: http://localhost:3000,http://localhost:3001)`
+    );
+    process.exit(1);
+  }
 };
