@@ -9,9 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@brain/api": "workspace:*",
+    "@tanstack/react-query": "^5.82.0",
+    "@trpc/client": "^11.4.3",
+    "@trpc/react-query": "^11.4.3",
+    "@trpc/tanstack-react-query": "^11.4.3",
+    "client-only": "^0.0.1",
+    "next": "15.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.5"
+    "server-only": "^0.0.1",
+    "superjson": "^2.2.2",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "typescript": "^5",
