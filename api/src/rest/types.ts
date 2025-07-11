@@ -1,5 +1,5 @@
-import { db } from "@/db";
-import type { AuthType } from "@/lib/auth";
+import { db } from "@api/db";
+import type { AuthType } from "@api/lib/auth";
 
 export type Context = {
   Variables: {

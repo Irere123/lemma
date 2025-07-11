@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { db } from "@api/db";
 import { TRPCError, initTRPC } from "@trpc/server";
 import type { Context } from "hono";
 import type { User } from "better-auth";

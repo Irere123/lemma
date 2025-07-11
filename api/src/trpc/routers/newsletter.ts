@@ -2,10 +2,10 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { WelcomeNewsletter } from "@brain/email/emails/welcome-newsletter";
-import { subscribers } from "@/schemas";
-import { createTRPCRouter, publicProcedure } from "@/trpc/init";
-import { generateId } from "@/lib/utils";
-import { resend } from "@/services/resend";
+import { subscribers } from "@api/schemas";
+import { createTRPCRouter, publicProcedure } from "@api/trpc/init";
+import { generateId } from "@api/lib/utils";
+import { resend } from "@api/services/resend";
 
 export const newsletterRouter = createTRPCRouter({
   subscribe: publicProcedure
