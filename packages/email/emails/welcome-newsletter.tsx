@@ -17,16 +17,15 @@ import {
 import { baseUrl } from "lib/constants";
 
 interface Props {
-  token: string;
+  token?: string;
 }
 
-export const WelcomeEmail = ({ token = "tk----" }: Props) => {
-  const text = `hey, welcome to brainOS – we're glad you're here!`;
+export const WelcomeNewsletter = ({ token }: Props) => {
   const themeClasses = getEmailThemeClasses();
   const lightStyles = getEmailInlineStyles("light");
 
   return (
-    <EmailThemeProvider preview={<Preview>{text}</Preview>}>
+    <EmailThemeProvider preview={<Preview>welcome to the newsletter</Preview>}>
       <Body
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}
@@ -40,49 +39,43 @@ export const WelcomeEmail = ({ token = "tk----" }: Props) => {
           }}
         >
           <Logo />
+
           <Heading
             className={`text-[21px] font-normal text-center p-0 my-[30px] mx-0 ${themeClasses.heading}`}
             style={{ color: lightStyles.text.color }}
           >
-            welcome aboard
+            you're in.
           </Heading>
 
-          <br />
-
-          <span
-            className={`font-medium ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            helllo,
-          </span>
-
           <Text
-            className={themeClasses.text}
+            className={`text-base ${themeClasses.text}`}
             style={{ color: lightStyles.text.color }}
           >
-            welcome to brainOS – i’m irere emmanuel, the one who built it.
+            hey, i'm irere.
             <br />
             <br />
-            brainOS was designed to help you think clearer, stay organized, and
-            move faster. it’s a tool i wish i had earlier, so i made it real.
+            welcome to my newsletter — a space where i share ideas, tools,
+            experiments, and honest thoughts around building and thinking
+            better.
             <br />
             <br />
-            take your time exploring. the system is flexible, so make it yours.
-            and if you ever want to chat, you can{" "}
-            <Link
-              href="https://cal.com/idee8"
-              className={`underline ${themeClasses.link}`}
-              style={{ color: lightStyles.text.color }}
-            >
-              book a call here
-            </Link>
-            .<br />
+            this newsletter is more than just a writing — it’s a way to operate.
+            you'll get updates, systems i’m testing, and frameworks that might
+            help you move a bit faster and think a bit clearer.
             <br />
-            questions, feedback, or random thoughts? just reply – i read every
-            message.
+            <br />
+            before we go further, confirm your email to stay in the loop.
           </Text>
 
-          <br />
+          {token && (
+            <Link
+              href={`${baseUrl}/verify?token=${token}`}
+              className={`my-[24px] p-[12px_24px] bg-black text-white rounded-md text-sm font-medium ${themeClasses.button}`}
+              style={{ backgroundColor: "#000", color: "#fff" }}
+            >
+              verify your email
+            </Link>
+          )}
 
           <Text
             className={themeClasses.mutedText}
@@ -126,4 +119,4 @@ export const WelcomeEmail = ({ token = "tk----" }: Props) => {
   );
 };
 
-export default WelcomeEmail;
+export default WelcomeNewsletter;

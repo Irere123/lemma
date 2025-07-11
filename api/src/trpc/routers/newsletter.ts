@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { WelcomeNewsletter } from "@brain/email/emails/welcome-newsletter";
 import { subscribers } from "@/schemas";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 import { generateId } from "@/lib/utils";
+import { resend } from "@/services/resend";
 
 export const newsletterRouter = createTRPCRouter({
   subscribe: publicProcedure
@@ -22,15 +24,25 @@ export const newsletterRouter = createTRPCRouter({
       if (!sub) {
         throw new TRPCError({
           message: "Already joined the newsletter.",
-          code: "BAD_REQUEST",
+          code: "CONFLICT",
         });
       }
 
       try {
-        await ctx.db.insert(subscribers).values({
-          id: generateId(),
-          email: input.email,
-          token: generateId("st"),
+        const [subCreated] = await ctx.db
+          .insert(subscribers)
+          .values({
+            id: generateId(),
+            email: input.email,
+            token: generateId("st"),
+          })
+          .returning();
+
+        resend.emails.send({
+          from: `Irere Emmanuel <welcome@${process.env.RESEND_DOMAIN}>`,
+          subject: "Welcome Abroad!",
+          to: subCreated?.email as string,
+          react: WelcomeNewsletter({ token: subCreated?.token as string }),
         });
       } catch (error) {
         console.log(error);

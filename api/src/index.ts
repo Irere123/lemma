@@ -7,6 +7,9 @@ import { auth } from "./lib/auth";
 import { routers } from "./rest/routers";
 import { appRouter } from "./trpc/routers/_app";
 import { createTRPCContext } from "./trpc/init";
+import { checkEnvVars } from "./lib/check-env";
+
+checkEnvVars();
 
 const app = new Hono<Context>();
 
