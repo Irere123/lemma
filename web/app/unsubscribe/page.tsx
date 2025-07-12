@@ -1,12 +1,15 @@
-import { UnsubButton } from "@/components/newsletter/unsub-button";
 import { Metadata } from "next";
-
-export const dynamic = "force-dynamic";
+import { Suspense } from "react";
+import { UnsubButton } from "@/components/newsletter/unsub-button";
 
 export const metadata: Metadata = {
   title: "Unsubscribe",
 };
 
 export default function UnsubscribePage() {
-  return <UnsubButton />;
+  return (
+    <Suspense fallback={null}>
+      <UnsubButton />
+    </Suspense>
+  );
 }
