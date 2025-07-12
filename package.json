@@ -9,7 +9,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"cd server && npm run dev\""
+    "dev": "concurrently \"cd api && bun run dev\" \"cd web && bun run dev\""
   },
   "keywords": [],
   "author": "",
