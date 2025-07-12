@@ -12,6 +12,7 @@
     "@brain/api": "workspace:*",
     "@tanstack/react-query": "^5.82.0",
     "@trpc/client": "^11.4.3",
+    "@trpc/next": "^11.4.3",
     "@trpc/react-query": "^11.4.3",
     "@trpc/tanstack-react-query": "^11.4.3",
     "client-only": "^0.0.1",

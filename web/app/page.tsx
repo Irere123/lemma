@@ -1,7 +1,9 @@
-export default function Home() {
+import SubscribeForm from "@/components/subscribe-form";
+
+export default async function Home() {
   return (
     <div>
-      <p>Irere.dev</p>
+      <SubscribeForm />
     </div>
   );
 }
