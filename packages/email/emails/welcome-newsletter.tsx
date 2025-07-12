@@ -14,7 +14,7 @@ import {
   getEmailInlineStyles,
   getEmailThemeClasses,
 } from "../components/theme";
-import { baseUrl } from "lib/constants";
+import { baseUrl } from "../lib/constants";
 
 interface Props {
   token?: string;
