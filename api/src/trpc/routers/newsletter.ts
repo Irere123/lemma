@@ -21,7 +21,7 @@ export const newsletterRouter = createTRPCRouter({
         .where(eq(subscribers.email, input.email))
         .limit(1);
 
-      if (!sub) {
+      if (sub) {
         throw new TRPCError({
           message: "Already joined the newsletter.",
           code: "CONFLICT",
