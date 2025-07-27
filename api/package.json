@@ -6,7 +6,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "types": "wrangler types --env local",
-    "generate-migration": "dotenv -- npx drizzle-kit generate",
+    "generate-migration": "drizzle-kit generate",
     "migrate:local": "bun run ./scripts/migrate.ts",
     "migrate:prod": "cross-env NODE_ENV=production bun run ./scripts/migrate.ts"
   },

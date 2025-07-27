@@ -72,7 +72,7 @@ export const verification = pgTable("verification", {
   ),
 });
 
-export const subscribers = pgTable(
+export const subscribers = createTable(
   "subscribers",
   {
     id: text().primaryKey(),
@@ -90,14 +90,14 @@ export const subscribers = pgTable(
     index("email_idx").on(table.email),
     index("token_idx").on(table.token),
     index("confirmed_idx").on(table.isConfirmed),
-    unique("unique_subscriber_constraint").on(table.email, table.token),
+    unique("sub_constraint").on(table.email, table.token),
   ]
 );
 
 export type Subscriber = typeof subscribers.$inferSelect;
 export type SubscriberInsert = typeof subscribers.$inferInsert;
 
-export const campaigns = pgTable("campaigns", {
+export const campaigns = createTable("campaigns", {
   id: text("id").primaryKey(),
   title: text().notNull(),
   slug: text().notNull(),
@@ -119,13 +119,13 @@ export const campaignLinks = createTable(
     url: text().notNull(),
     label: text(),
   },
-  (table) => [index("cmpg_link_id_idx").on(table.campaignId)]
+  (table) => [index("camp_id_idx").on(table.campaignId)]
 );
 
 export type CampaignLink = typeof campaignLinks.$inferSelect;
 export type CampignLinkInsert = typeof campaignLinks.$inferInsert;
 
-export const clickEvents = pgTable(
+export const clickEvents = createTable(
   "click_events",
   {
     id: text("id").primaryKey(),
@@ -142,12 +142,12 @@ export const clickEvents = pgTable(
     ipAddress: inet("ip_address"),
   },
   (table) => [
-    index("subscriber_id_idx").on(table.subscriberId),
-    index("campaign_link_id_idx").on(table.linkId),
+    index("sub_id_idx").on(table.subscriberId),
+    index("camp_ev_id_idx").on(table.linkId),
   ]
 );
 
-export const unsubscribeEvents = pgTable(
+export const unsubscribeEvents = createTable(
   "unsubscribe_events",
   {
     id: text("id").primaryKey(),
@@ -163,8 +163,8 @@ export const unsubscribeEvents = pgTable(
     reason: text(),
   },
   (table) => [
-    index("subscriber_rel_id_idx").on(table.subscriberId),
-    index("campaign_rel_id_idx").on(table.campaignId),
+    index("sub_rel_id_idx").on(table.subscriberId),
+    index("camp_rel_id_idx").on(table.campaignId),
   ]
 );
 
