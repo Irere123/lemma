@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "irere-brain-os",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "keep_vars": true,
+  "dev": {
+    "port": 4000,
+  },
+  "env": {
+    "local": {
+      "observability": {
+        "enabled": true,
+      },
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "14e911afb02544e6b90b8d2a917b1105",
+          "localConnectionString": "postgres://postgres:postgres@localhost:5432/brainos",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "development",
+        "PORT": 4000,
+      },
+    },
+    "production": {
+      "observability": {
+        "enabled": true,
+      },
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "14e911afb02544e6b90b8d2a917b1105",
+          "localConnectionString": "postgres://postgres:postgres@localhost:5432/brainos",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "development",
+        "PORT": 4000,
+      },
+    },
+  },
+}

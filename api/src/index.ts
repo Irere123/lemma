@@ -1,17 +1,14 @@
-import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { trpcServer } from "@hono/trpc-server";
-import type { Context } from "./rest/types";
-import { auth } from "./lib/auth";
 import { routers } from "./rest/routers";
 import { appRouter } from "./trpc/routers/_app";
 import { createTRPCContext } from "./trpc/init";
-import { checkEnvVars } from "./lib/check-env";
+import { createRouter } from "./lib/utils";
+import { createAuth } from "./lib/auth";
+import env from "@api/env-runtime";
 
-checkEnvVars();
-
-const app = new Hono<Context>();
+const app = createRouter();
 
 app.use(secureHeaders());
 
@@ -36,7 +33,7 @@ app.use(
 );
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
-  return auth.handler(c.req.raw);
+  return createAuth().handler(c.req.raw);
 });
 
 app.route("/", routers);
@@ -50,6 +47,6 @@ app.use(
 );
 
 export default {
-  port: process.env.PORT || 4000,
+  port: env.PORT || 4000,
   fetch: app.fetch,
 };

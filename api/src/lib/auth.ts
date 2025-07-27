@@ -1,21 +1,23 @@
 import { betterAuth } from "better-auth";
+import { env } from "cloudflare:workers";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-import { db } from "@api/db";
+import { createDb } from "@api/db";
 
-export const auth = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: "pg",
-  }),
-  socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+export const createAuth = () => {
+  const { db } = createDb(env.HYPERDRIVE.connectionString);
+
+  return betterAuth({
+    database: drizzleAdapter(db, {
+      provider: "pg",
+    }),
+    socialProviders: {
+      github: {
+        clientId: process.env.GITHUB_CLIENT_ID!,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      },
     },
-  },
-});
-
-export type AuthType = {
-  user: typeof auth.$Infer.Session.user | null;
-  session: typeof auth.$Infer.Session.session | null;
+  });
 };
+
+export type Auth = ReturnType<typeof createAuth>;

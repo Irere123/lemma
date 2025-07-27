@@ -3,26 +3,32 @@
   "main": "src/trpc/routers/_app.ts",
   "types": "src/trpc/routers/_app.ts",
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
-    "db:gen": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "types": "wrangler types --env local",
+    "generate-migration": "dotenv -- npx drizzle-kit generate",
+    "migrate:local": "bun run ./scripts/migrate.ts",
+    "migrate:prod": "cross-env NODE_ENV=production bun run ./scripts/migrate.ts"
   },
   "dependencies": {
     "@brain/email": "workspace:*",
     "@hono/trpc-server": "^0.4.0",
     "@trpc/server": "^11.4.3",
     "better-auth": "^1.2.12",
+    "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.2",
     "hono": "^4.8.4",
     "ksuid": "^3.0.0",
     "postgres": "^3.4.7",
     "resend": "^4.6.0",
     "superjson": "^2.2.2",
+    "wrangler": "^4.26.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^24.0.12",
+    "@types/node": "^24.1.0",
+    "cross-env": "^10.0.0",
     "drizzle-kit": "^0.31.4"
   }
 }

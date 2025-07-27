@@ -1,7 +1,6 @@
-import { Hono } from "hono";
-import type { Context } from "../types";
+import { createRouter } from "@api/lib/utils";
 
-const routers = new Hono<Context>();
+const routers = createRouter();
 
 routers.get("/", (c) => {
   return c.json({ message: "Hello world" });

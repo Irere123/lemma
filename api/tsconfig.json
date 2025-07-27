@@ -22,8 +22,8 @@
     "paths": {
       "@api/*": ["src/*"]
     },
-    "types": ["bun-types"]
+    "types": ["node"]
   },
   "exclude": ["node_modules"],
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "worker-configuration.d.ts", "drizzle.config.ts"]
 }

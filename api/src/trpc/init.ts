@@ -1,4 +1,5 @@
-import { db } from "@api/db";
+import { createDb, type DB } from "@api/db";
+import { env } from "cloudflare:workers";
 import { TRPCError, initTRPC } from "@trpc/server";
 import type { Context } from "hono";
 import type { User } from "better-auth";
@@ -6,13 +7,14 @@ import SuperJSON from "superjson";
 
 type TRPCContext = {
   user: User | null;
-  db: typeof db;
+  db: DB;
 };
 
 export const createTRPCContext = async (
   _: unknown,
   c: Context
 ): Promise<TRPCContext> => {
+  const { db } = createDb(env.HYPERDRIVE.connectionString);
   return {
     user: c.env.user,
     db,

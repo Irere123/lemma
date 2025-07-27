@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { WelcomeNewsletter } from "@brain/email/emails/welcome-newsletter";
-import { subscribers } from "@api/schemas";
+import { subscribers } from "@api/db/schema";
 import { createTRPCRouter, publicProcedure } from "@api/trpc/init";
 import { generateId } from "@api/lib/utils";
 import { resend } from "@api/services/resend";
