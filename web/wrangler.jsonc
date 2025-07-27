@@ -1,12 +1,32 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "brainos",
-  "compatibility_date": "2025-04-04",
+  "compatibility_date": "2025-07-27",
   "main": "./workers/app.ts",
-  "vars": {
-    "VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
-  },
   "observability": {
     "enabled": true,
+  },
+  "env": {
+    "local": {
+      "name": "brain-local",
+      "vars": {
+        "VITE_PUBLIC_BACKEND_URL": "http://localhost:4000",
+        "VITE_PUBLIC_APP_URL": "http://localhost:3000",
+      },
+    },
+    "staging": {
+      "name": "brain-staging",
+      "vars": {
+        "VITE_PUBLIC_BACKEND_URL": "https://sapi.irere.dev",
+        "VITE_PUBLIC_APP_URL": "https://staging.irere.dev",
+      },
+    },
+    "production": {
+      "name": "brain-production",
+      "vars": {
+        "VITE_PUBLIC_BACKEND_URL": "https://api.irere.dev",
+        "VITE_PUBLIC_APP_URL": "https://irere.dev",
+      },
+    },
   },
 }

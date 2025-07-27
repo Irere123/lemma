@@ -1,9 +1,9 @@
 {
   "include": [
     ".react-router/types/**/*",
-    "app/**/*",
-    "app/**/.server/**/*",
-    "app/**/.client/**/*",
+    "src/**/*",
+    "src/**/.server/**/*",
+    "src/**/.client/**/*",
     "workers/**/*",
     "vite.config.ts"
   ],
@@ -23,7 +23,8 @@
     "baseUrl": ".",
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
-      "~/*": ["./app/*"]
+      "@/*": ["./src/*"],
+      "@api/*": ["../api/src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
