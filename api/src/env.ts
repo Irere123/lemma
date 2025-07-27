@@ -1,13 +1,12 @@
 import { z } from "zod";
 
 const EnvSchema = z.object({
-  PORT: z.string().optional(),
+  PORT: z.string().default("4000"),
   NODE_ENV: z.string().default("development"),
-  DATABASE_URL: z.string().url(),
-  GITHUB_CLIENT_ID: z.string(),
-  GITHUB_CLIENT_SECRET: z.string(),
-  BETTER_AUTH_SECRET: z.string(),
-  BETTER_AUTH_URL: z.string().url(),
+  GITHUB_CLIENT_ID: z.string().default(""),
+  GITHUB_CLIENT_SECRET: z.string().default(""),
+  BETTER_AUTH_SECRET: z.string().default("supersecret"),
+  BETTER_AUTH_URL: z.string().url().default("http://localhost:4000"),
 });
 
 export type Environment = z.infer<typeof EnvSchema>;

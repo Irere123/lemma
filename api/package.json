@@ -4,7 +4,7 @@
   "types": "src/trpc/routers/_app.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify",
+    "deploy": "wrangler deploy",
     "types": "wrangler types --env local",
     "generate-migration": "dotenv -- npx drizzle-kit generate",
     "migrate:local": "bun run ./scripts/migrate.ts",
