@@ -9,8 +9,8 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <div>
-      <p>Hello Brainos</p>
+    <div className="max-w-2xl mx-auto py-8 px-6">
+      <p>Header</p>
     </div>
   );
 }
