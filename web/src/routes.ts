@@ -7,12 +7,21 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+  // Landing page
   index("./routes/home.tsx"),
+
+  // Public blog
+  route("/posts", "./routes/posts/page.tsx"),
+  route("/posts/:slug", "./routes/posts/$slug/page.tsx"),
+
+  // Notes and Newsletter
+  route("/notes", "./routes/notes/page.tsx"),
+  route("/newsletter", "./routes/newsletter/page.tsx"),
 
   // Auth
   route("/login", "./routes/(auth)/login/page.tsx"),
 
-  // Application
+  // Publisher application
   layout(
     "routes/publish/layout.tsx",
     prefix("/publish", [

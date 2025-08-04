@@ -1,7 +1,9 @@
+import { EditorSavingToDatabase } from "@/components/editor";
+
 export default function EditorPage() {
   return (
     <div>
-      <p>Editor</p>
+      <EditorSavingToDatabase />
     </div>
   );
 }
