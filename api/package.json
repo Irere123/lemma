@@ -3,7 +3,7 @@
   "main": "src/trpc/routers/_app.ts",
   "types": "src/trpc/routers/_app.ts",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --env local",
     "deploy": "wrangler deploy",
     "types": "wrangler types --env local",
     "generate-migration": "drizzle-kit generate",

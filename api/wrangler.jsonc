@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "irere-brain-os",
   "main": "src/index.ts",
-  "compatibility_date": "2025-07-27",
+  "compatibility_date": "2025-07-12",
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
   "dev": {
