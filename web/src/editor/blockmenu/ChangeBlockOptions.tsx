@@ -16,8 +16,7 @@ import { ReactEditor, useSlate } from "slate-react";
 import { ElementType } from "../types";
 import { useMemo } from "react";
 import { isElementActive, toggleElement } from "../utils/formatting";
-import Tooltip from "../ui/Tooltip";
-import { DropdownItem } from "../ui/Dropdown";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 type BlockButtonProps = {
   format: ElementType;
@@ -116,18 +115,14 @@ const BlockButton = ({
   const isActive = isElementActive(editor, format, path);
 
   return (
-    <Tooltip content={tooltip} placement="top" disabled={!tooltip}>
-      <span>
-        <DropdownItem
-          className={`flex cursor-pointer items-center rounded px-2 py-2 hover:bg-gray-100 active:bg-gray-200 ${className}`}
-          onClick={() => toggleElement(editor, format, path)}
-        >
-          <Icon
-            size={18}
-            className={isActive ? "text-green-500" : "text-neutral-800"}
-          />
-        </DropdownItem>
-      </span>
-    </Tooltip>
+    <DropdownMenuItem
+      className={`flex cursor-pointer items-center rounded px-2 py-2 hover:bg-gray-100 active:bg-gray-200 ${className}`}
+      onClick={() => toggleElement(editor, format, path)}
+    >
+      <Icon
+        size={18}
+        className={isActive ? "text-green-500" : "text-neutral-800"}
+      />
+    </DropdownMenuItem>
   );
 };

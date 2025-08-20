@@ -4,10 +4,15 @@ import { ReactEditor, useSlateStatic } from "slate-react";
 import { IconDotsVertical, IconLink, IconPlus } from "@tabler/icons-react";
 
 import { type ReferenceableBlockElement, ElementType } from "../types";
-import Dropdown, { DropdownItem } from "../ui/Dropdown";
 import { isReferenceableBlockElement } from "../utils/checks";
 import { createNodeId } from "../utils/plugins/withNodeId";
 import ChangeBlockOptions from "./ChangeBlockOptions";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type BlockMenuDropdownProps = {
   element: ReferenceableBlockElement;
@@ -60,15 +65,6 @@ export default function BlockMenuDropdown(props: BlockMenuDropdownProps) {
     navigator.clipboard.writeText(`((${blockId}))`);
   }, [editor, element]);
 
-  const buttonChildren = useMemo(
-    () => (
-      <span className="flex h-6 w-6 items-center justify-center">
-        <IconDotsVertical className="text-gray-500" size={18} />
-      </span>
-    ),
-    []
-  );
-
   const buttonClassName = useMemo(() => {
     const buttonClassName = `select-none hover:bg-gray-200 active:bg-gray-300 rounded absolute top-0.5 ${className}`;
     if (element.type === ElementType.ListItem) {
@@ -79,26 +75,26 @@ export default function BlockMenuDropdown(props: BlockMenuDropdownProps) {
   }, [element.type, className]);
 
   return (
-    <Dropdown
-      buttonChildren={buttonChildren}
-      buttonClassName={buttonClassName}
-      placement="left-start"
-      offset={[0, 6]}
-      tooltipContent={<span className="text-xs">Click to open menu</span>}
-      tooltipPlacement="bottom"
-    >
-      <DropdownItem onClick={onAddBlock}>
-        <IconPlus size={18} className="mr-1" />
-        <span>Add block below</span>
-      </DropdownItem>
-      <DropdownItem onClick={onCopyBlockRef}>
-        <IconLink size={18} className="mr-1" />
-        <span>Copy block reference</span>
-      </DropdownItem>
-      <ChangeBlockOptions
-        element={element}
-        className="border-t px-8 dark:border-gray-700"
-      />
-    </Dropdown>
+    <DropdownMenu>
+      <DropdownMenuTrigger className={`${buttonClassName}`}>
+        <span className="flex h-6 w-6 items-center justify-center">
+          <IconDotsVertical className="text-gray-500" size={18} />
+        </span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={onAddBlock}>
+          <IconPlus size={18} className="mr-1" />
+          <span>Add block below</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onCopyBlockRef}>
+          <IconLink size={18} className="mr-1" />
+          <span>Copy block reference</span>
+        </DropdownMenuItem>
+        <ChangeBlockOptions
+          element={element}
+          className="border-t px-8 dark:border-gray-700"
+        />
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

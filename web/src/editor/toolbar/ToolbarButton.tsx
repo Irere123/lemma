@@ -1,7 +1,6 @@
 import { type HTMLAttributes, memo } from "react";
 import type { TablerIcon } from "@tabler/icons-react";
 import { classnames } from "../utils/classnames";
-import Tooltip from "../ui/Tooltip";
 
 interface ToolbarButtonProps
   extends Omit<HTMLAttributes<HTMLSpanElement>, "onClick"> {
@@ -32,25 +31,21 @@ const ToolbarButton = (props: ToolbarButtonProps) => {
   );
 
   return (
-    <Tooltip content={tooltip} placement="top" disabled={!tooltip}>
-      <span
-        role="button"
-        className={buttonClassName}
-        onPointerDown={(event) => event.preventDefault()}
-        onPointerUp={(event) => {
-          if (event.button === 0) {
-            event.preventDefault();
-            onClick();
-          }
-        }}
-        {...otherProps}
-      >
-        <Icon size={18} />
-        {text ? (
-          <span className="ml-1 text-sm tracking-wide">{text}</span>
-        ) : null}
-      </span>
-    </Tooltip>
+    <span
+      role="button"
+      className={buttonClassName}
+      onPointerDown={(event) => event.preventDefault()}
+      onPointerUp={(event) => {
+        if (event.button === 0) {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      {...otherProps}
+    >
+      <Icon size={18} />
+      {text ? <span className="ml-1 text-sm tracking-wide">{text}</span> : null}
+    </span>
   );
 };
 

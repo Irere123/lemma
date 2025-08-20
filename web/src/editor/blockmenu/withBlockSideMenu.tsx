@@ -14,16 +14,11 @@ export default function withBlockSideMenu(
     }
 
     return (
-      <div className="">
+      <div className="group relative w-full before:absolute before:top-0 before:bottom-0 before:right-full before:w-full">
         <EditorElement {...props} />
         <BlockMenuDropdown
           element={element}
-          /**
-           * We're using opacity 0.001 here to support iOS Safari.
-           * If we use anything else to hide this element, it would
-           * require two taps to edit text (the first tap would display this element).
-           */
-          className="opacity-0.1 group-hover:opacity-100"
+          className="opacity-0 group-hover:opacity-100"
         />
       </div>
     );

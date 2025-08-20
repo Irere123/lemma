@@ -4,7 +4,7 @@ import { ReactEditor, useSlate } from "slate-react";
 import type { Placement, VirtualElement } from "@popperjs/core";
 import { usePopper } from "react-popper";
 
-import Portal from "./ui/Portal";
+import Portal from "./Portal";
 import useOnClickOutside from "./hooks/useOnClickOutside";
 import useHotkeys from "./hooks/useHotkeys";
 
