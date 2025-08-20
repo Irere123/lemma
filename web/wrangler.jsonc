@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "brainos",
+  "compatibility_flags": ["nodejs_compat"],
   "compatibility_date": "2025-07-12",
   "main": "./workers/app.ts",
   "observability": {
