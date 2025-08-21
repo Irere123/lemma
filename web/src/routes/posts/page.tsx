@@ -1,4 +1,9 @@
-import { ProfileHeader, DateText, TagPill, ListItem } from "@/components/ui";
+import {
+  ProfileHeader,
+  DateText,
+  TagPill,
+  ListItem,
+} from "@/components/landing";
 
 type Post = {
   slug: string;

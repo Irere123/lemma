@@ -1,3 +1,4 @@
+import { ProfileHeader } from "@/components/landing";
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router";
 
@@ -33,34 +34,16 @@ export default function NewsletterPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <header className="mb-6">
-        <div className="flex items-center gap-4">
-          <img
-            src="/favicon.ico"
-            alt="Irere Emmanuel"
-            className="h-8 w-8 rounded-full ring-1 ring-neutral-200"
-          />
-          <h1 className="text-2xl font-semibold tracking-tight">Newsletter</h1>
-        </div>
-        <nav className="mt-2 text-sm text-neutral-600 flex gap-6">
-          <Link to="/" className="hover:underline underline-offset-4">
-            About
-          </Link>
-          <Link to="/posts" className="hover:underline underline-offset-4">
-            Blog
-          </Link>
-          <span className="underline underline-offset-4">Newsletter</span>
-          <a
-            href="https://github.com/ireredev"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:underline underline-offset-4"
-          >
-            GitHub
-          </a>
-        </nav>
-        <hr className="mt-4 border-neutral-200" />
-      </header>
+      <ProfileHeader
+        title="Newsletter"
+        current="Newsletter"
+        links={[
+          { label: "About", to: "/" },
+          { label: "Blog", to: "/posts" },
+          { label: "Newsletter", to: "/newsletter" },
+          { label: "GitHub", href: "https://github.com/irere123" },
+        ]}
+      />
 
       <section className="space-y-4">
         <p className="text-[15px] leading-7 text-neutral-800">

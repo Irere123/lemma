@@ -1,20 +1,10 @@
 import { Link } from "react-router";
 
-/**
- * Shared UI primitives for landing-facing pages (About, Blog, Notes, Newsletter).
- * SOLID principles:
- * - SRP: each component does one thing.
- * - OCP: extend via props/children without modifying internals.
- * - LSP: interchangeable small components (e.g., TagPill vs any badge).
- * - ISP: minimal prop interfaces per component.
- * - DIP: pages depend on these abstractions instead of bespoke markup.
- */
-
 export function ProfileHeader({
   title,
   current,
   links,
-  avatarSrc = "/favicon.ico",
+  avatarSrc = "/images/irere.png",
   alt = "Irere Emmanuel",
 }: {
   title: string;
@@ -29,7 +19,7 @@ export function ProfileHeader({
         <img
           src={avatarSrc}
           alt={alt}
-          className="h-8 w-8 rounded-full ring-1 ring-neutral-200"
+          className="h-12 w-12 rounded-full ring-1 ring-neutral-200"
         />
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       </div>

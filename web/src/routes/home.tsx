@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { ProfileHeader, Callout, Section } from "@/components/ui";
+import { ProfileHeader, Callout, Section } from "@/components/landing";
 
 export function meta({}: Route.MetaArgs) {
   return [
