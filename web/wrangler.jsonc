@@ -12,6 +12,10 @@
       "pattern": "irere.dev",
       "custom_domain": true,
     },
+    {
+      "pattern": "www.irere.dev",
+      "custom_domain": true,
+    },
   ],
   "env": {
     "local": {
