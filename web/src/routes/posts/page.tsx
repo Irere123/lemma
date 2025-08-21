@@ -58,9 +58,8 @@ export default function PostsIndex({
         links={[
           { label: "About", to: "/" },
           { label: "Blog", to: "/posts" },
-          { label: "Notes", to: "/notes" },
           { label: "Newsletter", to: "/newsletter" },
-          { label: "GitHub", href: "https://github.com/ireredev" },
+          { label: "GitHub", href: "https://github.com/irere123" },
         ]}
       />
 

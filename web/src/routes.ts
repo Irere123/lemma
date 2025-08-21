@@ -14,8 +14,7 @@ export default [
   route("/posts", "./routes/posts/page.tsx"),
   route("/posts/:slug", "./routes/posts/$slug/page.tsx"),
 
-  // Notes and Newsletter
-  route("/notes", "./routes/notes/page.tsx"),
+  // Newsletter
   route("/newsletter", "./routes/newsletter/page.tsx"),
 
   // Auth
