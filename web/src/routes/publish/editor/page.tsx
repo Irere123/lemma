@@ -1,5 +1,5 @@
 import { Editor } from "@/editor";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Route } from "../+types/layout";
 import Title from "@/editor/Title";
 
@@ -18,9 +18,37 @@ export default function EditorPage() {
     isContentSynced: true,
   });
 
+  const isSynced = useMemo(
+    () => syncState.isTitleSynced && syncState.isContentSynced,
+    [syncState]
+  );
+
   const onEditorValueChange = useCallback(() => {
     setSyncState((syncState) => ({ ...syncState, isContentSynced: false }));
   }, []);
+
+  // Prompt the user with a dialog box about unsaved changes if they navigate away
+  useEffect(() => {
+    const warningText =
+      "You have unsaved changes — are you sure you wish to leave this page?";
+
+    const handleWindowClose = (e: BeforeUnloadEvent) => {
+      if (isSynced) return;
+      e.preventDefault();
+      return (e.returnValue = warningText);
+    };
+    const handleBrowseAway = () => {
+      if (isSynced) return;
+      if (window.confirm(warningText)) return;
+      throw "routeChange aborted";
+    };
+
+    window.addEventListener("beforeunload", handleWindowClose);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleWindowClose);
+    };
+  }, [isSynced]);
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
