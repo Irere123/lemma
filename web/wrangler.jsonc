@@ -7,6 +7,12 @@
   "observability": {
     "enabled": true,
   },
+  "routes": [
+    {
+      "pattern": "irere.dev",
+      "custom_domain": true,
+    },
+  ],
   "env": {
     "local": {
       "name": "brain-local",
