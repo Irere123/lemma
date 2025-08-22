@@ -6,8 +6,7 @@ export function meta({}: Route.MetaArgs) {
     { title: "Irere Emmanuel — About" },
     {
       name: "description",
-      content:
-        "Software engineer building at the edge with Cloudflare Workers, React Router, and TypeScript.",
+      content: "Software engineer building at the edge.",
     },
   ];
 }
@@ -36,9 +35,9 @@ export default function Home() {
         </p>
 
         <Callout tone="green">
-          On nights & weekends, I’m exploring editors and content systems,
-          including an opinionated stack using React Router 7 + Cloudflare
-          Workers. I’m also writing about practical engineering trade-offs.
+          On nights & weekends, I’m exploring AI and Web services, using an
+          opinionated stack: Typescript and Elixir. I’m also writing about
+          practical engineering.
         </Callout>
 
         <Section title="Previously, I’ve worked with:">
@@ -47,8 +46,8 @@ export default function Home() {
               Platform engineering on CI/CD and observability for large-scale
               deployments
             </li>
-            <li>Web performance and SSR at the edge with Workers and Vite</li>
-            <li>Design systems, documentation, and content tooling</li>
+            <li>Web performance and SSR at the edge</li>
+            <li>Design systems, documentation, and developer tooling</li>
           </ul>
         </Section>
       </section>
