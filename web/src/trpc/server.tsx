@@ -22,6 +22,12 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
       httpBatchLink({
         url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
         transformer: superjson,
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            credentials: "include",
+          });
+        },
       }),
       loggerLink({
         enabled: (opts) =>

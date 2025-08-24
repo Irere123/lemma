@@ -1,12 +1,14 @@
-import { createDb, type DB } from "@api/db";
 import { env } from "cloudflare:workers";
 import { TRPCError, initTRPC } from "@trpc/server";
 import type { Context } from "hono";
 import type { User } from "better-auth";
 import SuperJSON from "superjson";
 
+import { createDb, type DB } from "@api/db";
+import { createAuth } from "@api/lib/auth";
+
 type TRPCContext = {
-  user: User | null;
+  user: User | undefined;
   db: DB;
 };
 
@@ -14,9 +16,15 @@ export const createTRPCContext = async (
   _: unknown,
   c: Context
 ): Promise<TRPCContext> => {
+  const auth = createAuth();
   const { db } = createDb(env.HYPERDRIVE.connectionString);
+
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
+
   return {
-    user: c.env.user,
+    user: session?.user,
     db,
   };
 };
