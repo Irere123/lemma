@@ -8,13 +8,22 @@ export const createAuth = () => {
   const { db } = createDb(env.HYPERDRIVE.connectionString);
 
   return betterAuth({
+    basePath: "/auth",
     database: drizzleAdapter(db, {
       provider: "pg",
     }),
+    trustedOrigins: [...env.ALLOWED_API_ORIGINS.split(",")],
+    advanced: {
+      crossSubDomainCookies: {
+        enabled: env.NODE_ENV !== "development",
+        domain: ".irere.dev",
+      },
+      useSecureCookies: env.NODE_ENV !== "development",
+    },
     socialProviders: {
-      github: {
-        clientId: process.env.GITHUB_CLIENT_ID!,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       },
     },
   });

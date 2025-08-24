@@ -13,7 +13,7 @@ const app = createRouter();
 app.use(secureHeaders());
 
 app.use(
-  "/trpc/*",
+  "*",
   cors({
     origin: process.env.ALLOWED_API_ORIGINS?.split(",") ?? [],
     credentials: true,
@@ -32,11 +32,11 @@ app.use(
   })
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => {
+app.on(["POST", "GET"], "/auth/*", (c) => {
   return createAuth().handler(c.req.raw);
 });
 
-app.route("/", routers);
+app.route("/api/v1/", routers);
 
 app.use(
   "/trpc/*",
