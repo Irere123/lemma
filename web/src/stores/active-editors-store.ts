@@ -1,5 +1,5 @@
+import createCustomEditor from "@/editor/utils/createEditor";
 import { type Descendant, Editor } from "slate";
-import createCustomEditor from "../utils/createEditor";
 
 // Map from index of the editor to slate editor
 let activeEditors: Record<string, Editor> = {};
@@ -7,14 +7,14 @@ let activeEditors: Record<string, Editor> = {};
 let listeners: Array<() => void> = [];
 
 export const activeEditorsStore = {
-  getActiveEditor(index: string) {
-    return activeEditors[index];
+  getActiveEditor(documentId: string) {
+    return activeEditors[documentId];
   },
-  addActiveEditor(noteId: string) {
-    if (activeEditors[noteId]) {
+  addActiveEditor(documentId: string) {
+    if (activeEditors[documentId]) {
       return;
     }
-    activeEditors = { ...activeEditors, [noteId]: createCustomEditor() };
+    activeEditors = { ...activeEditors, [documentId]: createCustomEditor() };
     emitChange();
   },
   subscribe(listener: () => void) {
@@ -26,8 +26,9 @@ export const activeEditorsStore = {
   getSnapshot() {
     return activeEditors;
   },
+
   getServerSnapshot() {
-    return true; // Return a default or initial value for server-rendered content
+    return true; // Always show "Online" for server-generated HTML
   },
 };
 
@@ -38,8 +39,8 @@ function emitChange() {
 }
 
 // Get editor from active editors if it exists, or create a new one
-export function getActiveOrTempEditor(index: string, content: Descendant[]) {
-  let editor = activeEditorsStore.getActiveEditor(index);
+export function getActiveOrTempEditor(noteId: string, content: Descendant[]) {
+  let editor = activeEditorsStore.getActiveEditor(noteId);
   if (!editor) {
     editor = createCustomEditor();
     editor.children = content;

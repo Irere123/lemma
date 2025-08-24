@@ -1,12 +1,14 @@
+import { documentStore } from "@/stores/document-store";
 import { useEffect, useRef } from "react";
 
 type Props = {
+  documentId: string;
   onChange: (value: string) => void;
   className?: string;
 };
 
 export default function Title(props: Props) {
-  const { onChange, className = "" } = props;
+  const { documentId, onChange, className = "" } = props;
   const titleRef = useRef<HTMLDivElement | null>(null);
 
   const emitChange = () => {
@@ -22,8 +24,10 @@ export default function Title(props: Props) {
     if (!titleRef.current || titleRef.current.textContent) {
       return;
     }
-    titleRef.current.textContent = "";
-  }, []);
+    const initialValue =
+      documentStore.getState().documents[documentId]?.title ?? "";
+    titleRef.current.textContent = initialValue;
+  }, [documentId]);
 
   return (
     <>

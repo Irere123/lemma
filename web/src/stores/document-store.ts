@@ -14,6 +14,8 @@ import {
   toggleDocumentTreeItemCollapsed,
 } from "./document-store-utils";
 import { caseInsensitiveStringEqual } from "@/lib/utils";
+import type { Descendant } from "slate";
+import type { PickPartial } from "@/editor/types/utils";
 
 localforage.config({
   name: "irere.dev",
@@ -63,7 +65,8 @@ export type Document = {
   id: string;
   title: string;
   subtitle: string;
-  content: string;
+  content: Descendant[];
+  userId: string;
 };
 
 export type Documents = Record<Document["id"], Document>;
@@ -74,11 +77,20 @@ export type DocumentTreeItem = {
   collapsed: boolean;
 };
 
+export type DocumentUpdate = PickPartial<
+  Document,
+  "userId" | "content" | "title"
+>;
+
 export type Store = {
+  // Documents
   documents: Documents;
   setDocuments: Setter<Documents>;
   upsertDocument: (docuemnt: Document) => void;
   deleteDocument: (documentId: string) => void;
+  updateDocument: (note: DocumentUpdate) => void;
+
+  // DocumentTree
   documentTree: DocumentTreeItem[];
   openDocumentIds: string[];
   setDocumentTree: Setter<DocumentTreeItem[]>;
@@ -100,6 +112,19 @@ export const documentStore = createStore<Store>()(
        * Sets the documents
        */
       setDocuments: createSetter(set, "documents"),
+      /**
+       * Update the given note
+       */
+      updateDocument: (document: DocumentUpdate) => {
+        set((state) => {
+          if (state.documents[document.id]) {
+            state.documents[document.id] = {
+              ...state.documents[document.id],
+              ...document,
+            };
+          }
+        });
+      },
       /**
        * If the document id exists, then update the document. Otherwise, insert it
        */

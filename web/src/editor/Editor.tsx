@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent,
 } from "react";
 import { Transforms, type Descendant, type Path } from "slate";
@@ -11,6 +12,11 @@ import isHotkey from "is-hotkey";
 
 import withBlockSideMenu from "./blockmenu/withBlockSideMenu";
 import withVerticalSpacing from "./elements/withVerticalSpacing";
+import useHighlightedPath from "./utils/useHighlightedPath";
+import EditorLeaf from "./elements/EditorLeaf";
+import useIsMounted from "./hooks/useIsMounted";
+import HoveringToolbar from "./toolbar/HoveringToolbar";
+import activeEditorsStore from "@/stores/active-editors-store";
 import EditorElement from "./elements/EditorElement";
 import {
   handleEnter,
@@ -21,14 +27,11 @@ import {
   toggleMark,
 } from "./utils/formatting";
 import { ElementType, Mark } from "./types";
-import useHighlightedPath from "./utils/useHighlightedPath";
-import EditorLeaf from "./elements/EditorLeaf";
-import useIsMounted from "./hooks/useIsMounted";
-import HoveringToolbar from "./toolbar/HoveringToolbar";
-import createCustomEditor from "./utils/createEditor";
 import { getDefaultEditorValue } from "./utils/constants";
+import { documentStore } from "@/stores/document-store";
 
 type Props = {
+  documentId: string;
   onChange: (value: Descendant[]) => void;
   className?: string;
   highlightedPath?: Path;
@@ -41,14 +44,31 @@ export type AddLinkPopoverState = {
 };
 
 export default function Editor(props: Props) {
-  const { className = "", highlightedPath, onChange } = props;
+  const { documentId, className = "", highlightedPath, onChange } = props;
   const isMounted = useIsMounted();
 
-  const initialValueRef = useRef<Descendant[]>(getDefaultEditorValue());
+  const updateStoreDocument = useCallback(
+    (value: Descendant[]) =>
+      documentStore
+        .getState()
+        .updateDocument({ id: documentId, content: value, subtitle: "" }),
+    [documentId]
+  );
 
+  const initialValueRef = useRef<Descendant[]>(undefined);
+  if (!initialValueRef.current) {
+    activeEditorsStore.addActiveEditor(documentId);
+    initialValueRef.current =
+      documentStore.getState().documents[documentId]?.content ??
+      getDefaultEditorValue();
+  }
   const initialValue = initialValueRef.current;
 
-  const editor = useMemo(() => createCustomEditor(), []);
+  const editor = useSyncExternalStore(
+    activeEditorsStore.subscribe,
+    () => activeEditorsStore.getActiveEditor(documentId),
+    () => activeEditorsStore.getActiveEditor(documentId)
+  );
 
   const renderElement = useMemo(() => {
     const ElementWithSideMenu = withBlockSideMenu(
@@ -182,15 +202,15 @@ export default function Editor(props: Props) {
 
   const onSlateChange = useCallback(
     (newValue: Descendant[]) => {
-      // Check if there are changes other than the selection
       const isAstChange = editor.operations.some(
         (op) => "set_selection" !== op.type
       );
       if (isAstChange) {
+        updateStoreDocument(newValue);
         onChange(newValue);
       }
     },
-    [editor.operations, onChange]
+    [editor.operations, updateStoreDocument, onChange]
   );
 
   useHighlightedPath(editor, highlightedPath, false);

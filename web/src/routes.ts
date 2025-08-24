@@ -21,11 +21,11 @@ export default [
   route("/login", "./routes/(auth)/login/page.tsx"),
 
   // Publisher application
+  route("/editor/:documentId", "routes/editor/page.tsx"),
   layout(
     "routes/publish/layout.tsx",
     prefix("/publish", [
       index("./routes/publish/page.tsx"),
-      route("/editor", "routes/publish/editor/page.tsx"),
       route("/posts", "routes/publish/posts/page.tsx"),
     ])
   ),
