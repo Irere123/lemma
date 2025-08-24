@@ -8,6 +8,8 @@ import {
   varchar,
   boolean,
   unique,
+  jsonb,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `brainos_${name}`);
@@ -173,3 +175,34 @@ export type UnSubscribeEvent = typeof unsubscribeEvents.$inferSelect;
 export type ClickEvent = typeof clickEvents.$inferSelect;
 export type UnSubscribeEventInsert = typeof unsubscribeEvents.$inferInsert;
 export type ClickEventInsert = typeof clickEvents.$inferInsert;
+
+/**
+ * Documents (Written content)
+ */
+
+export const documentStatusEnum = pgEnum("document_staus", [
+  "DRAFT",
+  "PUBLISHED",
+]);
+export const documentTypeEnum = pgEnum("document_type", [
+  "ARTICLE",
+  "NEWSLETTER",
+  "NOTE",
+]);
+
+export const documents = createTable("documents", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  type: documentTypeEnum(),
+  status: documentStatusEnum(),
+  content: jsonb("content").$type<any>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Types
+export type Document = typeof documents.$inferSelect;
+export type DocumentInsert = typeof documents.$inferInsert;
+export type DocumentType = (typeof documentTypeEnum.enumValues)[number];
+export type DocumentStatus = (typeof documentStatusEnum.enumValues)[number];
