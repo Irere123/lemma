@@ -9,7 +9,7 @@ import {
   type DocumentUpdate,
 } from "@/stores/document-store";
 import { caseInsensitiveStringEqual, getUntitledTitle } from "@/lib/utils";
-import type { Route } from "../+types/home";
+import type { Route } from "../+types/layout";
 
 const SYNC_DEBOUNCE_MS = 1000;
 

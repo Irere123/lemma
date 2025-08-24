@@ -20,15 +20,11 @@ export default [
   // Auth
   route("/login", "./routes/(auth)/login/page.tsx"),
 
-  // Publisher application
-  route("/editor/:documentId", "routes/editor/page.tsx"),
-  layout(
-    "routes/publish/layout.tsx",
-    prefix("/publish", [
-      index("./routes/publish/page.tsx"),
-      route("/posts", "routes/publish/posts/page.tsx"),
-    ])
-  ),
+  // Editorial
+  layout("routes/(editorial)/layout.tsx", [
+    route("/editor/:documentId", "routes/(editorial)/editor/page.tsx"),
+    route("/documents", "routes/(editorial)/documents/page.tsx"),
+  ]),
 
   // Meta-files
   route("/*", "routes/not-found.tsx"),
