@@ -7,10 +7,6 @@ export const documentRouter = createTRPCRouter({
     .input(upsertDocumentSchema)
     .mutation(async ({ ctx, input }) => {
       const document = await upsertDocument(ctx.db, input);
-
-      if (document) {
-        return document;
-      }
-      return {};
+      return document;
     }),
 });
