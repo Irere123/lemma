@@ -15,6 +15,20 @@
       "when": 1756064250997,
       "tag": "0001_careful_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756107153034,
+      "tag": "0002_youthful_the_executioner",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1756107253076,
+      "tag": "0003_damp_vulture",
+      "breakpoints": true
     }
   ]
 }

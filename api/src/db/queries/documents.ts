@@ -1,26 +1,14 @@
 import { eq } from "drizzle-orm";
 
 import type { DB } from "@api/db";
-import {
-  documents,
-  type Document,
-  type DocumentStatus,
-  type DocumentType,
-} from "@api/db/schema";
+import { documents, type Document } from "@api/db/schema";
 import { generateId } from "@api/lib/utils";
-
-export type UpsertDocumentData = {
-  id?: string;
-  title: string;
-  subtitle: string;
-  content?: any;
-  type?: DocumentType;
-  status?: DocumentStatus;
-};
+import type { UpsertDocumentData } from "@api/schemas";
 
 export const upsertDocument = async (
   db: DB,
-  data: UpsertDocumentData
+  data: UpsertDocumentData,
+  userId: string
 ): Promise<Document | undefined> => {
   if (data.id) {
     const [document] = await db
@@ -34,7 +22,11 @@ export const upsertDocument = async (
   try {
     const [document] = await db
       .insert(documents)
-      .values({ ...data, id: generateId(), type: "ARTICLE", status: "DRAFT" })
+      .values({
+        ...data,
+        id: generateId(),
+        userId,
+      })
       .returning();
     return document;
   } catch (error) {
@@ -42,6 +34,19 @@ export const upsertDocument = async (
   }
 };
 
-export const deleteDocument = async (db: DB, documentId: string) => {
+export const deleteDocument = async (
+  db: DB,
+  documentId: string
+): Promise<void> => {
   await db.delete(documents).where(eq(documents.id, documentId));
+};
+
+export const getUserDocuments = async (
+  db: DB,
+  userId: string
+): Promise<Document[]> => {
+  const documents = await db.query.documents.findMany({
+    where: (table, { eq }) => eq(table.userId, userId),
+  });
+  return documents;
 };

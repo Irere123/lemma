@@ -1,0 +1,1 @@
+ALTER TABLE "brainos_documents" ALTER COLUMN "title" DROP NOT NULL;

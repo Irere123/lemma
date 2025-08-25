@@ -192,10 +192,11 @@ export const documentTypeEnum = pgEnum("document_type", [
 
 export const documents = createTable("documents", {
   id: text("id").primaryKey(),
-  title: text("title").notNull(),
+  title: text("title"),
   subtitle: text("subtitle"),
   type: documentTypeEnum(),
   status: documentStatusEnum(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
   content: jsonb("content").$type<any>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
