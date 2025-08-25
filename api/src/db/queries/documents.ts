@@ -50,3 +50,28 @@ export const getUserDocuments = async (
   });
   return documents;
 };
+
+export const getPublishedArticles = async (db: DB): Promise<Document[]> => {
+  const publishedArticles = await db.query.documents.findMany({
+    where: (table, { and, eq }) =>
+      and(eq(table.status, "PUBLISHED"), eq(table.type, "ARTICLE")),
+    orderBy: (table, { desc }) => [desc(table.createdAt)],
+  });
+  return publishedArticles;
+};
+
+export const getPublishedArticleBySlug = async (
+  db: DB,
+  slug: string
+): Promise<Document | undefined> => {
+  // For now, we'll use the document ID as slug. might have a separate slug field
+  const article = await db.query.documents.findFirst({
+    where: (table, { and, eq }) =>
+      and(
+        eq(table.id, slug),
+        eq(table.status, "PUBLISHED"),
+        eq(table.type, "ARTICLE")
+      ),
+  });
+  return article;
+};
