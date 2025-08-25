@@ -1,4 +1,4 @@
-import { documentStore } from "@/stores/document-store";
+import { documentStore, useDocumentStore } from "@/stores/document-store";
 import { useEffect, useRef } from "react";
 
 type Props = {
@@ -10,6 +10,7 @@ type Props = {
 export default function Title(props: Props) {
   const { documentId, onChange, className = "" } = props;
   const titleRef = useRef<HTMLDivElement | null>(null);
+  const document = useDocumentStore((state) => state.documents[documentId]);
 
   const emitChange = () => {
     if (!titleRef.current) {
@@ -19,15 +20,18 @@ export default function Title(props: Props) {
     onChange(title);
   };
 
-  // Set the initial title
+  // Set the initial title and update when document changes
   useEffect(() => {
-    if (!titleRef.current || titleRef.current.textContent) {
+    if (!titleRef.current) {
       return;
     }
-    const initialValue =
-      documentStore.getState().documents[documentId]?.title ?? "";
-    titleRef.current.textContent = initialValue;
-  }, [documentId]);
+    const initialValue = document?.title ?? "";
+
+    // Only set if the title is empty or different from current content
+    if (!titleRef.current.textContent || titleRef.current.textContent !== initialValue) {
+      titleRef.current.textContent = initialValue;
+    }
+  }, [document?.title]);
 
   return (
     <>

@@ -28,7 +28,7 @@ import {
 } from "./utils/formatting";
 import { ElementType, Mark } from "./types";
 import { getDefaultEditorValue } from "./utils/constants";
-import { documentStore } from "@/stores/document-store";
+import { documentStore, useDocumentStore } from "@/stores/document-store";
 
 type Props = {
   documentId: string;
@@ -55,12 +55,13 @@ export default function Editor(props: Props) {
     [documentId]
   );
 
+  // Use the document store hook to get reactive updates
+  const document = useDocumentStore((state) => state.documents[documentId]);
+
   const initialValueRef = useRef<Descendant[]>(undefined);
   if (!initialValueRef.current) {
     activeEditorsStore.addActiveEditor(documentId);
-    initialValueRef.current =
-      documentStore.getState().documents[documentId]?.content ??
-      getDefaultEditorValue();
+    initialValueRef.current = document?.content ?? getDefaultEditorValue();
   }
   const initialValue = initialValueRef.current;
 

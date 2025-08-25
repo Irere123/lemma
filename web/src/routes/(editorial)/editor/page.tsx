@@ -14,7 +14,7 @@ import { trpc } from "@/trpc/client";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [{ title: "Editor" }];
 }
 
@@ -23,6 +23,17 @@ export default function EditorPage() {
   const { mutateAsync: updateDbDocument } =
     trpc.documents.upsertDocument.useMutation();
   const updateDocument = useDocumentStore((state) => state.updateDocument);
+  const document = useDocumentStore((state) => state.documents[documentId]);
+
+  const [syncState, setSyncState] = useState({
+    isTitleSynced: true,
+    isContentSynced: true,
+  });
+
+  const isSynced = useMemo(
+    () => syncState.isTitleSynced && syncState.isContentSynced,
+    [syncState]
+  );
 
   const onTitleChange = useCallback(
     (title: string) => {
@@ -35,16 +46,6 @@ export default function EditorPage() {
     [documentId, updateDocument]
   );
 
-  const [syncState, setSyncState] = useState({
-    isTitleSynced: true,
-    isContentSynced: true,
-  });
-
-  const isSynced = useMemo(
-    () => syncState.isTitleSynced && syncState.isContentSynced,
-    [syncState]
-  );
-
   const onEditorValueChange = useCallback(() => {
     setSyncState((syncState) => ({ ...syncState, isContentSynced: false }));
   }, []);
@@ -53,11 +54,10 @@ export default function EditorPage() {
     await updateDbDocument({ ...(document as any) });
 
     setSyncState({ isTitleSynced: true, isContentSynced: true });
-  }, []);
+  }, [updateDbDocument]);
 
   // Save the document in the database if it changes and it hasn't been saved yet
   useEffect(() => {
-    console.log(documentId);
     const doc = documentStore.getState().documents[documentId];
 
     if (!doc) {
@@ -91,11 +91,6 @@ export default function EditorPage() {
       e.preventDefault();
       return (e.returnValue = warningText);
     };
-    const handleBrowseAway = () => {
-      if (isSynced) return;
-      if (window.confirm(warningText)) return;
-      throw "routeChange aborted";
-    };
 
     window.addEventListener("beforeunload", handleWindowClose);
 
@@ -103,6 +98,21 @@ export default function EditorPage() {
       window.removeEventListener("beforeunload", handleWindowClose);
     };
   }, [isSynced]);
+
+  // Show loading state if document is not loaded yet
+  if (!document) {
+    return (
+      <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+        <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
+          <div className="px-8 pt-8 pb-1 md:px-12 md:pt-12">
+            <div className="text-3xl font-semibold leading-tight text-gray-400 md:text-4xl">
+              Loading document...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
