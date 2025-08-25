@@ -20,8 +20,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env production
+          environment: production
           packageManager: bun
           workingDirectory: "api"
+          wranglerVersion: "4.32.0"
 
       - name: Print deployment URL
         env:

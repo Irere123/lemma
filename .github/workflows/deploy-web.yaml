@@ -22,6 +22,7 @@ jobs:
           command: deploy
           packageManager: bun
           workingDirectory: "web"
+          wranglerVersion: "4.32.0"
 
       - name: Print deployment URL
         env:
