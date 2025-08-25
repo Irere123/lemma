@@ -8,6 +8,7 @@ import { useState } from "react";
 import superjson from "superjson";
 import { makeQueryClient } from "./query-client";
 import type { AppRouter } from "@brain/api";
+import { env } from "cloudflare:workers";
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
@@ -38,7 +39,7 @@ export function TRPCReactProvider(
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/trpc`,
+          url: `${env.VITE_PUBLIC_BACKEND_URL}/trpc`,
           transformer: superjson,
           fetch(url, options) {
             return fetch(url, {

@@ -1,6 +1,7 @@
 import type { AppRouter } from "@brain/api";
 import { HydrationBoundary } from "@tanstack/react-query";
 import { dehydrate } from "@tanstack/react-query";
+import { env } from "cloudflare:workers";
 import { createTRPCClient, loggerLink } from "@trpc/client";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
 import {
@@ -20,7 +21,7 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
   client: createTRPCClient({
     links: [
       httpBatchLink({
-        url: `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/trpc`,
+        url: `${env.VITE_PUBLIC_BACKEND_URL}/trpc`,
         transformer: superjson,
         fetch(url, options) {
           return fetch(url, {

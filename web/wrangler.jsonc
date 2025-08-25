@@ -33,7 +33,7 @@
       },
     },
     "production": {
-      "name": "brain-production",
+      "name": "brainos",
       "vars": {
         "VITE_PUBLIC_BACKEND_URL": "https://api.irere.dev",
         "VITE_PUBLIC_APP_URL": "https://irere.dev",
