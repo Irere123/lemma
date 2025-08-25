@@ -19,7 +19,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env staging
-          packageManager: bun
           workingDirectory: "api"
 
       - name: Print deployment URL

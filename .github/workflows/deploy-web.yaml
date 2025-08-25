@@ -19,7 +19,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
-          packageManager: bun
           workingDirectory: "web"
 
       - name: Print deployment URL
