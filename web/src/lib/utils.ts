@@ -30,7 +30,7 @@ export const getUntitledTitle = (documentId: string) => {
     documentsArr.findIndex(
       (doc) =>
         doc.id !== documentId &&
-        caseInsensitiveStringEqual(doc.title, getResult())
+        caseInsensitiveStringEqual(doc.title as string, getResult())
     ) > -1
   ) {
     suffix += 1;

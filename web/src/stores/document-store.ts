@@ -62,11 +62,15 @@ export const createSetter: CreateSetter = (set, key) => (value) => {
 };
 
 export type Document = {
+  type: "ARTICLE" | "NEWSLETTER" | "NOTE" | null;
+  status: "DRAFT" | "PUBLISHED" | null;
   id: string;
-  title: string;
-  subtitle: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  userId: string | null;
+  title: string | null;
   content: Descendant[];
-  userId: string;
+  subtitle: string | null;
 };
 
 export type Documents = Record<Document["id"], Document>;
@@ -79,7 +83,14 @@ export type DocumentTreeItem = {
 
 export type DocumentUpdate = PickPartial<
   Document,
-  "userId" | "content" | "title"
+  | "userId"
+  | "content"
+  | "title"
+  | "createdAt"
+  | "updatedAt"
+  | "subtitle"
+  | "status"
+  | "type"
 >;
 
 export type Store = {
@@ -137,7 +148,7 @@ export const documentStore = createStore<Store>()(
             };
           } else {
             const existingdocument = Object.values(state.documents).find((n) =>
-              caseInsensitiveStringEqual(n.title, document.title)
+              caseInsensitiveStringEqual(n.title!, document.title!)
             );
             if (existingdocument) {
               // Update existing document

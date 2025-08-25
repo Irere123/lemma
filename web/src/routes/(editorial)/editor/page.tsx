@@ -8,8 +8,9 @@ import {
   useDocumentStore,
   type DocumentUpdate,
 } from "@/stores/document-store";
-import { caseInsensitiveStringEqual, getUntitledTitle } from "@/lib/utils";
+import { getUntitledTitle } from "@/lib/utils";
 import type { Route } from "../+types/layout";
+import { trpc } from "@/trpc/client";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
@@ -19,28 +20,17 @@ export function meta({}: Route.MetaArgs) {
 
 export default function EditorPage() {
   const { documentId } = useParams() as { documentId: string };
-
+  const { mutateAsync: updateDbDocument } =
+    trpc.documents.upsertDocument.useMutation();
   const updateDocument = useDocumentStore((state) => state.updateDocument);
 
   const onTitleChange = useCallback(
     (title: string) => {
       // Only update Document title in storage if there isn't already a document with that title
       const newTitle = title || getUntitledTitle(documentId);
-      const docsArr = Object.values(documentStore.getState().documents);
-      const isTitleUnique =
-        docsArr.findIndex(
-          (doc) =>
-            doc.id !== documentId &&
-            caseInsensitiveStringEqual(doc.title, newTitle)
-        ) === -1;
-      if (isTitleUnique) {
-        updateDocument({ id: documentId, title: newTitle, subtitle: "" });
-        setSyncState((syncState) => ({ ...syncState, isTitleSynced: false }));
-      } else {
-        console.error(
-          `There's already a Document called ${newTitle}. Please use a different title.`
-        );
-      }
+
+      updateDocument({ id: documentId, title: newTitle, subtitle: "" });
+      setSyncState((syncState) => ({ ...syncState, isTitleSynced: false }));
     },
     [documentId, updateDocument]
   );
@@ -60,13 +50,14 @@ export default function EditorPage() {
   }, []);
 
   const handleDocumentUpdate = useCallback(async (document: DocumentUpdate) => {
-    // const { error } = await updateDbDocument(Document);
+    await updateDbDocument({ ...(document as any) });
 
     setSyncState({ isTitleSynced: true, isContentSynced: true });
   }, []);
 
-  // Save the Document in the database if it changes and it hasn't been saved yet
+  // Save the document in the database if it changes and it hasn't been saved yet
   useEffect(() => {
+    console.log(documentId);
     const doc = documentStore.getState().documents[documentId];
 
     if (!doc) {
@@ -88,7 +79,7 @@ export default function EditorPage() {
       );
       return () => clearTimeout(handler);
     }
-  }, [documentStore, syncState, handleDocumentUpdate]);
+  }, [syncState, handleDocumentUpdate, documentId]);
 
   // Prompt the user with a dialog box about unsaved changes if they navigate away
   useEffect(() => {
