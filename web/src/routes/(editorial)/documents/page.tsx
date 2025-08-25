@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router";
 import { format } from "date-fns";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { trpc } from "@/trpc/client";
+import { useTRPC } from "@/trpc/client";
 import type { Route } from "../+types/layout";
 
 export function meta({}: Route.MetaArgs) {
@@ -9,9 +10,13 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function DocumentsPage() {
-  const { isPending: upsertLoading, mutateAsync: upsertDocument } =
-    trpc.documents.upsertDocument.useMutation();
-  const { data, isLoading } = trpc.documents.getUserDocuments.useQuery();
+  const trpc = useTRPC();
+  const { isPending: upsertLoading, mutateAsync: upsertDocument } = useMutation(
+    trpc.documents.upsertDocument.mutationOptions()
+  );
+  const { data, isLoading } = useQuery(
+    trpc.documents.getUserDocuments.queryOptions()
+  );
 
   const navigate = useNavigate();
 
@@ -40,15 +45,57 @@ export default function DocumentsPage() {
       </div>
       <div>
         {data?.map((document) => (
-          <div key={document.id} className="flex justify-between py-4">
-            <Link to={`/editor/${document.id}`}>
-              <span>{document.title ?? "Untitled"}</span>
-            </Link>
-            <div className="space-x-2">
-              <span>{format(document.createdAt!, "yyyy-MM-dd")} </span>
-              <span className="text-xs text-green-50 bg-green-600 py-1 px-3 rounded-full">
+          <div
+            key={document.id}
+            className="flex justify-between items-center py-4"
+          >
+            <div className="flex-1">
+              <Link to={`/editor/${document.id}`} className="hover:underline">
+                <span className="font-medium">
+                  {document.title ?? "Untitled"}
+                </span>
+              </Link>
+              {document.subtitle && (
+                <p className="text-sm text-gray-600 mt-1">
+                  {document.subtitle}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-gray-500">
+                {format(document.createdAt!, "yyyy-MM-dd")}
+              </span>
+              <span
+                className={`text-xs py-1 px-2 rounded-full ${
+                  document.type === "ARTICLE"
+                    ? "bg-blue-100 text-blue-800"
+                    : document.type === "NEWSLETTER"
+                      ? "bg-purple-100 text-purple-800"
+                      : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {document.type}
+              </span>
+              <span
+                className={`text-xs py-1 px-2 rounded-full ${
+                  document.status === "PUBLISHED"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
                 {document.status}
               </span>
+              {document.status === "PUBLISHED" &&
+                document.type === "ARTICLE" && (
+                  <a
+                    href={`/posts/${document.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    View Live
+                  </a>
+                )}
             </div>
           </div>
         ))}

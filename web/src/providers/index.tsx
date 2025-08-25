@@ -1,5 +1,5 @@
-import { TRPCProvider } from "@/trpc/client";
+import { TRPCReactProvider } from "@/trpc/client";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <TRPCProvider>{children}</TRPCProvider>;
+  return <TRPCReactProvider>{children}</TRPCReactProvider>;
 }

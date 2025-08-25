@@ -1,60 +1,53 @@
-import { Link, useParams } from "react-router";
+import { Link } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 
-type Post = {
-  slug: string;
-  title: string;
-  content: string;
-  date?: string;
-};
+import { prefetch } from "@/trpc/server";
+import { trpc as serverTrpc } from "@/trpc/server";
+import { useTRPC } from "@/trpc/client";
+import { ReadOnlyEditor } from "@/editor";
+import type { Route } from "./+types/page";
 
-const MOCK_POSTS: Post[] = [
-  {
-    slug: "introducing-brain",
-    title: "Introducing Brain",
-    content:
-      "Welcome to Brain. This is a minimal article page demonstrating SSR-friendly routing with React Router 7 and a clean blog style.",
-    date: "2025-08-01",
-  },
-  {
-    slug: "building-with-workers",
-    title: "Building with Cloudflare Workers",
-    content:
-      "Cloudflare Workers enable edge-first architectures. Pair with React Router data APIs for fast, reliable UX.",
-    date: "2025-08-03",
-  },
-];
-
-export async function loader({ params }: { params: { slug: string } }) {
-  const { slug } = params;
-  const post = MOCK_POSTS.find((p) => p.slug === slug);
-
-  if (!post) {
-    throw new Response("Not Found", { status: 404 });
-  }
-
-  return { post };
-}
-
-export function meta({ data }: { data?: { post?: Post } }) {
-  const post = data?.post;
-  if (!post) return [{ title: "Article — Not found" } as const];
-
+export function meta() {
   return [
-    { title: `${post.title} — Irere Emmanuel` },
+    { title: "Blog — Irere Emmanuel" },
     {
       name: "description",
-      content: post.content.slice(0, 140),
+      content:
+        "Writing by Irere Emmanuel on edge runtimes, DX, and practical engineering.",
     },
   ] as const;
 }
 
-export default function PostDetails({
-  loaderData,
-}: {
-  loaderData: { post: Post };
-}) {
-  const { slug } = useParams();
-  const { post } = loaderData;
+export async function loader({ params }: Route.LoaderArgs) {
+  const { slug } = params;
+
+  prefetch(serverTrpc.posts.getArticleBySlug.queryOptions({ slug }));
+
+  return { slug };
+}
+
+export default function PostDetails({ loaderData }: Route.ComponentProps) {
+  const trpc = useTRPC();
+  const { data: post, error } = useQuery(
+    trpc.posts.getArticleBySlug.queryOptions({ slug: loaderData.slug })
+  );
+
+  if (error || !post) {
+    return (
+      <main className="container mx-auto max-w-3xl px-6 py-10">
+        <nav className="mb-6">
+          <Link
+            to="/posts"
+            className="text-sm text-neutral-600 hover:underline"
+          >
+            ← Back to posts
+          </Link>
+        </nav>
+        <div className="py-8 text-center text-gray-500">Article not found.</div>
+      </main>
+    );
+  }
 
   return (
     <main className="container mx-auto max-w-3xl px-6 py-10">
@@ -67,25 +60,27 @@ export default function PostDetails({
       <article>
         <header className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">
-            {post.title}
+            {post.title || "Untitled"}
           </h1>
-          {post.date ? (
+          {post.subtitle && (
+            <p className="text-lg text-neutral-600 mt-2">{post.subtitle}</p>
+          )}
+          {post.createdAt ? (
             <time
-              dateTime={post.date}
-              className="text-xs text-neutral-500 mt-1 block"
+              dateTime={post.createdAt.toString()}
+              className="text-xs text-neutral-500 mt-2 block"
             >
-              {new Date(post.date).toLocaleDateString()}
+              {format(new Date(post.createdAt), "MMMM d, yyyy")}
             </time>
           ) : null}
         </header>
 
         <section className="prose prose-neutral max-w-none">
-          <p>{post.content}</p>
+          <ReadOnlyEditor
+            content={post.content || []}
+            className="text-base leading-7"
+          />
         </section>
-
-        <footer className="mt-10 border-t pt-6 text-sm text-neutral-500">
-          <p>Slug: {slug}</p>
-        </footer>
       </article>
     </main>
   );

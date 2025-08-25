@@ -20,7 +20,7 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
   client: createTRPCClient({
     links: [
       httpBatchLink({
-        url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
+        url: `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/trpc`,
         transformer: superjson,
         fetch(url, options) {
           return fetch(url, {

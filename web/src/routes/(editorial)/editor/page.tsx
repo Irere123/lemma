@@ -10,18 +10,42 @@ import {
 } from "@/stores/document-store";
 import { getUntitledTitle } from "@/lib/utils";
 import type { Route } from "../+types/layout";
-import { trpc } from "@/trpc/client";
+import { useTRPC } from "@/trpc/client";
+import { useMutation } from "@tanstack/react-query";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
-export function meta({ }: Route.MetaArgs) {
+export function meta({}: Route.MetaArgs) {
   return [{ title: "Editor" }];
 }
 
 export default function EditorPage() {
+  const trpc = useTRPC();
   const { documentId } = useParams() as { documentId: string };
-  const { mutateAsync: updateDbDocument } =
-    trpc.documents.upsertDocument.useMutation();
+  const { mutateAsync: updateDbDocument } = useMutation(
+    trpc.documents.upsertDocument.mutationOptions()
+  );
+  const { mutate: updateDocumentStatus } = useMutation(
+    trpc.documents.updateDocumentStatus.mutationOptions({
+      onSuccess: () => {
+        // Optionally show success message
+      },
+      onError: (error) => {
+        console.error("Failed to update document status:", error);
+      },
+    })
+  );
+  const { mutate: updateDocumentType } = useMutation(
+    trpc.documents.updateDocumentType.mutationOptions({
+      onSuccess: () => {
+        // Optionally show success message
+      },
+      onError: (error) => {
+        console.error("Failed to update document type:", error);
+      },
+    })
+  );
+
   const updateDocument = useDocumentStore((state) => state.updateDocument);
   const document = useDocumentStore((state) => state.documents[documentId]);
 
@@ -50,11 +74,14 @@ export default function EditorPage() {
     setSyncState((syncState) => ({ ...syncState, isContentSynced: false }));
   }, []);
 
-  const handleDocumentUpdate = useCallback(async (document: DocumentUpdate) => {
-    await updateDbDocument({ ...(document as any) });
+  const handleDocumentUpdate = useCallback(
+    async (document: DocumentUpdate) => {
+      await updateDbDocument({ ...(document as any) });
 
-    setSyncState({ isTitleSynced: true, isContentSynced: true });
-  }, [updateDbDocument]);
+      setSyncState({ isTitleSynced: true, isContentSynced: true });
+    },
+    [updateDbDocument]
+  );
 
   // Save the document in the database if it changes and it hasn't been saved yet
   useEffect(() => {
@@ -117,9 +144,97 @@ export default function EditorPage() {
   return (
     <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
       <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
+        <div className="flex items-center justify-between px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Type:</label>
+              <select
+                value={document.type || "ARTICLE"}
+                onChange={(e) => {
+                  updateDocumentType({
+                    id: documentId,
+                    type: e.target.value as any,
+                  });
+                  updateDocument({
+                    id: documentId,
+                    type: e.target.value as any,
+                  });
+                }}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ARTICLE">Article</option>
+                <option value="NEWSLETTER">Newsletter</option>
+                <option value="NOTE">Note</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Status:
+              </label>
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  document.status === "PUBLISHED"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {document.status || "DRAFT"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {document.status === "DRAFT" ? (
+              <button
+                onClick={() => {
+                  updateDocumentStatus({
+                    id: documentId,
+                    status: "PUBLISHED",
+                  });
+                  updateDocument({
+                    id: documentId,
+                    status: "PUBLISHED",
+                  });
+                }}
+                className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                Publish
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  updateDocumentStatus({
+                    id: documentId,
+                    status: "DRAFT",
+                  });
+                  updateDocument({
+                    id: documentId,
+                    status: "DRAFT",
+                  });
+                }}
+                className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Unpublish
+              </button>
+            )}
+
+            {document.status === "PUBLISHED" && document.type === "ARTICLE" && (
+              <a
+                href={`/posts/${documentId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                View Live
+              </a>
+            )}
+          </div>
+        </div>
+
         <Title
           documentId={documentId}
-          className="px-8 pt-8 pb-1 md:px-12 md:pt-12"
+          className="px-8 pt-4 pb-1 md:px-12 md:pt-8"
           onChange={onTitleChange}
         />
         <Editor

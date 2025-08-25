@@ -1,41 +1,10 @@
-import {
-  ProfileHeader,
-  DateText,
-  TagPill,
-  ListItem,
-} from "@/components/landing";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 
-type Post = {
-  slug: string;
-  title: string;
-  excerpt?: string;
-  date?: string;
-  tags?: string[];
-};
-
-export async function loader() {
-  // TODO: Replace with real fetch to @brain/api
-  const posts: Post[] = [
-    {
-      slug: "edge-ssr-react-router",
-      title: "Edge-first SSR with React Router 7",
-      excerpt:
-        "Designing a minimal stack for blogs and docs using Workers, Vite, and React Router's data APIs.",
-      date: "2025-08-03",
-      tags: ["edge", "react-router", "workers"],
-    },
-    {
-      slug: "content-and-editors",
-      title: "Notes on content systems and editors",
-      excerpt:
-        "Thoughts on structured content, Yoopta blocks, and pragmatic authoring UX.",
-      date: "2025-07-28",
-      tags: ["dx", "content", "yoopta"],
-    },
-  ];
-
-  return { posts };
-}
+import { ProfileHeader, DateText, ListItem } from "@/components/landing";
+import { trpc, prefetch } from "@/trpc/server";
+import { useTRPC } from "@/trpc/client";
+import type { Route } from "./+types/page";
 
 export function meta() {
   return [
@@ -48,12 +17,16 @@ export function meta() {
   ] as const;
 }
 
-export default function PostsIndex({
-  loaderData,
-}: {
-  loaderData: { posts: Post[] };
-}) {
-  const { posts } = loaderData;
+export async function loader() {
+  prefetch(trpc.posts.getPublishedArticles.queryOptions());
+  return null;
+}
+
+export default function PostsIndex({}: Route.ComponentProps) {
+  const trpc = useTRPC();
+  const { data: posts } = useSuspenseQuery(
+    trpc.posts.getPublishedArticles.queryOptions()
+  );
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
@@ -68,27 +41,39 @@ export default function PostsIndex({
         ]}
       />
 
-      <ul className="divide-y divide-neutral-200">
-        {posts.map((p) => (
-          <li key={p.slug} className="py-4">
-            <ListItem to={`/posts/${p.slug}`} left={<DateText date={p.date} />}>
-              <h2 className="text-[16px] font-medium leading-6 hover:underline">
-                {p.title}
-              </h2>
-              {p.excerpt ? (
-                <p className="text-sm text-neutral-600 mt-1">{p.excerpt}</p>
-              ) : null}
-              {p.tags && p.tags.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {p.tags.map((t) => (
-                    <TagPill key={t}>{t}</TagPill>
-                  ))}
-                </div>
-              ) : null}
-            </ListItem>
-          </li>
-        ))}
-      </ul>
+      {!posts || posts.length === 0 ? (
+        <div className="py-8 text-center text-gray-500">
+          No published articles yet.
+        </div>
+      ) : (
+        <ul className="divide-y divide-neutral-200">
+          {posts.map((post) => (
+            <li key={post.id} className="py-4">
+              <ListItem
+                to={`/posts/${post.id}`}
+                left={
+                  <DateText
+                    date={
+                      post.createdAt
+                        ? format(new Date(post.createdAt), "yyyy-MM-dd")
+                        : undefined
+                    }
+                  />
+                }
+              >
+                <h2 className="text-[16px] font-medium leading-6 hover:underline">
+                  {post.title || "Untitled"}
+                </h2>
+                {post.subtitle ? (
+                  <p className="text-sm text-neutral-600 mt-1">
+                    {post.subtitle}
+                  </p>
+                ) : null}
+              </ListItem>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

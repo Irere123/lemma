@@ -4,15 +4,18 @@ import {
   useDocumentStore,
   type Document,
 } from "@/stores/document-store";
-import { trpc } from "@/trpc/client";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 
 export default function PublishLayout() {
+  const trpc = useTRPC();
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const { data: session, isPending } = useSession();
-  const { data: documents, isLoading: documentsLoading } =
-    trpc.documents.getUserDocuments.useQuery();
+  const { data: documents, isLoading: documentsLoading } = useQuery(
+    trpc.documents.getUserDocuments.queryOptions()
+  );
   const navigate = useNavigate();
 
   const setupStore = useCallback(async () => {
