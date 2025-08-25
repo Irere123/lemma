@@ -1,0 +1,34 @@
+name: Deploy web app
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - web/**
+      - packages/**
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+
+      - name: Deploy web application
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: bun run build && wrangler deploy --env production
+          environment: production
+          packageManager: bun
+          workingDirectory: "api"
+          wranglerVersion: "4.32.0"
+
+      - name: Print deployment URL
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: echo "Deployment URL - $DEPLOYMENT_URL"
