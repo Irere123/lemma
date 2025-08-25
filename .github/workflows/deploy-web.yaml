@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  - name: Deploy WebApp
+    id: deploy
+    uses: cloudflare/wrangler-action@v3
+    with:
+      apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      command: deploy --env production
+      packageManager: bun
+      workingDirectory: "web"
+
+  - name: print deployment-url
+    env:
+      DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+    run: echo $DEPLOYMENT_URL
