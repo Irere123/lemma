@@ -1,6 +1,5 @@
 import { authClient } from "@/lib/auth-client";
 import type { Route } from "./+types/page";
-import { env } from "cloudflare:workers";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Login" }];
@@ -14,7 +13,7 @@ export default function LoginPage() {
         onClick={async () => {
           await authClient.signIn.social({
             provider: "google",
-            callbackURL: `${env.VITE_PUBLIC_APP_URL}/documents`,
+            callbackURL: `${import.meta.env.VITE_PUBLIC_APP_URL}/documents`,
           });
         }}
         className="bg-green-400 px-4 py-2 text-white rounded-md"
