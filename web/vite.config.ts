@@ -11,12 +11,4 @@ export default defineConfig({
     reactRouter(),
     tsconfigPaths(),
   ],
-  optimizeDeps: {
-    exclude: ["virtual:react-router/server-build"],
-  },
-  build: {
-    rollupOptions: {
-      external: [/cloudflare:.*/],
-    },
-  },
 });
