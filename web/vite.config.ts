@@ -14,4 +14,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["virtual:react-router/server-build"],
   },
+  build: {
+    rollupOptions: {
+      external: [/cloudflare:.*/],
+    },
+  },
 });
