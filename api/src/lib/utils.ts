@@ -1,5 +1,5 @@
 import KSUID from "ksuid";
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import type { AppBindings } from "@api/lib/types";
 
 export const generateId = (prefix?: string) => {
@@ -11,7 +11,7 @@ export const generateId = (prefix?: string) => {
 };
 
 export function createRouter() {
-  return new Hono<AppBindings>({
+  return new OpenAPIHono<AppBindings>({
     strict: false,
   });
 }

@@ -1,4 +1,5 @@
 import { cors } from "hono/cors";
+import { Scalar } from "@scalar/hono-api-reference";
 import { secureHeaders } from "hono/secure-headers";
 import { trpcServer } from "@hono/trpc-server";
 import { routers } from "./rest/routers";
@@ -44,6 +45,44 @@ app.use(
     router: appRouter,
     createContext: createTRPCContext,
   })
+);
+
+app.doc("/openapi", {
+  openapi: "3.1.0",
+  info: {
+    version: "0.0.1",
+    title: "Irere API",
+    description: "Irere.DEV Blogging platform",
+    contact: {
+      name: "Support",
+      email: "hello@irere.dev",
+      url: "irere.dev",
+    },
+    license: {
+      name: "AGPL-3.0 license",
+      url: "https://github.com/midday-ai/midday/blob/main/LICENSE",
+    },
+  },
+  servers: [
+    {
+      url: "https://api.irere.dev",
+      description: "Production API",
+    },
+  ],
+  security: [{ token: [] }],
+});
+
+// Register security scheme
+app.openAPIRegistry.registerComponent("securitySchemes", "token", {
+  type: "http",
+  scheme: "bearer",
+  description: "Default authenticaton mechanism",
+  "x-api-key-example": "IRERE.DEV API KEY",
+});
+
+app.get(
+  "/",
+  Scalar({ url: "/openapi", pageTitle: "Irere.DEV API", theme: "saturn" })
 );
 
 export default {

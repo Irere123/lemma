@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import type { DB } from "@api/db";
 import { apiKeys } from "@api/db/schema";
