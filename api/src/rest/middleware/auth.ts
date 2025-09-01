@@ -1,16 +1,88 @@
 import type { MiddlewareHandler } from "hono";
+import { getSessionCookie } from "better-auth/cookies";
 import { HTTPException } from "hono/http-exception";
+
 import { createAuth } from "@api/lib/auth";
+import { isValidApiKeyFormat } from "@api/db/utils/api-keys";
+import { hash } from "@api/encryption";
+import {
+  getUserById,
+  getApiKeyByToken,
+  updatedApiKeyLastUsedAt,
+} from "@api/db/queries";
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
-  const auth = createAuth();
+  const sessionCookie = getSessionCookie(c.req.raw.headers);
+  const authHeader = c.req.header("Authorization");
 
-  const session = await auth.api.getSession({
-    headers: c.req.raw.headers,
-  });
+  if (sessionCookie) {
+    const auth = createAuth();
 
-  c.set("auth", auth);
-  c.set("sessionUser", session?.user);
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
+
+    if (!session || !session.user) {
+      throw new HTTPException(401, {
+        message: "Not authenticated",
+      });
+    }
+
+    c.set("session", session.session);
+
+    await next();
+    return;
+  }
+
+  if (!authHeader) {
+    throw new HTTPException(401, { message: "Authorization header required" });
+  }
+
+  const [scheme, token] = authHeader.split(" ");
+
+  if (scheme !== "Bearer") {
+    throw new HTTPException(401, { message: "Invalid authorization scheme" });
+  }
+
+  if (!token) {
+    throw new HTTPException(401, { message: "Token required" });
+  }
+
+  // Handle API keys (start with brain_ but not brain_access_token_)
+  if (!token.startsWith("brain_") || !isValidApiKeyFormat(token)) {
+    throw new HTTPException(401, { message: "Invalid token format" });
+  }
+
+  const db = c.get("db");
+
+  const keyHash = hash(token);
+
+  // TODO: Check cache first for API key
+  let apiKey = await getApiKeyByToken(db, keyHash);
+
+  if (!apiKey) {
+    throw new HTTPException(401, { message: "Invalid API key" });
+  }
+
+  // TODO: Check cache first for user
+  let user = await getUserById(db, apiKey.userId);
+
+  if (!user) {
+    throw new HTTPException(401, { message: "User not found" });
+  }
+
+  const session = {
+    user: {
+      id: user.id,
+      email: user.email,
+      image: user.image,
+    },
+  };
+
+  c.set("session", session);
+
+  // Update last used at
+  updatedApiKeyLastUsedAt(db, apiKey.id);
 
   await next();
 };
