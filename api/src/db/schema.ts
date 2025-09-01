@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTableCreator,
   timestamp,
@@ -10,6 +11,7 @@ import {
   unique,
   jsonb,
   pgEnum,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `brainos_${name}`);
@@ -207,3 +209,42 @@ export type Document = typeof documents.$inferSelect;
 export type DocumentInsert = typeof documents.$inferInsert;
 export type DocumentType = (typeof documentTypeEnum.enumValues)[number];
 export type DocumentStatus = (typeof documentStatusEnum.enumValues)[number];
+
+// API Keys
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: text("id").notNull().primaryKey(),
+    keyEncrypted: text("key_encrypted").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    userId: text("user_id").notNull(),
+    keyHash: text("key_hash"),
+    scopes: text("scopes")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    lastUsedAt: timestamp("last_used_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+  },
+  (table) => [
+    index("api_keys_key_idx").using(
+      "btree",
+      table.keyHash.asc().nullsLast().op("text_ops")
+    ),
+    index("api_keys_user_id_idx").using(
+      "btree",
+      table.userId.asc().nullsLast().op("text_ops")
+    ),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "api_keys_api_user_fkey",
+    }).onDelete("cascade"),
+    unique("api_keys_key_unique").on(table.keyHash),
+  ]
+);
