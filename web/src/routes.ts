@@ -26,6 +26,11 @@ export default [
     route("/documents", "routes/(editorial)/documents/page.tsx"),
   ]),
 
+  // Developers
+  layout("routes/(developers)/layout.tsx", [
+    route("/developers", "routes/(developers)/developers/page.tsx"),
+  ]),
+
   // Meta-files
   route("/*", "routes/not-found.tsx"),
 ] satisfies RouteConfig;
