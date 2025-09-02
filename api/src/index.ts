@@ -54,7 +54,7 @@ app.doc("/openapi", {
     },
     license: {
       name: "AGPL-3.0 license",
-      url: "https://github.com/midday-ai/midday/blob/main/LICENSE",
+      url: "https://github.com/irere123/brainos/blob/main/LICENSE",
     },
   },
   servers: [
