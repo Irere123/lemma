@@ -11,7 +11,5 @@ export const generateId = (prefix?: string) => {
 };
 
 export function createRouter() {
-  return new OpenAPIHono<AppBindings>({
-    strict: false,
-  });
+  return new OpenAPIHono<AppBindings>();
 }

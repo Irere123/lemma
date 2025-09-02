@@ -33,12 +33,6 @@ app.use(
   })
 );
 
-app.on(["POST", "GET"], "/auth/*", (c) => {
-  return createAuth().handler(c.req.raw);
-});
-
-app.route("/api/v1/", routers);
-
 app.use(
   "/trpc/*",
   trpcServer({
@@ -84,6 +78,12 @@ app.get(
   "/",
   Scalar({ url: "/openapi", pageTitle: "Irere.DEV API", theme: "saturn" })
 );
+
+app.on(["POST", "GET"], "/auth/*", (c) => {
+  return createAuth().handler(c.req.raw);
+});
+
+app.route("/", routers);
 
 export default {
   port: env.PORT || 4000,

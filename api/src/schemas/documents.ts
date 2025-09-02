@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "@hono/zod-openapi";
 
 import { documentStatusEnum, documentTypeEnum } from "@api/db/schema";
 

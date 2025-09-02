@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "@hono/zod-openapi";
 import { SCOPES } from "@api/lib/scopes";
 
 export const upsertApiKeySchema = z.object({
