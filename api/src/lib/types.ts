@@ -1,14 +1,16 @@
 import type { env } from "cloudflare:workers";
+
 import type { Auth } from "@api/lib/auth";
 import type { DB } from "@api/db";
+import type { Scope } from "./scopes";
 
-export type SessionUser = NonNullable<
+export type Session = NonNullable<
   Awaited<ReturnType<Auth["api"]["getSession"]>>
->["user"];
+>;
 
 export type HonoVariables = {
-  auth: Auth;
-  sessionUser?: SessionUser;
+  session: Session;
+  scopes: Scope[];
   db: DB;
 };
 

@@ -11,4 +11,13 @@ export const upsertDocumentSchema = z.object({
   content: z.any(),
 });
 
+export const upsertDocumentResponseSchema = z.object({
+  data: z.any(),
+});
+
+export const documentsResponseSchema = z.object({
+  nextCursor: z.nullable(z.string()),
+  data: z.array(z.any()),
+});
+
 export type UpsertDocumentData = z.infer<typeof upsertDocumentSchema>;
