@@ -21,6 +21,10 @@ export const documentTypeSchema = z.object({
   type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
 });
 
+export const documentByIdSchema = z.object({
+  id: z.string(),
+});
+
 // Responses
 
 export const upsertDocumentResponseSchema = z.object({
@@ -30,6 +34,10 @@ export const upsertDocumentResponseSchema = z.object({
 export const documentsResponseSchema = z.object({
   nextCursor: z.nullable(z.string()),
   data: z.array(z.any()),
+});
+
+export const documentResponseSchema = z.object({
+  data: z.any(),
 });
 
 export type UpsertDocumentData = z.infer<typeof upsertDocumentSchema>;

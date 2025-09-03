@@ -9,6 +9,7 @@ import {
 } from "@api/db/schema";
 import { generateId } from "@api/lib/utils";
 import type { UpsertDocumentData } from "@api/schemas";
+import { env } from "cloudflare:workers";
 
 export const upsertDocument = async (
   db: DB,
@@ -54,6 +55,21 @@ export const getUserDocuments = async (
     where: (table, { eq }) => eq(table.userId, userId),
   });
   return documents;
+};
+
+export const getAdminPublishedArticles = async (
+  db: DB
+): Promise<Document[]> => {
+  return db.query.documents.findMany({
+    where: (table, { and, eq }) =>
+      and(eq(table.status, "PUBLISHED"), eq(table.userId, env.ADMIN_USER_ID)),
+  });
+};
+
+export const getDocumentById = async (db: DB, id: string) => {
+  return db.query.documents.findFirst({
+    where: (table, { eq }) => eq(table.id, id),
+  });
 };
 
 export const getPublishedArticles = async (db: DB): Promise<Document[]> => {
