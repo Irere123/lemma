@@ -131,6 +131,11 @@ export default function EditorPage() {
               <select
                 value={document.type || "ARTICLE"}
                 onChange={(e) => {
+                  updateDbDocument({
+                    ...(document as any),
+                    id: documentId,
+                    type: e.target.value as any,
+                  });
                   updateDocument({
                     ...document,
                     id: documentId,
@@ -165,6 +170,11 @@ export default function EditorPage() {
             {document.status === "DRAFT" ? (
               <button
                 onClick={() => {
+                  updateDbDocument({
+                    ...(document as any),
+                    id: documentId,
+                    status: "PUBLISHED",
+                  });
                   updateDocument({
                     ...document,
                     id: documentId,
@@ -178,6 +188,11 @@ export default function EditorPage() {
             ) : (
               <button
                 onClick={() => {
+                  updateDbDocument({
+                    ...(document as any),
+                    id: documentId,
+                    status: "DRAFT",
+                  });
                   updateDocument({
                     ...document,
                     id: documentId,
