@@ -13,12 +13,9 @@ export const upsertDocumentSchema = z.object({
   content: z.any(),
 });
 
-export const documentByStatusSchema = z.object({
-  status: z.enum(documentStatusEnum.enumValues).default("PUBLISHED"),
-});
-
-export const documentTypeSchema = z.object({
-  type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
+export const documentsFilters = z.object({
+  type: z.enum(documentTypeEnum.enumValues).optional(),
+  status: z.enum(documentStatusEnum.enumValues).optional(),
 });
 
 export const documentByIdSchema = z.object({

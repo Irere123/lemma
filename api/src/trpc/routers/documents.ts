@@ -1,5 +1,6 @@
 import {
   documentByIdSchema,
+  documentsFilters,
   upsertDocumentSchema,
 } from "@api/schemas/documents";
 import {
@@ -28,7 +29,9 @@ export const documentRouter = createTRPCRouter({
       return document;
     }),
 
-  getUserDocuments: protectedProcedure.query(async ({ ctx }) => {
-    return await getUserDocuments(ctx.db, ctx.user.id);
-  }),
+  getUserDocuments: protectedProcedure
+    .input(documentsFilters)
+    .query(async ({ ctx: { db, user }, input }) => {
+      return await getUserDocuments(db, { ...input, userId: user.id });
+    }),
 });

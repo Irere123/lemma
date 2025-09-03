@@ -2,18 +2,13 @@ import { createRoute } from "@hono/zod-openapi";
 
 import { createRouter } from "@api/lib/utils";
 import {
-  documentByStatusSchema,
+  documentsFilters,
   documentsResponseSchema,
-  documentTypeSchema,
   upsertDocumentResponseSchema,
   upsertDocumentSchema,
 } from "@api/schemas";
 import { withRequiredScope } from "@api/rest/middleware";
-import {
-  getDocumentsByTypeAndStatus,
-  getUserDocuments,
-  upsertDocument,
-} from "@api/db/queries";
+import { getUserDocuments, upsertDocument } from "@api/db/queries";
 import { validateResponse } from "@api/lib/validate-response";
 
 const documentsRouter = createRouter();
@@ -23,6 +18,9 @@ documentsRouter.openapi(
     method: "get",
     path: "/",
     summary: "List all user documents",
+    request: {
+      query: documentsFilters,
+    },
     responses: {
       200: {
         description:
@@ -39,8 +37,12 @@ documentsRouter.openapi(
   async (c) => {
     const db = c.get("db");
     const session = c.get("session");
+    const filters = c.req.valid("query");
 
-    const documents = await getUserDocuments(db, session.user.id);
+    const documents = await getUserDocuments(db, {
+      ...filters,
+      userId: session.user.id,
+    });
 
     return c.json(
       validateResponse(
@@ -85,38 +87,6 @@ documentsRouter.openapi(
     const result = await upsertDocument(db, input, session.user.id);
 
     return c.json(validateResponse(result, upsertDocumentResponseSchema));
-  }
-);
-
-documentsRouter.openapi(
-  createRoute({
-    method: "get",
-    path: "/:status",
-    summary: "Get document by status and type",
-    request: {
-      params: documentByStatusSchema,
-      query: documentTypeSchema,
-    },
-    responses: {
-      200: {
-        description: "Retrieved documents",
-        content: {
-          "application/json": {
-            schema: documentsResponseSchema,
-          },
-        },
-      },
-    },
-    middleware: [withRequiredScope("documents.read")],
-  }),
-  async (c) => {
-    const db = c.get("db");
-    const { type } = c.req.valid("query");
-    const { status } = c.req.valid("param");
-
-    const result = await getDocumentsByTypeAndStatus(db, { status, type });
-
-    return c.json(validateResponse(result, documentsResponseSchema));
   }
 );
 

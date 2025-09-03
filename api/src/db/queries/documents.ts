@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type { DB } from "@api/db";
 import {
@@ -47,14 +47,34 @@ export const deleteDocument = async (
   await db.delete(documents).where(eq(documents.id, documentId));
 };
 
+type UserDocumentsData = {
+  userId: string;
+  status?: DocumentStatus;
+  type?: DocumentType;
+};
+
 export const getUserDocuments = async (
   db: DB,
-  userId: string
+  data: UserDocumentsData
 ): Promise<Document[]> => {
-  const documents = await db.query.documents.findMany({
-    where: (table, { eq }) => eq(table.userId, userId),
-  });
-  return documents;
+  // Build filter conditions dynamically
+  const filters = [eq(documents.userId, data.userId)];
+
+  if (data.status) {
+    filters.push(eq(documents.status, data.status));
+  }
+
+  if (data.type) {
+    filters.push(eq(documents.type, data.type));
+  }
+
+  // Execute query with all applicable filters
+  const userDocuments = await db
+    .select()
+    .from(documents)
+    .where(and(...filters));
+
+  return userDocuments;
 };
 
 export const getAdminPublishedArticles = async (
