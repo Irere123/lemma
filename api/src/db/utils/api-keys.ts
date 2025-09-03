@@ -16,5 +16,5 @@ export function generateApiKey(): string {
  * @returns True if the key starts with 'brain_' and has the correct length
  */
 export function isValidApiKeyFormat(key: string): boolean {
-  return key.startsWith("brain_") && key.length === 68; // brain_ (4) + 64 hex chars
+  return key.startsWith("brain_") && key.length === 70; // brain_ (6) + 64 hex chars
 }

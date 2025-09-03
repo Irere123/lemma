@@ -83,7 +83,7 @@ app.on(["POST", "GET"], "/auth/*", (c) => {
   return createAuth().handler(c.req.raw);
 });
 
-app.route("/", routers);
+app.route("/v1", routers);
 
 export default {
   port: env.PORT || 4000,
