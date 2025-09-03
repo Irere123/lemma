@@ -1,13 +1,14 @@
 import { cors } from "hono/cors";
 import { Scalar } from "@scalar/hono-api-reference";
+import { env } from "cloudflare:workers";
 import { secureHeaders } from "hono/secure-headers";
 import { trpcServer } from "@hono/trpc-server";
+
 import { routers } from "./rest/routers";
 import { appRouter } from "./trpc/routers/_app";
 import { createTRPCContext } from "./trpc/init";
 import { createRouter } from "./lib/utils";
 import { createAuth } from "./lib/auth";
-import env from "@api/env-runtime";
 
 const app = createRouter();
 
