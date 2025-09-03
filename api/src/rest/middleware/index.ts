@@ -17,3 +17,5 @@ export const protectedMiddleware: MiddlewareHandler[] = [
   withDatabase,
   withAuth,
 ];
+
+export { withRequiredScope } from "./scope";

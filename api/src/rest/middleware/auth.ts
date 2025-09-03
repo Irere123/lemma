@@ -13,6 +13,7 @@ import {
 } from "@api/db/queries";
 import { apiKeyCache } from "@api/cache/api-keys-cache";
 import { userCache } from "@api/cache/user-cache";
+import { expandScopes } from "@api/lib/scopes";
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
   const sessionCookie = getSessionCookie(c.req.raw.headers);
@@ -32,6 +33,7 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
     }
 
     c.set("session", session.session);
+    c.set("scopes", expandScopes(["apis.all"]));
 
     await next();
     return;
@@ -106,6 +108,7 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
   };
 
   c.set("session", session);
+  c.set("scopes", expandScopes(apiKey.scopes ?? []));
 
   // Update last used at
   updatedApiKeyLastUsedAt(db, apiKey.id);
