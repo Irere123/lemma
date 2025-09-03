@@ -24,6 +24,12 @@
         "NODE_ENV": "development",
         "PORT": 4000,
       },
+      "kv_namespaces": [
+        {
+          "binding": "CACHE_KV",
+          "id": "e679d852f8094948baf97528648abc31",
+        },
+      ],
     },
     "production": {
       "observability": {
@@ -40,6 +46,12 @@
         "NODE_ENV": "development",
         "PORT": 4000,
       },
+      "kv_namespaces": [
+        {
+          "binding": "CACHE_KV",
+          "id": "e679d852f8094948baf97528648abc31",
+        },
+      ],
     },
   },
 }
