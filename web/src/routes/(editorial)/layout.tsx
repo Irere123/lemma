@@ -14,7 +14,7 @@ export default function PublishLayout() {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const { data: session, isPending } = useSession();
   const { data: documents, isLoading: documentsLoading } = useQuery(
-    trpc.documents.getUserDocuments.queryOptions()
+    trpc.documents.getUserDocuments.queryOptions({})
   );
   const navigate = useNavigate();
 

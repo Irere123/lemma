@@ -18,14 +18,14 @@ export function meta() {
 }
 
 export async function loader() {
-  prefetch(trpc.posts.getPublishedArticles.queryOptions());
+  prefetch(trpc.documents.getAdminPublishedArticles.queryOptions());
   return null;
 }
 
 export default function PostsIndex({}: Route.ComponentProps) {
   const trpc = useTRPC();
   const { data: posts } = useSuspenseQuery(
-    trpc.posts.getPublishedArticles.queryOptions()
+    trpc.documents.getAdminPublishedArticles.queryOptions()
   );
 
   return (

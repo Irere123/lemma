@@ -25,26 +25,6 @@ export default function EditorPage() {
   const { mutateAsync: updateDbDocument } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
   );
-  const { mutate: updateDocumentStatus } = useMutation(
-    trpc.documents.updateDocumentStatus.mutationOptions({
-      onSuccess: () => {
-        // Optionally show success message
-      },
-      onError: (error) => {
-        console.error("Failed to update document status:", error);
-      },
-    })
-  );
-  const { mutate: updateDocumentType } = useMutation(
-    trpc.documents.updateDocumentType.mutationOptions({
-      onSuccess: () => {
-        // Optionally show success message
-      },
-      onError: (error) => {
-        console.error("Failed to update document type:", error);
-      },
-    })
-  );
 
   const updateDocument = useDocumentStore((state) => state.updateDocument);
   const document = useDocumentStore((state) => state.documents[documentId]);
@@ -151,11 +131,8 @@ export default function EditorPage() {
               <select
                 value={document.type || "ARTICLE"}
                 onChange={(e) => {
-                  updateDocumentType({
-                    id: documentId,
-                    type: e.target.value as any,
-                  });
                   updateDocument({
+                    ...document,
                     id: documentId,
                     type: e.target.value as any,
                   });
@@ -188,11 +165,8 @@ export default function EditorPage() {
             {document.status === "DRAFT" ? (
               <button
                 onClick={() => {
-                  updateDocumentStatus({
-                    id: documentId,
-                    status: "PUBLISHED",
-                  });
                   updateDocument({
+                    ...document,
                     id: documentId,
                     status: "PUBLISHED",
                   });
@@ -204,11 +178,8 @@ export default function EditorPage() {
             ) : (
               <button
                 onClick={() => {
-                  updateDocumentStatus({
-                    id: documentId,
-                    status: "DRAFT",
-                  });
                   updateDocument({
+                    ...document,
                     id: documentId,
                     status: "DRAFT",
                   });

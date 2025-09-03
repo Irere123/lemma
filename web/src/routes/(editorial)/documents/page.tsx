@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "@/trpc/client";
 import type { Route } from "../+types/layout";
+import { getDefaultEditorValue } from "@/editor/utils/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Documents" }];
@@ -15,7 +16,7 @@ export default function DocumentsPage() {
     trpc.documents.upsertDocument.mutationOptions()
   );
   const { data, isLoading } = useQuery(
-    trpc.documents.getUserDocuments.queryOptions()
+    trpc.documents.getUserDocuments.queryOptions({})
   );
 
   const navigate = useNavigate();
@@ -33,7 +34,9 @@ export default function DocumentsPage() {
           type="button"
           className="bg-amber-500 disabled:bg-amber-300 text-white py-2 px-4 rounded-xl"
           onClick={async () => {
-            const resp = await upsertDocument({});
+            const resp = await upsertDocument({
+              content: getDefaultEditorValue(),
+            });
 
             if (resp) {
               navigate(`/editor/${resp.id}`);

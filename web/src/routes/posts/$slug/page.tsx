@@ -22,7 +22,7 @@ export function meta() {
 export async function loader({ params }: Route.LoaderArgs) {
   const { slug } = params;
 
-  prefetch(serverTrpc.posts.getArticleBySlug.queryOptions({ slug }));
+  prefetch(serverTrpc.documents.getDocumentById.queryOptions({ id: slug }));
 
   return { slug };
 }
@@ -30,7 +30,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 export default function PostDetails({ loaderData }: Route.ComponentProps) {
   const trpc = useTRPC();
   const { data: post, error } = useQuery(
-    trpc.posts.getArticleBySlug.queryOptions({ slug: loaderData.slug })
+    trpc.documents.getDocumentById.queryOptions({ id: loaderData.slug })
   );
 
   if (error || !post) {
