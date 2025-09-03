@@ -10,6 +10,8 @@ import {
   getApiKeyByToken,
   updatedApiKeyLastUsedAt,
 } from "@api/db/queries";
+import { apiKeyCache } from "@api/cache/api-keys-cache";
+import { userCache } from "@api/cache/user-cache";
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
   const sessionCookie = getSessionCookie(c.req.raw.headers);
@@ -57,15 +59,31 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
 
   const keyHash = hash(token);
 
-  // TODO: Check cache first for API key
-  let apiKey = await getApiKeyByToken(db, keyHash);
+  // Check cache first for API key
+  let apiKey = await apiKeyCache.get(keyHash);
+  if (!apiKey) {
+    // If not cache, query database
+    apiKey = await getApiKeyByToken(db, keyHash);
+    if (apiKey) {
+      // Store in cache for future requests
+      await apiKeyCache.set(keyHash, apiKey);
+    }
+  }
 
   if (!apiKey) {
     throw new HTTPException(401, { message: "Invalid API key" });
   }
 
-  // TODO: Check cache first for user
-  let user = await getUserById(db, apiKey.userId);
+  // Check cache first for user
+  let user = await userCache.get(apiKey.userId);
+  if (!user) {
+    // If not cache, query database
+    user = await getUserById(db, apiKey.userId);
+    if (user) {
+      // Store in cache for future requests
+      await userCache.set(apiKey.userId, user);
+    }
+  }
 
   if (!user) {
     throw new HTTPException(401, { message: "User not found" });

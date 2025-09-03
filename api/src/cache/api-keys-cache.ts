@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import type { ApiKey } from "@api/db/queries";
 
 export const apiKeyCache = {
-  get: (key: string): Promise<ApiKey | null> =>
+  get: (key: string): Promise<ApiKey | null | undefined> =>
     env.CACHE_KV.get<ApiKey>(`api-keys:${key}`),
   set: (key: string, value: ApiKey): Promise<void> =>
     env.CACHE_KV.put(`api-keys:${key}`, JSON.stringify(value), {

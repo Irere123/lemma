@@ -1,6 +1,7 @@
 import { deleteApiKey, getApiKeysByUser, upsertApiKey } from "@api/db/queries";
-import { createTRPCRouter, protectedProcedure } from "../init";
 import { deleteApiKeySchema, upsertApiKeySchema } from "@api/schemas";
+import { apiKeyCache } from "@api/cache/api-keys-cache";
+import { createTRPCRouter, protectedProcedure } from "../init";
 
 export const apiKeysRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx: { db, user } }) => {
@@ -15,7 +16,10 @@ export const apiKeysRouter = createTRPCRouter({
         ...input,
       });
 
-      // TODO: Invalidate cache if this was an update (has keyHash)
+      // Invalidate cache if this was an update (has keyHash)
+      if (keyHash) {
+        await apiKeyCache.delete(keyHash);
+      }
 
       // TODO: send email for notification
 
@@ -29,7 +33,10 @@ export const apiKeysRouter = createTRPCRouter({
     .mutation(async ({ ctx: { db }, input }) => {
       const keyHash = await deleteApiKey(db, input);
 
-      // TODO: Invalidate cache if key was deleted
+      // Invalidate cache if key was deleted
+      if (keyHash) {
+        await apiKeyCache.delete(keyHash);
+      }
 
       return keyHash;
     }),
