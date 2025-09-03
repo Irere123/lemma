@@ -157,34 +157,3 @@ We welcome contributions from developers, researchers, and builders.
 2. Create a feature branch
 3. Make and document your changes
 4. Submit a pull request
-
-See [`CONTRIBUTING.md`](.github/CONTRIBUTING.md) for more.
-
----
-
-## Community
-
-- Discord: [Join here](https://discord.gg/yourcommunitylink)
-- Email: `hello@brainos.dev`
-- Docs: [docs.brainos.dev](https://docs.brainos.dev)
-- Examples: [examples.brainos.dev](https://examples.brainos.dev)
-
----
-
-## License
-
-MIT License. See [`LICENSE`](LICENSE) for details.
-
----
-
-## Contributors
-
-Thanks to everyone contributing to the future of personal knowledge infrastructure:
-
-<a href="https://github.com/yourusername/brainos/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=yourusername/brainos" />
-</a>
-
----
-
-_“The best way to think better is to think in public.”_
