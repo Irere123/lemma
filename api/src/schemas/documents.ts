@@ -2,6 +2,8 @@ import { z } from "@hono/zod-openapi";
 
 import { documentStatusEnum, documentTypeEnum } from "@api/db/schema";
 
+// Request
+
 export const upsertDocumentSchema = z.object({
   id: z.string().optional(),
   title: z.string().optional(),
@@ -10,6 +12,16 @@ export const upsertDocumentSchema = z.object({
   type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
   content: z.any(),
 });
+
+export const documentByStatusSchema = z.object({
+  status: z.enum(documentStatusEnum.enumValues).default("PUBLISHED"),
+});
+
+export const documentTypeSchema = z.object({
+  type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
+});
+
+// Responses
 
 export const upsertDocumentResponseSchema = z.object({
   data: z.any(),

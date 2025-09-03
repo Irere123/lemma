@@ -2,12 +2,18 @@ import { createRoute } from "@hono/zod-openapi";
 
 import { createRouter } from "@api/lib/utils";
 import {
+  documentByStatusSchema,
   documentsResponseSchema,
+  documentTypeSchema,
   upsertDocumentResponseSchema,
   upsertDocumentSchema,
 } from "@api/schemas";
 import { withRequiredScope } from "@api/rest/middleware";
-import { getUserDocuments, upsertDocument } from "@api/db/queries";
+import {
+  getDocumentsByTypeAndStatus,
+  getUserDocuments,
+  upsertDocument,
+} from "@api/db/queries";
 import { validateResponse } from "@api/lib/validate-response";
 
 const documentsRouter = createRouter();
@@ -79,6 +85,38 @@ documentsRouter.openapi(
     const result = await upsertDocument(db, input, session.user.id);
 
     return c.json(validateResponse(result, upsertDocumentResponseSchema));
+  }
+);
+
+documentsRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/:status",
+    summary: "Get document by status and type",
+    request: {
+      params: documentByStatusSchema,
+      query: documentTypeSchema,
+    },
+    responses: {
+      200: {
+        description: "Retrieved documents",
+        content: {
+          "application/json": {
+            schema: documentsResponseSchema,
+          },
+        },
+      },
+    },
+    middleware: [withRequiredScope("documents.read")],
+  }),
+  async (c) => {
+    const db = c.get("db");
+    const { type } = c.req.valid("query");
+    const { status } = c.req.valid("param");
+
+    const result = await getDocumentsByTypeAndStatus(db, { status, type });
+
+    return c.json(validateResponse(result, documentsResponseSchema));
   }
 );
 

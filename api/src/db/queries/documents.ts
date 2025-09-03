@@ -1,7 +1,12 @@
 import { eq } from "drizzle-orm";
 
 import type { DB } from "@api/db";
-import { documents, type Document } from "@api/db/schema";
+import {
+  documents,
+  type Document,
+  type DocumentStatus,
+  type DocumentType,
+} from "@api/db/schema";
 import { generateId } from "@api/lib/utils";
 import type { UpsertDocumentData } from "@api/schemas";
 
@@ -74,4 +79,21 @@ export const getPublishedArticleBySlug = async (
       ),
   });
   return article;
+};
+
+// Filter by type and status
+
+type GetDocumentsByTypeAndStatusData = {
+  type: DocumentType;
+  status: DocumentStatus;
+};
+
+export const getDocumentsByTypeAndStatus = async (
+  db: DB,
+  data: GetDocumentsByTypeAndStatusData
+): Promise<Document[]> => {
+  return db.query.documents.findMany({
+    where: (table, { and, eq }) =>
+      and(eq(table.type, data.type), eq(table.status, data.status)),
+  });
 };
