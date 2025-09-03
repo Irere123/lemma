@@ -1,4 +1,4 @@
-# Brain
+# BrainOS
 
 **Your thoughts. Your API. Your rules.**
 
@@ -60,12 +60,10 @@ pnpm run setup
 5. **Start the Application**
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 Visit `http://localhost:3000` to begin using BrainOS.
-
----
 
 ## Architecture
 
@@ -120,8 +118,6 @@ Define what is public, private, or gated. Total control over visibility.
 - API usage metrics
 - Subscriber engagement tracking
 - Popular content analysis
-
----
 
 ## Use Cases
 
