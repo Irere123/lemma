@@ -7,10 +7,15 @@ import { DeleteApiKeyModal } from "@/components/modals/delete-api-key-modal";
 import { EditApiKeyModal } from "@/components/modals/edit-api-key-modal";
 import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import { Button } from "@/components/ui/button";
+import type { Route } from "../+types/layout";
 
 export async function loader() {
   batchPrefetch([trpc.apiKeys.get.queryOptions()]);
   return null;
+}
+
+export function meta({}: Route.MetaArgs) {
+  return [{ title: "Developers Portal" }];
 }
 
 export default function DevelopersPage() {
@@ -59,7 +64,7 @@ export default function DevelopersPage() {
               ))}
             </div>
           ) : (
-            <div>
+            <div className="flex items-center justify-center">
               <p>No Keys available</p>
             </div>
           )}

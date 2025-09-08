@@ -30,9 +30,7 @@ export function CreateApiKeyModal() {
         <CopyInput value={createdKey} />
 
         <DialogFooter>
-          <Button onClick={() => setData(undefined)} className="w-full">
-            Done
-          </Button>
+          <Button onClick={() => setData(undefined)}>Done</Button>
         </DialogFooter>
       </div>
     );
