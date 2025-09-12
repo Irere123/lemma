@@ -24,7 +24,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: wrangler deploy --env production
+          command: wrangler deploy
           environment: production
           packageManager: bun
           workingDirectory: "web"
