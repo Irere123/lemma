@@ -28,6 +28,7 @@ app.use(
       "x-user-locale",
       "x-user-timezone",
       "x-user-country",
+      "X-Retry-After",
     ],
     exposeHeaders: ["Content-Length"],
     maxAge: 86400,
