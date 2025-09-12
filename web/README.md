@@ -10,7 +10,7 @@ npm install
 
 ### Development
 
-Start the development server with HMR:
+Start the developmen t server with HMR:
 
 ```bash
 npm run    dev
