@@ -124,3 +124,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+#nprogress .bar {
+  background: lightgreen !important;
+  height: 3px !important;
+}
+#nprogress .peg {
+  box-shadow:
+    0 0 10px lightgreen,
+    0 0 5px lightgreen !important;
+}

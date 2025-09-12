@@ -74,6 +74,7 @@
         "is-hotkey": "^0.2.0",
         "isbot": "^5.1.27",
         "localforage": "^1.10.0",
+        "nprogress": "^0.2.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.62.0",
@@ -93,6 +94,7 @@
         "@react-router/dev": "^7.7.1",
         "@tailwindcss/vite": "^4.1.4",
         "@types/node": "^20",
+        "@types/nprogress": "^0.2.3",
         "@types/react": "^19.1.2",
         "@types/react-dom": "^19.1.2",
         "tailwindcss": "^4.1.4",
@@ -655,6 +657,8 @@
 
     "@types/normalize-path": ["@types/normalize-path@3.0.2", "", {}, "sha512-DO++toKYPaFn0Z8hQ7Tx+3iT9t77IJo/nDiqTXilgEP+kPNIYdpS9kh3fXuc53ugqwp9pxC1PVjCpV1tQDyqMA=="],
 
+    "@types/nprogress": ["@types/nprogress@0.2.3", "", {}, "sha512-k7kRA033QNtC+gLc4VPlfnue58CM1iQLgn1IMAU8VPHGOj7oIHPp9UlhedEnD/Gl8evoCjwkZjlBORtZ3JByUA=="],
+
     "@types/prismjs": ["@types/prismjs@1.26.5", "", {}, "sha512-AUZTa7hQ2KY5L7AmtSiqxlhWxb4ina0yd8hNbl4TWuqnv/pFP0nDMb3YrfSBf4hJVGLh2YEIBfKaBW/9UEl6IQ=="],
 
     "@types/react": ["@types/react@19.1.8", "", { "dependencies": { "csstype": "^3.0.2" } }, "sha512-AwAfQ2Wa5bCx9WP8nZL2uMZWod7J7/JSplxbTmBQ5ms6QpqNYm672H0Vu9ZVKVngQ+ii4R/byguVEUZQyeg44g=="],
@@ -1144,6 +1148,8 @@
     "npm-package-arg": ["npm-package-arg@10.1.0", "", { "dependencies": { "hosted-git-info": "^6.0.0", "proc-log": "^3.0.0", "semver": "^7.3.5", "validate-npm-package-name": "^5.0.0" } }, "sha512-uFyyCEmgBfZTtrKk/5xDfHp6+MdrqGotX/VoOyEEl3mBwiEE5FlBaePanazJSVMPT7vKepcjYBY2ztg9A3yPIA=="],
 
     "npm-pick-manifest": ["npm-pick-manifest@8.0.2", "", { "dependencies": { "npm-install-checks": "^6.0.0", "npm-normalize-package-bin": "^3.0.0", "npm-package-arg": "^10.0.0", "semver": "^7.3.5" } }, "sha512-1dKY+86/AIiq1tkKVD3l0WI+Gd3vkknVGAggsFeBkTvbhMQ1OND/LKkYv4JtXPKUJ8bOTCyLiqEg2P6QNdK+Gg=="],
+
+    "nprogress": ["nprogress@0.2.0", "", {}, "sha512-I19aIingLgR1fmhftnbWWO3dXc0hSxqHQHQb3H8m+K3TnEn/iSeTZZOyvKXWqQESMwuUVnatlCnZdLBZZt2VSA=="],
 
     "nth-check": ["nth-check@2.1.1", "", { "dependencies": { "boolbase": "^1.0.0" } }, "sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w=="],
 
