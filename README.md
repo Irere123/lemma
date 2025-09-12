@@ -2,7 +2,7 @@
 
 **Your thoughts. Your API. Your rules.**
 
-Brain is a programmable interface for your mind. It’s more than a publishing platform—it's your personal cognitive infrastructure.
+Brain is a programmable interface for your mind. It’s more than a publishing platform it's your personal cognitive infrastructure.
 
 ## Overview
 
@@ -34,14 +34,14 @@ If it exists, it should be programmable. Every thought can be queried and used i
 1. **Clone the Repository**
 
 ```bash
-git clone https://github.com/irere123/brainos.git
-cd brainos
+git clone https://github.com/irere123/brain.git
+cd brain
 ```
 
 2. **Install Dependencies**
 
 ```bash
-pnpm install
+bun install
 ```
 
 3. **Configure Your Environment**
