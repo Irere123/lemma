@@ -16,13 +16,19 @@ jobs:
         uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
 
+      - name: Install dependencies
+        run: bun install --cwd web
+
+      - name: Build web app
+        run: bun run build --cwd web
+
       - name: Deploy web application
         id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: bun run build && wrangler deploy --env production
+          command: wrangler deploy --env production
           environment: production
           packageManager: bun
           workingDirectory: "api"
