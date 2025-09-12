@@ -14,13 +14,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
 
       - name: Install dependencies
-        run: bun install --cwd web
+        run: bun install
+        working-directory: ./web
 
-      - name: Build web app
-        run: bun run build --cwd web
+      - name: Build application
+        run: bun run build
+        working-directory: ./web
 
       - name: Deploy web application
         id: deploy
@@ -31,7 +35,7 @@ jobs:
           command: wrangler deploy --env production
           environment: production
           packageManager: bun
-          workingDirectory: "api"
+          workingDirectory: "web"
           wranglerVersion: "4.32.0"
 
       - name: Print deployment URL
