@@ -1,8 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "brainos",
+  "compatibility_date": "2025-09-12",
   "compatibility_flags": ["nodejs_compat"],
-  "compatibility_date": "2025-07-12",
   "main": ".output/server/index.mjs",
   "assets": {
     "directory": ".output/public",
