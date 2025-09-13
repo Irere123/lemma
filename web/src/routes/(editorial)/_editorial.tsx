@@ -6,10 +6,14 @@ import {
 } from "@/stores/document-store";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router";
 
-export default function PublishLayout() {
+export const Route = createFileRoute("/(editorial)/_editorial")({
+  component: PublishLayout,
+});
+
+function PublishLayout() {
   const trpc = useTRPC();
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const { data: session, isPending } = useSession();
@@ -61,7 +65,7 @@ export default function PublishLayout() {
   useEffect(() => {
     if (!session?.user && !isPending) {
       // Redirect to login page if there is no user logged in
-      navigate("/login");
+      navigate({ to: "/login" });
     } else if (!isPageLoaded && session?.user) {
       // Initialize data if there is a user and the data has not been initialized yet
       initData();
