@@ -27,6 +27,9 @@ jobs:
       - name: Build web application
         working-directory: web
         run: bun run build
+        env:
+          VITE_PUBLIC_BACKEND_URL: ${{ secrets.VITE_PUBLIC_BACKEND_URL }}
+          VITE_PUBLIC_APP_URL: ${{ secrets.VITE_PUBLIC_APP_URL }}
 
       # deploy web app to cloudflare workers
       - name: Deploy web application
