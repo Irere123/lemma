@@ -1,23 +1,36 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
+import { prefetch } from "@/trpc/server";
+import { trpc as serverTrpc } from "@/trpc/server";
 import { useTRPC } from "@/trpc/client";
 import { ReadOnlyEditor } from "@/editor";
+import type { Route } from "./+types/page";
 
-export const Route = createFileRoute("/posts/$postId")({
-  loader: ({ params: { postId } }) => {
-    return { postId };
-  },
-  component: PostDetails,
-});
+export function meta() {
+  return [
+    { title: "Blog — Irere Emmanuel" },
+    {
+      name: "description",
+      content:
+        "Writing by Irere Emmanuel on edge runtimes, DX, and practical engineering.",
+    },
+  ] as const;
+}
 
-function PostDetails() {
-  const { postId } = Route.useLoaderData();
+export async function loader({ params }: Route.LoaderArgs) {
+  const { slug } = params;
+
+  prefetch(serverTrpc.documents.getDocumentById.queryOptions({ id: slug }));
+
+  return { slug };
+}
+
+export default function PostDetails({ loaderData }: Route.ComponentProps) {
   const trpc = useTRPC();
   const { data: post, error } = useQuery(
-    trpc.documents.getDocumentById.queryOptions({ id: postId })
+    trpc.documents.getDocumentById.queryOptions({ id: loaderData.slug })
   );
 
   if (error || !post) {

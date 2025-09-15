@@ -1,15 +1,28 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 
 import { ProfileHeader, DateText, ListItem } from "@/components/landing";
+import { trpc, prefetch } from "@/trpc/server";
 import { useTRPC } from "@/trpc/client";
+import type { Route } from "./+types/page";
 
-export const Route = createFileRoute("/posts/")({
-  component: PostsIndex,
-});
+export function meta() {
+  return [
+    { title: "Blog — Irere Emmanuel" },
+    {
+      name: "description",
+      content:
+        "Writing by Irere Emmanuel on edge runtimes, DX, and practical engineering.",
+    },
+  ] as const;
+}
 
-function PostsIndex() {
+export async function loader() {
+  prefetch(trpc.documents.getAdminPublishedArticles.queryOptions());
+  return null;
+}
+
+export default function PostsIndex({}: Route.ComponentProps) {
   const trpc = useTRPC();
   const { data: posts } = useSuspenseQuery(
     trpc.documents.getAdminPublishedArticles.queryOptions()

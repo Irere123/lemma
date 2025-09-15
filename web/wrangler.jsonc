@@ -3,10 +3,7 @@
   "name": "brainos",
   "compatibility_flags": ["nodejs_compat"],
   "compatibility_date": "2025-07-12",
-  "main": ".output/server/index.mjs",
-  "assets": {
-    "directory": ".output/public",
-  },
+  "main": "./workers/app.ts",
   "observability": {
     "enabled": true,
   },

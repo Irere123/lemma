@@ -1,15 +1,16 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router";
 import { format } from "date-fns";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { getDefaultEditorValue } from "@/editor/utils/constants";
 import { useTRPC } from "@/trpc/client";
+import type { Route } from "../+types/layout";
+import { getDefaultEditorValue } from "@/editor/utils/constants";
 
-export const Route = createFileRoute("/(editorial)/_editorial/documents")({
-  component: DocumentsPage,
-});
+export function meta({}: Route.MetaArgs) {
+  return [{ title: "Documents" }];
+}
 
-function DocumentsPage() {
+export default function DocumentsPage() {
   const trpc = useTRPC();
   const { isPending: upsertLoading, mutateAsync: upsertDocument } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
@@ -38,7 +39,7 @@ function DocumentsPage() {
             });
 
             if (resp) {
-              navigate({ to: "/doc/$id", params: { id: resp.id } });
+              navigate(`/editor/${resp.id}`);
             }
           }}
         >
@@ -52,11 +53,7 @@ function DocumentsPage() {
             className="flex justify-between items-center py-4"
           >
             <div className="flex-1">
-              <Link
-                to="/doc/$id"
-                params={{ id: document.id }}
-                className="hover:underline"
-              >
+              <Link to={`/editor/${document.id}`} className="hover:underline">
                 <span className="font-medium">
                   {document.title ?? "Untitled"}
                 </span>

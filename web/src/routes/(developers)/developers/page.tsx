@@ -1,22 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
 
-import { Button } from "@/components/ui/button";
-import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import { useTRPC } from "@/trpc/client";
 import { batchPrefetch, trpc } from "@/trpc/server";
 import { CreateApiKeyModal } from "@/components/modals/create-api-key-modal";
 import { DeleteApiKeyModal } from "@/components/modals/delete-api-key-modal";
 import { EditApiKeyModal } from "@/components/modals/edit-api-key-modal";
+import { useApiKeysModalStore } from "@/stores/api-keys-modal";
+import { Button } from "@/components/ui/button";
+import type { Route } from "../+types/layout";
 
-export const Route = createFileRoute("/(developers)/_developers/keys")({
-  loader: () => {
-    batchPrefetch([trpc.apiKeys.get.queryOptions()]);
-  },
-  component: DevelopersPage,
-});
+export async function loader() {
+  batchPrefetch([trpc.apiKeys.get.queryOptions()]);
+  return null;
+}
 
-function DevelopersPage() {
+export function meta({}: Route.MetaArgs) {
+  return [{ title: "Developers Portal" }];
+}
+
+export default function DevelopersPage() {
   const trpc = useTRPC();
   const { setData } = useApiKeysModalStore();
 

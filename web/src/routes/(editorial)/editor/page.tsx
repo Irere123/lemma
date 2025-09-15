@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useParams } from "react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Editor } from "@/editor";
@@ -9,25 +9,25 @@ import {
   type DocumentUpdate,
 } from "@/stores/document-store";
 import { getUntitledTitle } from "@/lib/utils";
+import type { Route } from "../+types/layout";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
-export const Route = createFileRoute("/(editorial)/_editorial/doc/$id")({
-  component: EditorPage,
-});
+export function meta({}: Route.MetaArgs) {
+  return [{ title: "Editor" }];
+}
 
-function EditorPage() {
+export default function EditorPage() {
   const trpc = useTRPC();
-  const { id } = Route.useParams();
-
+  const { documentId } = useParams() as { documentId: string };
   const { mutateAsync: updateDbDocument } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
   );
 
   const updateDocument = useDocumentStore((state) => state.updateDocument);
-  const document = useDocumentStore((state) => state.documents[id]);
+  const document = useDocumentStore((state) => state.documents[documentId]);
 
   const [syncState, setSyncState] = useState({
     isTitleSynced: true,
@@ -42,12 +42,12 @@ function EditorPage() {
   const onTitleChange = useCallback(
     (title: string) => {
       // Only update Document title in storage if there isn't already a document with that title
-      const newTitle = title || getUntitledTitle(id);
+      const newTitle = title || getUntitledTitle(documentId);
 
-      updateDocument({ id: id, title: newTitle, subtitle: "" });
+      updateDocument({ id: documentId, title: newTitle, subtitle: "" });
       setSyncState((syncState) => ({ ...syncState, isTitleSynced: false }));
     },
-    [id, updateDocument]
+    [documentId, updateDocument]
   );
 
   const onEditorValueChange = useCallback(() => {
@@ -65,13 +65,13 @@ function EditorPage() {
 
   // Save the document in the database if it changes and it hasn't been saved yet
   useEffect(() => {
-    const doc = documentStore.getState().documents[id];
+    const doc = documentStore.getState().documents[documentId];
 
     if (!doc) {
       return;
     }
 
-    const documentUpdate: DocumentUpdate = { id: id, subtitle: "" };
+    const documentUpdate: DocumentUpdate = { id: documentId, subtitle: "" };
     if (!syncState.isContentSynced) {
       documentUpdate.content = doc.content;
     }
@@ -86,7 +86,7 @@ function EditorPage() {
       );
       return () => clearTimeout(handler);
     }
-  }, [syncState, handleDocumentUpdate, id]);
+  }, [syncState, handleDocumentUpdate, documentId]);
 
   // Prompt the user with a dialog box about unsaved changes if they navigate away
   useEffect(() => {
@@ -133,12 +133,12 @@ function EditorPage() {
                 onChange={(e) => {
                   updateDbDocument({
                     ...(document as any),
-                    id: id,
+                    id: documentId,
                     type: e.target.value as any,
                   });
                   updateDocument({
                     ...document,
-                    id: id,
+                    id: documentId,
                     type: e.target.value as any,
                   });
                 }}
@@ -172,12 +172,12 @@ function EditorPage() {
                 onClick={() => {
                   updateDbDocument({
                     ...(document as any),
-                    id: id,
+                    id: documentId,
                     status: "PUBLISHED",
                   });
                   updateDocument({
                     ...document,
-                    id: id,
+                    id: documentId,
                     status: "PUBLISHED",
                   });
                 }}
@@ -190,12 +190,12 @@ function EditorPage() {
                 onClick={() => {
                   updateDbDocument({
                     ...(document as any),
-                    id: id,
+                    id: documentId,
                     status: "DRAFT",
                   });
                   updateDocument({
                     ...document,
-                    id: id,
+                    id: documentId,
                     status: "DRAFT",
                   });
                 }}
@@ -207,7 +207,7 @@ function EditorPage() {
 
             {document.status === "PUBLISHED" && document.type === "ARTICLE" && (
               <a
-                href={`/posts/${id}`}
+                href={`/posts/${documentId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -219,12 +219,12 @@ function EditorPage() {
         </div>
 
         <Title
-          documentId={id}
+          documentId={documentId}
           className="px-8 pt-4 pb-1 md:px-12 md:pt-8"
           onChange={onTitleChange}
         />
         <Editor
-          documentId={id}
+          documentId={documentId}
           className="px-8 pt-2 pb-8 md:px-12 md:pb-12"
           onChange={onEditorValueChange}
           highlightedPath={undefined}

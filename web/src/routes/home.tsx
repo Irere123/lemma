@@ -1,12 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-
+import type { Route } from "./+types/home";
 import { ProfileHeader, Callout, Section } from "@/components/landing";
 
-export const Route = createFileRoute("/")({
-  component: Home,
-});
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Irere Emmanuel — About" },
+    {
+      name: "description",
+      content: "Software engineer building at the edge.",
+    },
+  ];
+}
 
-function Home() {
+export default function Home() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <ProfileHeader
