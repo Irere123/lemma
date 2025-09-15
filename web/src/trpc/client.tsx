@@ -37,7 +37,7 @@ export function TRPCReactProvider(
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: "/trpc",
+          url: `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/trpc`,
           transformer: superjson,
           fetch(url, options) {
             return fetch(url, {
