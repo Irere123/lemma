@@ -9,6 +9,7 @@ import {
 } from "@trpc/tanstack-react-query";
 import { cache } from "react";
 import superjson from "superjson";
+
 import { makeQueryClient } from "./query-client";
 
 // IMPORTANT: Create a stable getter for the query client that
