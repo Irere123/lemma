@@ -36,6 +36,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+          environment: production
           packageManager: bun
           workingDirectory: "web"
           wranglerVersion: "4.32.0"
