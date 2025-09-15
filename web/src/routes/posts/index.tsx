@@ -4,8 +4,13 @@ import { format } from "date-fns";
 
 import { ProfileHeader, DateText, ListItem } from "@/components/landing";
 import { useTRPC } from "@/trpc/client";
+import { prefetch, trpc } from "@/trpc/server";
 
 export const Route = createFileRoute("/posts/")({
+  loader: () => {
+    prefetch(trpc.documents.getAdminPublishedArticles.queryOptions());
+    return null;
+  },
   component: PostsIndex,
 });
 
