@@ -1,9 +1,9 @@
-import { Link } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 import { prefetch } from "@/trpc/server";
-import { trpc as serverTrpc } from "@/trpc/server";
+import { trpc } from "@/trpc/server";
 import { useTRPC } from "@/trpc/client";
 import { ReadOnlyEditor } from "@/editor";
 import type { Route } from "./+types/page";
@@ -20,33 +20,23 @@ export function meta() {
 }
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const { slug } = params;
+  const { postId } = params;
 
-  prefetch(serverTrpc.documents.getDocumentById.queryOptions({ id: slug }));
+  prefetch(trpc.documents.getDocumentById.queryOptions({ id: postId }));
 
-  return { slug };
+  return { postId };
 }
 
 export default function PostDetails({ loaderData }: Route.ComponentProps) {
   const trpc = useTRPC();
-  const { data: post, error } = useQuery(
-    trpc.documents.getDocumentById.queryOptions({ id: loaderData.slug })
+  const navigate = useNavigate();
+  const { data: post, error } = useSuspenseQuery(
+    trpc.documents.getDocumentById.queryOptions({ id: loaderData.postId })
   );
 
   if (error || !post) {
-    return (
-      <main className="container mx-auto max-w-3xl px-6 py-10">
-        <nav className="mb-6">
-          <Link
-            to="/posts"
-            className="text-sm text-neutral-600 hover:underline"
-          >
-            ← Back to posts
-          </Link>
-        </nav>
-        <div className="py-8 text-center text-gray-500">Article not found.</div>
-      </main>
-    );
+    navigate("/posts");
+    return null;
   }
 
   return (

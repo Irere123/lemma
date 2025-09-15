@@ -12,7 +12,7 @@ export default [
 
   // Public blog
   route("/posts", "./routes/posts/page.tsx"),
-  route("/posts/:slug", "./routes/posts/$slug/page.tsx"),
+  route("/posts/:postId", "./routes/posts/$postId/page.tsx"),
 
   // Newsletter
   route("/newsletter", "./routes/newsletter/page.tsx"),
