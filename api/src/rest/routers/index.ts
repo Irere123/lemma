@@ -1,12 +1,16 @@
 import { createRouter } from "@api/lib/utils";
-import { protectedMiddleware } from "../middleware";
+
+import { protectedMiddleware, publicMiddleware } from "../middleware";
 import { documentsRouter } from "./documents";
+import { postsRouter } from "./posts";
 
 const routers = createRouter();
 
-routers.get("/", (c) => {
-  return c.json({ message: "Hello API v1" });
-});
+// Public routes (not authenticated)
+
+routers.use(...publicMiddleware);
+
+routers.route("/posts", postsRouter);
 
 // Authenticated routes
 

@@ -4,6 +4,17 @@ import { documentStatusEnum, documentTypeEnum } from "@api/db/schema";
 
 // Request
 
+export const documentSchema = z.object({
+  id: z.string(),
+  title: z.string().optional(),
+  subtitle: z.string().optional(),
+  status: z.enum(documentStatusEnum.enumValues).default("DRAFT"),
+  type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
+  content: z.any(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
 export const upsertDocumentSchema = z.object({
   id: z.string().optional(),
   title: z.string().optional(),
@@ -25,12 +36,12 @@ export const documentByIdSchema = z.object({
 // Responses
 
 export const upsertDocumentResponseSchema = z.object({
-  data: z.any(),
+  data: documentSchema,
 });
 
 export const documentsResponseSchema = z.object({
   nextCursor: z.nullable(z.string()),
-  data: z.array(z.any()),
+  data: z.array(documentSchema),
 });
 
 export const documentResponseSchema = z.object({

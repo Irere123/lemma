@@ -16,6 +16,7 @@ const documentsRouter = createRouter();
 documentsRouter.openapi(
   createRoute({
     method: "get",
+    tags: ["Documents"],
     path: "/",
     summary: "List all user documents",
     request: {
@@ -57,6 +58,7 @@ documentsRouter.openapi(
   createRoute({
     method: "post",
     path: "/",
+    tags: ["Documents"],
     summary: "Create/Update a document",
     request: {
       body: {
