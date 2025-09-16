@@ -9,6 +9,7 @@ import { appRouter } from "./trpc/routers/_app";
 import { createTRPCContext } from "./trpc/init";
 import { createRouter } from "./lib/utils";
 import { createAuth } from "./lib/auth";
+import { BASE_URL } from "./lib/constants";
 
 const app = createRouter();
 
@@ -61,7 +62,7 @@ app.doc("/openapi", {
   },
   servers: [
     {
-      url: "https://api.irere.dev",
+      url: BASE_URL,
       description: "Production API",
     },
   ],
