@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "bun@1.2.2",
   "devDependencies": {
     "concurrently": "^9.2.0"
   }
