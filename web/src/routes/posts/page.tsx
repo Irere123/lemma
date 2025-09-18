@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 import { ProfileHeader, DateText, ListItem } from "@/components/landing";
-import { trpc, prefetch } from "@/trpc/server";
+import { trpc, prefetch, HydrateClient } from "@/trpc/server";
 import { useTRPC } from "@/trpc/client";
 import type { Route } from "./+types/page";
 
@@ -29,51 +29,53 @@ export default function PostsIndex({}: Route.ComponentProps) {
   );
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <ProfileHeader
-        title="Blog"
-        current="Blog"
-        links={[
-          { label: "About", to: "/" },
-          { label: "Blog", to: "/posts" },
-          { label: "Newsletter", to: "/newsletter" },
-          { label: "GitHub", href: "https://github.com/irere123" },
-        ]}
-      />
+    <HydrateClient>
+      <main className="mx-auto max-w-3xl px-6 py-10">
+        <ProfileHeader
+          title="Blog"
+          current="Blog"
+          links={[
+            { label: "About", to: "/" },
+            { label: "Blog", to: "/posts" },
+            { label: "Newsletter", to: "/newsletter" },
+            { label: "GitHub", href: "https://github.com/irere123" },
+          ]}
+        />
 
-      {!posts || posts.length === 0 ? (
-        <div className="py-8 text-center text-gray-500">
-          No published articles yet.
-        </div>
-      ) : (
-        <ul className="divide-y divide-neutral-200">
-          {posts.map((post) => (
-            <li key={post.id} className="py-4">
-              <ListItem
-                to={`/posts/${post.id}`}
-                left={
-                  <DateText
-                    date={
-                      post.createdAt
-                        ? format(new Date(post.createdAt), "yyyy-MM-dd")
-                        : undefined
-                    }
-                  />
-                }
-              >
-                <h2 className="text-[16px] font-medium leading-6 hover:underline">
-                  {post.title || "Untitled"}
-                </h2>
-                {post.subtitle ? (
-                  <p className="text-sm text-neutral-600 mt-1">
-                    {post.subtitle}
-                  </p>
-                ) : null}
-              </ListItem>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+        {!posts || posts.length === 0 ? (
+          <div className="py-8 text-center text-gray-500">
+            No published articles yet.
+          </div>
+        ) : (
+          <ul className="divide-y divide-neutral-200">
+            {posts.map((post) => (
+              <li key={post.id} className="py-4">
+                <ListItem
+                  to={`/posts/${post.id}`}
+                  left={
+                    <DateText
+                      date={
+                        post.createdAt
+                          ? format(new Date(post.createdAt), "yyyy-MM-dd")
+                          : undefined
+                      }
+                    />
+                  }
+                >
+                  <h2 className="text-[16px] font-medium leading-6 hover:underline">
+                    {post.title || "Untitled"}
+                  </h2>
+                  {post.subtitle ? (
+                    <p className="text-sm text-neutral-600 mt-1">
+                      {post.subtitle}
+                    </p>
+                  ) : null}
+                </ListItem>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </HydrateClient>
   );
 }
