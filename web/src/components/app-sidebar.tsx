@@ -1,17 +1,26 @@
+import { useMutation } from "@tanstack/react-query";
+import { IconChevronDown, IconCirclePlus } from "@tabler/icons-react";
+import { Link, useNavigate } from "react-router";
+
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { IconChevronDown, IconCirclePlus } from "@tabler/icons-react";
-import { Link } from "react-router";
+import { useTRPC } from "@/trpc/client";
+import { getDefaultEditorValue } from "@/editor/utils/constants";
 
 export function AppSidebar() {
+  const trpc = useTRPC();
+  const { isPending: upsertLoading, mutateAsync: upsertDocument } = useMutation(
+    trpc.documents.upsertDocument.mutationOptions()
+  );
+  const navigate = useNavigate();
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -27,19 +36,31 @@ export function AppSidebar() {
       <SidebarContent className="justify-center px-3">
         <SidebarMenu>
           <SidebarMenuItem>
+            <SidebarMenuButton
+              disabled={upsertLoading}
+              onClick={async () => {
+                const resp = await upsertDocument({
+                  content: getDefaultEditorValue(),
+                });
+
+                if (resp) {
+                  navigate(`/editor/${resp.id}`);
+                }
+              }}
+              className="group/new-document cursor-pointer"
+            >
+              New Doc
+              <span>
+                <IconCirclePlus
+                  size={16}
+                  className="group-hover/new-document:fill-black group-hover/new-document:text-white transition-all transform-gpu duration-200"
+                />
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link
-                to={`/new`}
-                className="flex gap-3 items-center group/new-document"
-              >
-                New Document
-                <span>
-                  <IconCirclePlus
-                    size={16}
-                    className="group-hover/new-document:fill-black group-hover/new-document:text-white transition-all transform-gpu duration-200"
-                  />
-                </span>
-              </Link>
+              <Link to={`/documents`}>Documents</Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

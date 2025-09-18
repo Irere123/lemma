@@ -1,20 +1,45 @@
 import { IconEdit, IconSettings } from "@tabler/icons-react";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router";
+
 import { SidebarTrigger, useSidebar } from "./ui/sidebar";
-import { Link } from "react-router";
+import { useTRPC } from "@/trpc/client";
+import { Button } from "./ui/button";
+import { getDefaultEditorValue } from "@/editor/utils/constants";
 
 export function AppHeader() {
   const { open } = useSidebar();
+  const trpc = useTRPC();
+  const navigate = useNavigate();
+  const { isPending: upsertLoading, mutateAsync: upsertDocument } = useMutation(
+    trpc.documents.upsertDocument.mutationOptions()
+  );
+
   return (
     <div className="py-2 px-3 flex gap-3">
       <SidebarTrigger />
       {!open && (
-        <div className="flex gap-2 items-center">
-          <Link to={`/documents`}>
-            <IconSettings size={20} />
-          </Link>
-          <Link to={`/new`}>
-            <IconEdit size={20} />
-          </Link>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" className="size-7">
+            <IconSettings className="size-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            disabled={upsertLoading}
+            onClick={async () => {
+              const resp = await upsertDocument({
+                content: getDefaultEditorValue(),
+              });
+
+              if (resp) {
+                navigate(`/editor/${resp.id}`);
+              }
+            }}
+          >
+            <IconEdit className="size-5" />
+          </Button>
         </div>
       )}
     </div>

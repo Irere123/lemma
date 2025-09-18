@@ -1,14 +1,15 @@
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { format } from "date-fns";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 import { useTRPC } from "@/trpc/client";
 import type { Route } from "../+types/layout";
-import { getDefaultEditorValue } from "@/editor/utils/constants";
+import { Button } from "@/components/ui/button";
+import { IconFilter2 } from "@tabler/icons-react";
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Documents" }];
+  return [{ title: "Documents / Brain" }];
 }
 
 export async function loader() {
@@ -18,36 +19,22 @@ export async function loader() {
 
 export default function DocumentsPage() {
   const trpc = useTRPC();
-  const { isPending: upsertLoading, mutateAsync: upsertDocument } = useMutation(
-    trpc.documents.upsertDocument.mutationOptions()
-  );
-  const { data } = useQuery(trpc.documents.getUserDocuments.queryOptions({}));
 
-  const navigate = useNavigate();
+  const { data } = useQuery(trpc.documents.getUserDocuments.queryOptions({}));
 
   return (
     <HydrateClient>
-      <div className="w-full max-w-3xl mx-auto">
-        <div className="flex justify-between py-3">
-          <h3>Documents</h3>
-          <button
-            disabled={upsertLoading}
-            type="button"
-            className="bg-amber-500 disabled:bg-amber-300 text-white py-2 px-4 rounded-xl"
-            onClick={async () => {
-              const resp = await upsertDocument({
-                content: getDefaultEditorValue(),
-              });
-
-              if (resp) {
-                navigate(`/editor/${resp.id}`);
-              }
-            }}
-          >
-            Create new
-          </button>
+      <div className="w-full max-w-3xl mx-auto space-y-4">
+        <div className="flex flex-col gap-3">
+          <h3 className="text-lg font-semibold">Documents</h3>
+          <div className="flex justify-between">
+            <Button type="button" variant={"outline"} onClick={async () => {}}>
+              <IconFilter2 />
+              Filter
+            </Button>
+          </div>
         </div>
-        <div>
+        <div className="border border-border border-dashed py-3 px-4 rounded-md">
           {data?.map((document) => (
             <div
               key={document.id}
