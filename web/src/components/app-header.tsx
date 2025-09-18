@@ -16,7 +16,7 @@ export function AppHeader() {
   );
 
   return (
-    <div className="py-2 px-3 flex gap-3">
+    <div className="py-2 px-1 flex gap-3">
       <SidebarTrigger />
       {!open && (
         <div className="flex gap-2">

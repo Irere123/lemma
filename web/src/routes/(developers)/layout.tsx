@@ -1,9 +1,17 @@
 import { Outlet } from "react-router";
 
+import { AppHeader } from "@/components/app-header";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+
 export default function DevelopersPageLayout() {
   return (
-    <div className="max-w-3xl mx-auto w-full py-4">
-      <Outlet />
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <div className="w-full">
+        <AppHeader />
+        <Outlet />
+      </div>
+    </SidebarProvider>
   );
 }

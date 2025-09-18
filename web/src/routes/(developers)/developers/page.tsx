@@ -8,6 +8,7 @@ import { EditApiKeyModal } from "@/components/modals/edit-api-key-modal";
 import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import { Button } from "@/components/ui/button";
 import type { Route } from "../+types/layout";
+import { IconPlus } from "@tabler/icons-react";
 
 export async function loader() {
   batchPrefetch([trpc.apiKeys.get.queryOptions()]);
@@ -15,7 +16,7 @@ export async function loader() {
 }
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Developers Portal" }];
+  return [{ title: "Developers / Brain" }];
 }
 
 export default function DevelopersPage() {
@@ -31,23 +32,24 @@ export default function DevelopersPage() {
   }
 
   return (
-    <>
+    <main className="mx-auto w-full max-w-3xl">
       <div className="space-y-12">
         <div className="w-full">
-          <div className="flex flex-col md:flex-row md:items-center pb-4 gap-4 md:gap-8">
+          <div className="flex flex-col pb-4 gap-4">
             <div className="flex-1">
-              <h3 className="text-lg font-medium leading-none tracking-tight mb-2">
-                API Keys
+              <h3 className="text-xl font-semibold leading-none tracking-tight mb-2">
+                Developers Portal
               </h3>
 
               <p className="text-sm text-[#606060]">
-                These API keys allow other apps to access your team. Use it with
+                These API keys allow other apps to access your data. Use it with
                 caution – do not share your API key with others, or expose it in
                 the browser or other client-side code.
               </p>
             </div>
             <div className="flex-shrink-0">
               <Button onClick={() => setData(undefined, "create")}>
+                <IconPlus />
                 Create API Key
               </Button>
             </div>
@@ -73,6 +75,6 @@ export default function DevelopersPage() {
       <EditApiKeyModal />
       <DeleteApiKeyModal />
       <CreateApiKeyModal />
-    </>
+    </main>
   );
 }
