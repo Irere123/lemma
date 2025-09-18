@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { IconPlus } from "@tabler/icons-react";
 
+import type { Route } from "../+types/layout";
 import { useTRPC } from "@/trpc/client";
 import { batchPrefetch, trpc } from "@/trpc/server";
 import { CreateApiKeyModal } from "@/components/modals/create-api-key-modal";
@@ -7,8 +9,7 @@ import { DeleteApiKeyModal } from "@/components/modals/delete-api-key-modal";
 import { EditApiKeyModal } from "@/components/modals/edit-api-key-modal";
 import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import { Button } from "@/components/ui/button";
-import type { Route } from "../+types/layout";
-import { IconPlus } from "@tabler/icons-react";
+import { DataTable as ApiKeysTable } from "@/components/tables/api-keys";
 
 export async function loader() {
   batchPrefetch([trpc.apiKeys.get.queryOptions()]);
@@ -54,22 +55,7 @@ export default function DevelopersPage() {
               </Button>
             </div>
           </div>
-          {data?.length! > 0 ? (
-            <div>
-              {data?.map((key, idx) => (
-                <div key={key.id}>
-                  <p>
-                    {idx + 1}.{key.name}
-                  </p>
-                  <p>{key.scopes}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center">
-              <p>No Keys available</p>
-            </div>
-          )}
+          <ApiKeysTable />
         </div>
       </div>
       <EditApiKeyModal />
