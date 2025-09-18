@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
 import {
   documentStore,
@@ -11,6 +11,7 @@ import {
   type Document,
 } from "@/stores/document-store";
 import { useTRPC } from "@/trpc/client";
+import { AppHeader } from "@/components/app-header";
 
 export default function PublishLayout() {
   const trpc = useTRPC();
@@ -75,7 +76,7 @@ export default function PublishLayout() {
     <SidebarProvider>
       <AppSidebar />
       <div className="w-full">
-        <SidebarTrigger />
+        <AppHeader />
         <Outlet />
       </div>
     </SidebarProvider>
