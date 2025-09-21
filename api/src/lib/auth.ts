@@ -14,6 +14,7 @@ export const createAuth = () => {
     }),
     trustedOrigins: [...env.ALLOWED_API_ORIGINS.split(",")],
     advanced: {
+      cookiePrefix: "brain",
       crossSubDomainCookies: {
         enabled: env.NODE_ENV !== "development",
         domain: ".irere.dev",
