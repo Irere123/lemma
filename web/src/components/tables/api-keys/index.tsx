@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   flexRender,
   getCoreRowModel,
@@ -22,7 +22,7 @@ import { EmptyState } from "./empty-state";
 export function DataTable() {
   const trpc = useTRPC();
   const { setData } = useApiKeysModalStore();
-  const { data } = useSuspenseQuery({
+  const { data, isLoading } = useQuery({
     ...trpc.apiKeys.get.queryOptions(),
   });
 
@@ -32,6 +32,10 @@ export function DataTable() {
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  if (!data || isLoading) {
+    return null;
+  }
 
   return (
     <>
