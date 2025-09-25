@@ -1,9 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "brainos",
+  "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "compatibility_date": "2025-07-12",
-  "main": "@tanstack/react-start/server-entry",
+  "main": "./dist/server/server.js",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist/client",
+  },
   "observability": {
     "enabled": true,
   },
