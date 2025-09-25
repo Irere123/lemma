@@ -50,7 +50,7 @@ To deploy a preview URL:
 bunx wrangler versions upload
 ```
 
-You can then promote version to production after verification or roll it out progressively.
+You can then promote version to production after verification or roll it out progressively
 
 ```sh
 bunx wrangler versions deploy
