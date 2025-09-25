@@ -1,6 +1,6 @@
 import { IconEdit, IconSettings } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 import { SidebarTrigger, useSidebar } from "./ui/sidebar";
 import { useTRPC } from "@/trpc/client";
@@ -34,7 +34,7 @@ export function AppHeader() {
               });
 
               if (resp) {
-                navigate(`/editor/${resp.id}`);
+                navigate({ to: "/editor/$docId", params: { docId: resp.id } });
               }
             }}
           >

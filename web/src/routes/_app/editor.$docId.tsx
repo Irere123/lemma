@@ -1,27 +1,25 @@
-import { useParams } from "react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-
 import { Editor } from "@/editor";
 import Title from "@/editor/Title";
+import { getUntitledTitle } from "@/lib/utils";
 import {
   documentStore,
   useDocumentStore,
   type DocumentUpdate,
 } from "@/stores/document-store";
-import { getUntitledTitle } from "@/lib/utils";
-import type { Route } from "../+types/layout";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
-export function meta({}: Route.MetaArgs) {
-  return [{ title: "Editor" }];
-}
+export const Route = createFileRoute("/_app/editor/$docId")({
+  component: RouteComponent,
+});
 
-export default function EditorPage() {
+function RouteComponent() {
   const trpc = useTRPC();
-  const { documentId } = useParams() as { documentId: string };
+  const { docId: documentId } = Route.useParams();
   const { mutateAsync: updateDbDocument } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
   );

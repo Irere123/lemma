@@ -1,24 +1,18 @@
 import { IconPlus } from "@tabler/icons-react";
+import { createFileRoute } from "@tanstack/react-router";
 
-import type { Route } from "../+types/layout";
-import { batchPrefetch, trpc } from "@/trpc/server";
 import { CreateApiKeyModal } from "@/components/modals/create-api-key-modal";
 import { DeleteApiKeyModal } from "@/components/modals/delete-api-key-modal";
 import { EditApiKeyModal } from "@/components/modals/edit-api-key-modal";
-import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import { Button } from "@/components/ui/button";
+import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import { DataTable as ApiKeysTable } from "@/components/tables/api-keys";
 
-export async function loader() {
-  batchPrefetch([trpc.apiKeys.get.queryOptions()]);
-  return null;
-}
+export const Route = createFileRoute("/_developers/developers")({
+  component: RouteComponent,
+});
 
-export function meta({}: Route.MetaArgs) {
-  return [{ title: "Developers / Brain" }];
-}
-
-export default function DevelopersPage() {
+function RouteComponent() {
   const { setData } = useApiKeysModalStore();
 
   return (

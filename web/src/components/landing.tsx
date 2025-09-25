@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export function ProfileHeader({
   title,
@@ -161,7 +161,7 @@ export function ListItem({
 
   if (to) {
     return (
-      <Link to={to} prefetch={prefetch} className="block">
+      <Link to={to} className="block">
         {content}
       </Link>
     );

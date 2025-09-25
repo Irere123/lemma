@@ -1,14 +1,20 @@
-import { reactRouter } from "@react-router/dev/vite";
-import { cloudflare } from "@cloudflare/vite-plugin";
-import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { cloudflare } from "@cloudflare/vite-plugin";
+import tsConfigPaths from "vite-tsconfig-paths";
+import viteReact from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  server: {
+    port: 3000,
+  },
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
-    reactRouter(),
-    tsconfigPaths(),
+    tsConfigPaths(),
+    tanstackStart(),
+    cloudflare(),
+    // react's vite plugin must come after start's vite plugin
+    viteReact(),
   ],
 });

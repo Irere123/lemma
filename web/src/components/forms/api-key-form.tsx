@@ -24,7 +24,7 @@ import { Input } from "../ui/input";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { Button } from "../ui/button";
 import { IconLoader2 } from "@tabler/icons-react";
-import { ScopeSelector } from "../scope-selectot";
+import { ScopeSelector } from "../scope-selector";
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -43,7 +43,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
   const [preset, setPreset] = useState<ScopePreset>(() =>
     data?.scopes
       ? (scopesToName(data.scopes).preset as ScopePreset)
-      : "all_access"
+      : "all_access",
   );
 
   const trpc = useTRPC();
@@ -58,7 +58,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
 
         onSuccess(data.key);
       },
-    })
+    }),
   );
 
   const form = useZodForm(formSchema, {
@@ -98,11 +98,11 @@ export function ApiKeyForm({ onSuccess }: Props) {
         const currentScopes = form.getValues("scopes");
         // Get all valid scopes from RESOURCES
         const validScopes = RESOURCES.flatMap((resource) =>
-          resource.scopes.map((scope) => scope.scope)
+          resource.scopes.map((scope) => scope.scope),
         );
         // Only keep scopes that are defined in RESOURCES
         newScopes = currentScopes.filter((scope): scope is Scope =>
-          validScopes.some((validScope) => validScope === scope)
+          validScopes.some((validScope) => validScope === scope),
         );
         break;
       }
@@ -126,7 +126,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
 
     // Remove any existing scopes for this resource
     const filteredScopes = currentScopes.filter(
-      (currentScope) => !resource.scopes.some((s) => s.scope === currentScope)
+      (currentScope) => !resource.scopes.some((s) => s.scope === currentScope),
     );
 
     // Add the new scope if it's not empty

@@ -1,11 +1,14 @@
 import { authClient } from "@/lib/auth-client";
-import type { Route } from "./+types/page";
+import { createFileRoute } from "@tanstack/react-router";
 
-export function meta({}: Route.MetaArgs) {
-  return [{ title: "Login" }];
-}
+export const Route = createFileRoute("/login")({
+  component: RouteComponent,
+  head: () => {
+    return { meta: [{ title: "Login" }] };
+  },
+});
 
-export default function LoginPage() {
+function RouteComponent() {
   return (
     <div className="w-full h-screen flex justify-center items-center">
       <button

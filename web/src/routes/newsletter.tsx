@@ -1,19 +1,16 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
+
 import { ProfileHeader } from "@/components/landing";
-import { type FormEvent, useState } from "react";
-import { Link } from "react-router";
 
-export function meta() {
-  return [
-    { title: "Newsletter — Irere Emmanuel" },
-    {
-      name: "description",
-      content:
-        "Subscribe to Irere Emmanuel’s newsletter for notes on edge runtimes, DX, and practical engineering.",
-    },
-  ] as const;
-}
+export const Route = createFileRoute("/newsletter")({
+  component: RouteComponent,
+  head: () => {
+    return { meta: [{ title: "Newsletter" }] };
+  },
+});
 
-export default function NewsletterPage() {
+function RouteComponent() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"

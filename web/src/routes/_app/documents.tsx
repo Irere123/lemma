@@ -1,23 +1,20 @@
-import { Link } from "react-router";
-import { format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-
-import { prefetch, trpc } from "@/trpc/server";
-import { useTRPC } from "@/trpc/client";
-import type { Route } from "../+types/layout";
-import { Button } from "@/components/ui/button";
 import { IconFilter2 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { format } from "date-fns";
 
-export function meta({}: Route.MetaArgs) {
-  return [{ title: "Documents / Brain" }];
-}
+import { Button } from "@/components/ui/button";
+import { useTRPC } from "@/trpc/client";
+import { prefetch, trpc } from "@/trpc/server";
 
-export async function loader() {
-  prefetch(trpc.documents.getUserDocuments.queryOptions({}));
-  return null;
-}
+export const Route = createFileRoute("/_app/documents")({
+  component: RouteComponent,
+  loader: () => {
+    prefetch(trpc.documents.getUserDocuments.queryOptions({}));
+  },
+});
 
-export default function DocumentsPage() {
+function RouteComponent() {
   const trpc = useTRPC();
 
   const { data } = useQuery(trpc.documents.getUserDocuments.queryOptions({}));
@@ -40,7 +37,11 @@ export default function DocumentsPage() {
             className="flex justify-between items-center py-4"
           >
             <div className="flex-1">
-              <Link to={`/editor/${document.id}`} className="hover:underline">
+              <Link
+                to={`/editor/$docId`}
+                params={{ docId: document.id }}
+                className="hover:underline"
+              >
                 <span className="font-medium">
                   {document.title ?? "Untitled"}
                 </span>

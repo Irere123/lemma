@@ -1,21 +1,9 @@
-import { Link, useNavigate } from "react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 
-import { useTRPC } from "@/trpc/client";
 import { ReadOnlyEditor } from "@/editor";
-import type { Route } from "./+types/page";
+import { useTRPC } from "@/trpc/client";
 
-export function meta({ data }: Route.MetaArgs) {
-  return [
-    { title: `${data?.post.title} — Irere Emmanuel` },
-    {
-      name: "description",
-      content:
-        data?.post.subtitle ??
-        "Writing by Irere Emmanuel on edge runtimes, DX, and practical engineering.",
-    },
-  ] as const;
-}
 interface IPost {
   id: string;
   title: string;
@@ -25,27 +13,30 @@ interface IPost {
   updatedAt: string;
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
-  const { postId } = params;
-  const post: IPost = await (
-    await fetch(
-      `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/v1/posts/${postId}`,
-      {
-        credentials: "include",
-      }
-    )
-  ).json();
+export const Route = createFileRoute("/posts/$postId")({
+  component: RouteComponent,
+  loader: async ({ params }) => {
+    const { postId } = params;
+    const post: IPost = await (
+      await fetch(
+        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/v1/posts/${postId}`,
+        {
+          credentials: "include",
+        }
+      )
+    ).json();
 
-  return { post };
-}
+    return { post };
+  },
+});
 
-export default function PostDetails({ loaderData }: Route.ComponentProps) {
+function RouteComponent() {
   const trpc = useTRPC();
   const navigate = useNavigate();
-  const { post } = loaderData;
+  const { post } = Route.useLoaderData();
 
   if (!post?.id) {
-    navigate("/posts");
+    navigate({ to: "/posts" });
     return null;
   }
 

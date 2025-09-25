@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { IconChevronDown, IconCirclePlus } from "@tabler/icons-react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import {
   Sidebar,
@@ -44,7 +44,10 @@ export function AppSidebar() {
                 });
 
                 if (resp) {
-                  navigate(`/editor/${resp.id}`);
+                  navigate({
+                    to: "/editor/$docId",
+                    params: { docId: resp.id },
+                  });
                 }
               }}
               className="group/new-document cursor-pointer"
@@ -70,7 +73,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link to={`/release-notes`}>Release Notes</Link>
+              <Link to={`/documents`}>Release Notes</Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
