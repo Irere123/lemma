@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     tsConfigPaths(),
     tanstackStart(),
-    cloudflare(),
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     // react's vite plugin must come after start's vite plugin
     viteReact(),
   ],

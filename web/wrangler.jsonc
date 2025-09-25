@@ -3,7 +3,7 @@
   "name": "brainos",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "./dist/server/server.js",
+  "main": "@tanstack/react-start/server-entry",
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist/client",
