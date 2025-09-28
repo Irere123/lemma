@@ -12,7 +12,11 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     tsConfigPaths(),
-    tanstackStart(),
+    tanstackStart({
+      srcDirectory: "src",
+      start: { entry: "./start.tsx" },
+      server: { entry: "./server.ts" },
+    }),
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     // react's vite plugin must come after start's vite plugin
     viteReact(),
