@@ -11,6 +11,9 @@ export const documentSchema = z.object({
   status: z.enum(documentStatusEnum.enumValues).default("DRAFT"),
   type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
   content: z.any(),
+  markdown: z.string().nullable().optional(),
+  bannerImage: z.string().nullable().optional(),
+  publishedDate: z.date().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -22,11 +25,16 @@ export const upsertDocumentSchema = z.object({
   status: z.enum(documentStatusEnum.enumValues).default("DRAFT"),
   type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
   content: z.any(),
+  markdown: z.string().nullable().optional(),
+  bannerImage: z.string().nullable().optional(),
+  publishedDate: z.date().nullable().optional(),
 });
 
 export const documentsFilters = z.object({
   type: z.enum(documentTypeEnum.enumValues).optional(),
   status: z.enum(documentStatusEnum.enumValues).optional(),
+  limit: z.number().min(1).max(100).optional().default(20),
+  cursor: z.string().optional(),
 });
 
 export const documentByIdSchema = z.object({
@@ -39,9 +47,15 @@ export const upsertDocumentResponseSchema = z.object({
   data: documentSchema,
 });
 
+// Lightweight document schema without heavy content fields
+export const documentListItemSchema = documentSchema.omit({
+  content: true,
+  markdown: true,
+});
+
 export const documentsResponseSchema = z.object({
   nextCursor: z.nullable(z.string()),
-  data: z.array(documentSchema),
+  data: z.array(documentListItemSchema),
 });
 
 export const documentResponseSchema = z.object({

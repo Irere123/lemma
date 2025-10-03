@@ -69,8 +69,12 @@ export type Document = {
   updatedAt: Date | null;
   userId: string | null;
   title: string | null;
-  content: Descendant[];
+  content?: Descendant[];
   subtitle: string | null;
+  markdown?: string | null;
+  bannerImage?: string | null;
+  publishedDate?: Date | null;
+  sendAsNewsletter?: boolean | null;
 };
 
 export type Documents = Record<Document["id"], Document>;

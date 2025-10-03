@@ -55,14 +55,13 @@ function RouteComponent() {
 
     if (!documentsLoading) {
       // Set documents
-      const docsAsObj = documents!.reduce<Record<Document["id"], Document>>(
-        (acc, doc) => {
-          acc[doc.id] = doc;
-          return acc;
-        },
-        {}
-      );
-      setDocuments(docsAsObj);
+      const docsAsObj = documents?.documents.reduce<
+        Record<Document["id"], Omit<Document, "content" | "markdown">>
+      >((acc, doc) => {
+        acc[doc.id] = doc;
+        return acc;
+      }, {});
+      setDocuments(docsAsObj ?? {});
     }
   }, [session, documents, documentsLoading, setDocuments, isPending]);
 

@@ -192,17 +192,35 @@ export const documentTypeEnum = pgEnum("document_type", [
   "NOTE",
 ]);
 
-export const documents = createTable("documents", {
-  id: text("id").primaryKey(),
-  title: text("title"),
-  subtitle: text("subtitle"),
-  type: documentTypeEnum(),
-  status: documentStatusEnum(),
-  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
-  content: jsonb("content").$type<any>(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const documents = createTable(
+  "documents",
+  {
+    id: text("id").primaryKey(),
+    title: text("title"),
+    subtitle: text("subtitle"),
+    type: documentTypeEnum(),
+    status: documentStatusEnum(),
+    userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+    content: jsonb("content").$type<any>(),
+    markdown: text("markdown"),
+    bannerImage: text("banner_image"),
+    publishedDate: timestamp("published_date"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    // Add indexes for scalability
+    index("documents_user_id_idx").on(table.userId),
+    index("documents_status_idx").on(table.status),
+    index("documents_type_idx").on(table.type),
+    index("documents_created_at_idx").on(table.createdAt),
+    index("documents_user_status_type_idx").on(
+      table.userId,
+      table.status,
+      table.type
+    ),
+  ]
+);
 
 // Types
 export type Document = typeof documents.$inferSelect;

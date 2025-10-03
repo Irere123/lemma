@@ -1,4 +1,4 @@
-import { Editor } from "@/editor";
+import { Editor, slateToMarkdown } from "@/editor";
 import Title from "@/editor/Title";
 import { getUntitledTitle } from "@/lib/utils";
 import {
@@ -10,6 +10,7 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Descendant } from "slate";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
@@ -54,7 +55,13 @@ function RouteComponent() {
 
   const handleDocumentUpdate = useCallback(
     async (document: DocumentUpdate) => {
-      await updateDbDocument({ ...(document as any) });
+      // Convert Slate content to markdown if content exists
+      const updateData = { ...(document as any) };
+      if (document.content) {
+        updateData.markdown = slateToMarkdown(document.content as Descendant[]);
+      }
+
+      await updateDbDocument(updateData);
 
       setSyncState({ isTitleSynced: true, isContentSynced: true });
     },
@@ -122,6 +129,7 @@ function RouteComponent() {
   return (
     <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
       <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
+        {/* Top toolbar */}
         <div className="flex items-center justify-between px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -168,15 +176,18 @@ function RouteComponent() {
             {document.status === "DRAFT" ? (
               <button
                 onClick={() => {
-                  updateDbDocument({
+                  const updatePayload = {
                     ...(document as any),
                     id: documentId,
                     status: "PUBLISHED",
-                  });
+                    publishedDate: document.publishedDate || new Date(),
+                  };
+                  updateDbDocument(updatePayload);
                   updateDocument({
                     ...document,
                     id: documentId,
                     status: "PUBLISHED",
+                    publishedDate: document.publishedDate || new Date(),
                   });
                 }}
                 className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -213,6 +224,87 @@ function RouteComponent() {
                 View Live
               </a>
             )}
+          </div>
+        </div>
+
+        <div className="px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Banner Image
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={document.bannerImage || ""}
+                onChange={(e) => {
+                  updateDocument({
+                    ...document,
+                    id: documentId,
+                    bannerImage: e.target.value,
+                  });
+                }}
+                onBlur={(e) => {
+                  if (e.target.value !== document.bannerImage) {
+                    updateDbDocument({
+                      ...(document as any),
+                      id: documentId,
+                      bannerImage: e.target.value,
+                    });
+                  }
+                }}
+                placeholder="Enter banner image URL"
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            {document.bannerImage && (
+              <div className="mt-2">
+                <img
+                  src={document.bannerImage}
+                  alt="Banner preview"
+                  className="w-full h-48 object-cover rounded-md"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
+          <div className="flex items-center gap-6">
+            {/* Published Date Picker */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Published Date:
+              </label>
+              <input
+                type="datetime-local"
+                value={
+                  document.publishedDate
+                    ? new Date(document.publishedDate)
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""
+                }
+                onChange={(e) => {
+                  const newDate = e.target.value
+                    ? new Date(e.target.value)
+                    : null;
+                  updateDocument({
+                    ...document,
+                    id: documentId,
+                    publishedDate: newDate,
+                  });
+                  updateDbDocument({
+                    ...(document as any),
+                    id: documentId,
+                    publishedDate: newDate,
+                  });
+                }}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
         </div>
 

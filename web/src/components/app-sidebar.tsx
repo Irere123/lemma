@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useTRPC } from "@/trpc/client";
 import { getDefaultEditorValue } from "@/editor/utils/constants";
+import { documentStore } from "@/stores/document-store";
 
 export function AppSidebar() {
   const trpc = useTRPC();
@@ -44,6 +45,9 @@ export function AppSidebar() {
                 });
 
                 if (resp) {
+                  // Add the document to the store immediately
+                  documentStore.getState().upsertDocument(resp as any);
+
                   navigate({
                     to: "/editor/$docId",
                     params: { docId: resp.id },

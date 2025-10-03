@@ -36,6 +36,20 @@
       "when": 1756748678821,
       "tag": "0004_goofy_virginia_dare",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1759469719267,
+      "tag": "0005_cheerful_whirlwind",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1759471012790,
+      "tag": "0006_regular_cloak",
+      "breakpoints": true
     }
   ]
 }

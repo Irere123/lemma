@@ -21,6 +21,9 @@ export enum ElementType {
   ThematicBreak = "thematic-break",
   Image = "image",
   BlockReference = "block-reference",
+  Callout = "callout",
+  Toggle = "toggle",
+  Divider = "divider",
 }
 
 export enum Mark {
@@ -137,6 +140,26 @@ export type BlockReference = {
   children: Descendant[];
 };
 
+export type Callout = {
+  id: string;
+  type: ElementType.Callout;
+  variant?: "info" | "warning" | "success" | "error";
+  children: Descendant[];
+};
+
+export type Toggle = {
+  id: string;
+  type: ElementType.Toggle;
+  open?: boolean;
+  children: Descendant[];
+};
+
+export type Divider = {
+  id: string;
+  type: ElementType.Divider;
+  children: Descendant[];
+};
+
 export type ReferenceableBlockElement =
   | ParagraphElement
   | HeadingOneElement
@@ -148,10 +171,14 @@ export type ReferenceableBlockElement =
   | CodeBlock
   | ThematicBreak
   | Image
-  | BlockReference;
+  | BlockReference
+  | Callout
+  | Toggle
+  | Divider;
 
 export type InlineElement = ExternalLink | NoteLink | Tag;
 export type ListElement = BulletedList | NumberedList;
+export type SpecialBlockElement = Callout | Toggle | Divider;
 
 export type BrainOSElement =
   | ReferenceableBlockElement

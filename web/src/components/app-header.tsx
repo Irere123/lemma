@@ -6,6 +6,7 @@ import { SidebarTrigger, useSidebar } from "./ui/sidebar";
 import { useTRPC } from "@/trpc/client";
 import { Button } from "./ui/button";
 import { getDefaultEditorValue } from "@/editor/utils/constants";
+import { documentStore } from "@/stores/document-store";
 
 export function AppHeader() {
   const { open } = useSidebar();
@@ -34,6 +35,9 @@ export function AppHeader() {
               });
 
               if (resp) {
+                // Add the document to the store immediately
+                documentStore.getState().upsertDocument(resp as any);
+
                 navigate({ to: "/editor/$docId", params: { docId: resp.id } });
               }
             }}

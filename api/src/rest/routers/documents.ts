@@ -40,14 +40,14 @@ documentsRouter.openapi(
     const session = c.get("session");
     const filters = c.req.valid("query");
 
-    const documents = await getUserDocuments(db, {
+    const result = await getUserDocuments(db, {
       ...filters,
       userId: session.user.id,
     });
 
     return c.json(
       validateResponse(
-        { nextCursor: null, data: documents },
+        { nextCursor: result.nextCursor, data: result.documents },
         documentsResponseSchema
       )
     );

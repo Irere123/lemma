@@ -18,6 +18,7 @@ import useIsMounted from "./hooks/useIsMounted";
 import HoveringToolbar from "./toolbar/HoveringToolbar";
 import activeEditorsStore from "@/stores/active-editors-store";
 import EditorElement from "./elements/EditorElement";
+
 import {
   handleEnter,
   handleIndent,
@@ -223,11 +224,11 @@ export default function Editor(props: Props) {
         setAddLinkPopoverState={setAddLinkPopoverState}
       />
       <Editable
-        className={`overflow-hidden placeholder-green-400 focus:outline-none ${className}`}
+        className={`overflow-hidden placeholder-gray-400 focus:outline-none ${className}`}
         data-testid="editor"
         renderElement={renderElement}
         renderLeaf={EditorLeaf}
-        placeholder="Start typing here…"
+        placeholder="Start writing..."
         onKeyDown={onKeyDown}
         onPointerDown={() => setToolbarCanBeVisible(false)}
         onPointerUp={() =>

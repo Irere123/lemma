@@ -5,6 +5,9 @@ import ThematicBreakElement from "./ThematicBreakElement";
 import ExternalLinkElement from "./ExternalLinkElement";
 import CheckListItemElement from "./CheckListItemElement";
 import TagElement from "./TagElement";
+import CalloutElement from "./CalloutElement";
+import ToggleElement from "./ToggleElement";
+import DividerElement from "./DividerElement";
 import { ElementType } from "../types";
 
 export type EditorElementProps = {
@@ -18,37 +21,52 @@ export default function EditorElement(props: EditorElementProps) {
   switch (element.type) {
     case ElementType.HeadingOne:
       return (
-        <h1 className={`text-2xl font-semibold ${className}`} {...attributes}>
+        <h1
+          className={`text-3xl font-bold mt-6 mb-2 ${className}`}
+          {...attributes}
+        >
           {children}
         </h1>
       );
     case ElementType.HeadingTwo:
       return (
-        <h2 className={`text-xl font-semibold ${className}`} {...attributes}>
+        <h2
+          className={`text-2xl font-bold mt-5 mb-2 ${className}`}
+          {...attributes}
+        >
           {children}
         </h2>
       );
     case ElementType.HeadingThree:
       return (
-        <h3 className={`text-lg font-semibold ${className}`} {...attributes}>
+        <h3
+          className={`text-xl font-semibold mt-4 mb-1 ${className}`}
+          {...attributes}
+        >
           {children}
         </h3>
       );
     case ElementType.ListItem:
       return (
-        <li className={className} {...attributes}>
+        <li className={`${className} py-0.5`} {...attributes}>
           {children}
         </li>
       );
     case ElementType.BulletedList:
       return (
-        <ul className={`ml-6 list-disc ${className}`} {...attributes}>
+        <ul
+          className={`ml-6 list-disc space-y-1 my-2 ${className}`}
+          {...attributes}
+        >
           {children}
         </ul>
       );
     case ElementType.NumberedList:
       return (
-        <ol className={`ml-6 list-decimal ${className}`} {...attributes}>
+        <ol
+          className={`ml-6 list-decimal space-y-1 my-2 ${className}`}
+          {...attributes}
+        >
           {children}
         </ol>
       );
@@ -64,14 +82,17 @@ export default function EditorElement(props: EditorElementProps) {
       );
     case ElementType.Blockquote:
       return (
-        <blockquote className={`border-l-4 pl-4 ${className}`} {...attributes}>
+        <blockquote
+          className={`border-l-4 border-gray-300 dark:border-gray-600 pl-4 my-3 italic text-gray-700 dark:text-gray-300 ${className}`}
+          {...attributes}
+        >
           {children}
         </blockquote>
       );
     case ElementType.CodeBlock:
       return (
         <code
-          className={`block rounded border border-gray-200 bg-gray-100 p-2 dark:border-gray-700 dark:bg-gray-800 ${className}`}
+          className={`block rounded-md border border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700 p-4 my-3 font-mono text-sm ${className}`}
           {...attributes}
         >
           {children}
@@ -102,6 +123,24 @@ export default function EditorElement(props: EditorElementProps) {
         >
           {children}
         </TagElement>
+      );
+    case ElementType.Callout:
+      return (
+        <CalloutElement element={element} attributes={attributes}>
+          {children}
+        </CalloutElement>
+      );
+    case ElementType.Toggle:
+      return (
+        <ToggleElement element={element} attributes={attributes}>
+          {children}
+        </ToggleElement>
+      );
+    case ElementType.Divider:
+      return (
+        <DividerElement element={element} attributes={attributes}>
+          {children}
+        </DividerElement>
       );
 
     default:

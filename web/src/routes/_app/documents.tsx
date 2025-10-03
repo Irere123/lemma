@@ -19,6 +19,8 @@ function RouteComponent() {
 
   const { data } = useQuery(trpc.documents.getUserDocuments.queryOptions({}));
 
+  const documents = data?.documents || [];
+
   return (
     <div className="w-full max-w-3xl mx-auto space-y-4">
       <div className="flex flex-col gap-3">
@@ -31,7 +33,7 @@ function RouteComponent() {
         </div>
       </div>
       <div className="border border-border border-dashed py-3 px-4 rounded-md">
-        {data?.map((document) => (
+        {documents.map((document) => (
           <div
             key={document.id}
             className="flex justify-between items-center py-4"

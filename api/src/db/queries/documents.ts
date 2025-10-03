@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 
 import type { DB } from "@api/db";
 import {
@@ -10,6 +10,10 @@ import {
 import { generateId } from "@api/lib/utils";
 import type { UpsertDocumentData } from "@api/schemas";
 import { env } from "cloudflare:workers";
+
+// Default page size for pagination
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 
 export const upsertDocument = async (
   db: DB,
@@ -51,12 +55,16 @@ type UserDocumentsData = {
   userId: string;
   status?: DocumentStatus;
   type?: DocumentType;
+  limit?: number;
+  cursor?: string;
 };
 
 export const getUserDocuments = async (
   db: DB,
   data: UserDocumentsData
-): Promise<Document[]> => {
+): Promise<Omit<Document, "content" | "markdown">[]> => {
+  const limit = Math.min(data.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+
   // Build filter conditions dynamically
   const filters = [eq(documents.userId, data.userId)];
 
@@ -68,22 +76,64 @@ export const getUserDocuments = async (
     filters.push(eq(documents.type, data.type));
   }
 
+  // Add cursor-based pagination
+  if (data.cursor) {
+    filters.push(lt(documents.createdAt, new Date(data.cursor)));
+  }
+
   // Execute query with all applicable filters
+  // Exclude heavy fields (content, markdown) from list queries
   const userDocuments = await db
-    .select()
+    .select({
+      id: documents.id,
+      title: documents.title,
+      subtitle: documents.subtitle,
+      type: documents.type,
+      status: documents.status,
+      userId: documents.userId,
+      bannerImage: documents.bannerImage,
+      publishedDate: documents.publishedDate,
+      createdAt: documents.createdAt,
+      updatedAt: documents.updatedAt,
+    })
     .from(documents)
-    .where(and(...filters));
+    .where(and(...filters))
+    .orderBy(desc(documents.createdAt))
+    .limit(limit + 1); // Fetch one extra to determine if there's a next page
 
   return userDocuments;
 };
 
 export const getAdminPublishedArticles = async (
-  db: DB
-): Promise<Document[]> => {
-  return db.query.documents.findMany({
-    where: (table, { and, eq }) =>
-      and(eq(table.status, "PUBLISHED"), eq(table.userId, env.ADMIN_USER_ID)),
-  });
+  db: DB,
+  limit: number = DEFAULT_PAGE_SIZE
+): Promise<Omit<Document, "content" | "markdown">[]> => {
+  const safeLimit = Math.min(limit, MAX_PAGE_SIZE);
+
+  const results = await db
+    .select({
+      id: documents.id,
+      title: documents.title,
+      subtitle: documents.subtitle,
+      type: documents.type,
+      status: documents.status,
+      userId: documents.userId,
+      bannerImage: documents.bannerImage,
+      publishedDate: documents.publishedDate,
+      createdAt: documents.createdAt,
+      updatedAt: documents.updatedAt,
+    })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.status, "PUBLISHED"),
+        eq(documents.userId, env.ADMIN_USER_ID)
+      )
+    )
+    .orderBy(desc(documents.publishedDate), desc(documents.createdAt))
+    .limit(safeLimit);
+
+  return results;
 };
 
 export const getDocumentById = async (db: DB, id: string) => {
@@ -92,12 +142,32 @@ export const getDocumentById = async (db: DB, id: string) => {
   });
 };
 
-export const getPublishedArticles = async (db: DB): Promise<Document[]> => {
-  const publishedArticles = await db.query.documents.findMany({
-    where: (table, { and, eq }) =>
-      and(eq(table.status, "PUBLISHED"), eq(table.type, "ARTICLE")),
-    orderBy: (table, { desc }) => [desc(table.createdAt)],
-  });
+export const getPublishedArticles = async (
+  db: DB,
+  limit: number = DEFAULT_PAGE_SIZE
+): Promise<Omit<Document, "content" | "markdown">[]> => {
+  const safeLimit = Math.min(limit, MAX_PAGE_SIZE);
+
+  const publishedArticles = await db
+    .select({
+      id: documents.id,
+      title: documents.title,
+      subtitle: documents.subtitle,
+      type: documents.type,
+      status: documents.status,
+      userId: documents.userId,
+      bannerImage: documents.bannerImage,
+      publishedDate: documents.publishedDate,
+      createdAt: documents.createdAt,
+      updatedAt: documents.updatedAt,
+    })
+    .from(documents)
+    .where(
+      and(eq(documents.status, "PUBLISHED"), eq(documents.type, "ARTICLE"))
+    )
+    .orderBy(desc(documents.publishedDate), desc(documents.createdAt))
+    .limit(safeLimit);
+
   return publishedArticles;
 };
 
@@ -126,10 +196,30 @@ type GetDocumentsByTypeAndStatusData = {
 
 export const getDocumentsByTypeAndStatus = async (
   db: DB,
-  data: GetDocumentsByTypeAndStatusData
-): Promise<Document[]> => {
-  return db.query.documents.findMany({
-    where: (table, { and, eq }) =>
-      and(eq(table.type, data.type), eq(table.status, data.status)),
-  });
+  data: GetDocumentsByTypeAndStatusData,
+  limit: number = DEFAULT_PAGE_SIZE
+): Promise<Omit<Document, "content" | "markdown">[]> => {
+  const safeLimit = Math.min(limit, MAX_PAGE_SIZE);
+
+  const results = await db
+    .select({
+      id: documents.id,
+      title: documents.title,
+      subtitle: documents.subtitle,
+      type: documents.type,
+      status: documents.status,
+      userId: documents.userId,
+      bannerImage: documents.bannerImage,
+      publishedDate: documents.publishedDate,
+      createdAt: documents.createdAt,
+      updatedAt: documents.updatedAt,
+    })
+    .from(documents)
+    .where(
+      and(eq(documents.type, data.type), eq(documents.status, data.status))
+    )
+    .orderBy(desc(documents.createdAt))
+    .limit(safeLimit);
+
+  return results;
 };

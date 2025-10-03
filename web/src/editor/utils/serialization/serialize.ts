@@ -23,7 +23,6 @@ THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import { Element, Text } from "slate";
 import {
-  type BlockReference,
   type CheckListItem,
   ElementType,
   type ExternalLink,
@@ -190,6 +189,15 @@ export default function serialize(
 
     case ElementType.ThematicBreak:
       return `---\n\n`;
+
+    case ElementType.Divider:
+      return `---\n\n`;
+
+    case ElementType.Callout:
+      return `> ${children}\n\n`;
+
+    case ElementType.Toggle:
+      return `<details>\n<summary>${children}</summary>\n</details>\n\n`;
 
     default:
       return children;
