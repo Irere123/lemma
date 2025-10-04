@@ -70,15 +70,13 @@ export const NewsletterSubscribeForm = ({
   return (
     <div
       className={`${
-        isInline
-          ? "w-full"
-          : "p-6 bg-white rounded-lg shadow-md border border-gray-200"
+        isInline ? "w-full" : "p-6 bg-white rounded-lg border border-gray-200"
       }`}
     >
       {!isInline && (
         <>
           <div className="flex items-center gap-2 mb-2">
-            <IconMail className="w-5 h-5 text-purple-600" />
+            <IconMail className="w-5 h-5" />
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           </div>
           <p className="text-sm text-gray-600 mb-4">{description}</p>
@@ -93,12 +91,12 @@ export const NewsletterSubscribeForm = ({
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
             disabled={isPending}
-            className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Button
             type="submit"
             disabled={isPending}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-neutral-600 hover:bg-neutral-700 text-white px-6 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? (
               <>

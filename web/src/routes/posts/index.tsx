@@ -67,15 +67,6 @@ function RouteComponent() {
             ))}
           </ul>
         )}
-
-        {/* Newsletter Subscription */}
-        <div className="pt-8 border-t border-neutral-200">
-          <NewsletterSubscribeForm
-            variant="card"
-            title="Never Miss an Update"
-            description="Subscribe to get notified when new articles are published."
-          />
-        </div>
       </div>
     </main>
   );
