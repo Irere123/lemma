@@ -5,15 +5,6 @@
   "compatibility_date": "2025-07-12",
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "EMAIL_QUEUE_SHARD",
-        "class_name": "QueueDurableObject",
-        "script_name": "brainos-api",
-      },
-    ],
-  },
   "dev": {
     "port": 4000,
   },
@@ -40,9 +31,23 @@
         },
         {
           "binding": "QUEUE_SHARDS_KV",
-          "id": "preview_id",
+          "id": "6df1aad1a26c4354adc1becbd910f709",
         },
       ],
+      "migrations": [
+        {
+          "new_sqlite_classes": ["QueueDurableObject"],
+          "tag": "v1",
+        },
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "EMAIL_QUEUE_SHARD",
+            "class_name": "QueueDurableObject",
+          },
+        ],
+      },
     },
     "production": {
       "observability": {
@@ -66,9 +71,23 @@
         },
         {
           "binding": "QUEUE_SHARDS_KV",
-          "id": "production_id",
+          "id": "6df1aad1a26c4354adc1becbd910f709",
         },
       ],
+      "migrations": [
+        {
+          "new_sqlite_classes": ["QueueDurableObject"],
+          "tag": "v1",
+        },
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "EMAIL_QUEUE_SHARD",
+            "class_name": "QueueDurableObject",
+          },
+        ],
+      },
     },
   },
 }
