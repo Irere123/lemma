@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
 
 import { ProfileHeader } from "@/components/landing";
+import { NewsletterSubscribeForm } from "@/components/newsletter-subscribe-form";
 
 export const Route = createFileRoute("/newsletter")({
   component: RouteComponent,
@@ -11,24 +11,6 @@ export const Route = createFileRoute("/newsletter")({
 });
 
 function RouteComponent() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!email) return;
-    setStatus("loading");
-    try {
-      // TODO: Integrate with @brain/api newsletter endpoint
-      await new Promise((r) => setTimeout(r, 800));
-      setStatus("success");
-    } catch {
-      setStatus("error");
-    }
-  }
-
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <ProfileHeader
@@ -42,47 +24,52 @@ function RouteComponent() {
         ]}
       />
 
-      <section className="space-y-4">
-        <p className="text-[15px] leading-7 text-neutral-800">
-          Get occasional emails about new posts and notes on edge runtimes, DX,
-          and practical engineering. No spam—unsubscribe anytime.
-        </p>
+      <section className="space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Subscribe to the Newsletter
+          </h2>
+          <p className="text-[15px] leading-7 text-neutral-800">
+            Get occasional emails about new posts and notes on edge runtimes,
+            DX, and practical engineering. No spam—unsubscribe anytime.
+          </p>
+        </div>
 
-        <form
-          onSubmit={onSubmit}
-          className="mt-2 flex flex-col sm:flex-row gap-3"
-        >
-          <input
-            type="email"
-            required
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full sm:max-w-sm rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-neutral-500"
-          />
-          <button
-            type="submit"
-            disabled={status === "loading"}
-            className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-60"
-          >
-            {status === "loading" ? "Subscribing…" : "Subscribe"}
-          </button>
-        </form>
+        <NewsletterSubscribeForm
+          variant="card"
+          title="Join the Community"
+          description="Be the first to know when new articles are published. Plus, get exclusive content and updates."
+        />
 
-        {status === "success" ? (
-          <div className="rounded-md border border-green-200 bg-green-50/60 p-3 text-sm text-neutral-800">
-            Thanks! Please check your inbox to confirm the subscription.
-          </div>
-        ) : null}
+        <div className="space-y-3 pt-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            What you'll get:
+          </h3>
+          <ul className="space-y-2 text-sm text-neutral-700">
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 mt-1">✓</span>
+              <span>Weekly or bi-weekly updates on new articles and posts</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 mt-1">✓</span>
+              <span>
+                Exclusive insights and deep dives into technical topics
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 mt-1">✓</span>
+              <span>Early access to new projects and experiments</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 mt-1">✓</span>
+              <span>Behind-the-scenes content and development stories</span>
+            </li>
+          </ul>
+        </div>
 
-        {status === "error" ? (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            Something went wrong. Please try again.
-          </div>
-        ) : null}
-
-        <p className="text-xs text-neutral-500">
-          By subscribing, you agree to receive emails from Irere Emmanuel.
+        <p className="text-xs text-neutral-500 border-t pt-4">
+          By subscribing, you agree to receive emails from Irere Emmanuel. You
+          can unsubscribe at any time using the link in the email footer.
         </p>
       </section>
     </main>

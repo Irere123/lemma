@@ -11,6 +11,8 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Descendant } from "slate";
+import { SendNewsletterDialog } from "@/components/send-newsletter-dialog";
+import { IconMail } from "@tabler/icons-react";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
@@ -32,6 +34,8 @@ function RouteComponent() {
     isTitleSynced: true,
     isContentSynced: true,
   });
+
+  const [isNewsletterDialogOpen, setIsNewsletterDialogOpen] = useState(false);
 
   const isSynced = useMemo(
     () => syncState.isTitleSynced && syncState.isContentSynced,
@@ -272,39 +276,83 @@ function RouteComponent() {
         </div>
 
         <div className="px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
-          <div className="flex items-center gap-6">
-            {/* Published Date Picker */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
-                Published Date:
-              </label>
-              <input
-                type="datetime-local"
-                value={
-                  document.publishedDate
-                    ? new Date(document.publishedDate)
-                        .toISOString()
-                        .slice(0, 16)
-                    : ""
-                }
-                onChange={(e) => {
-                  const newDate = e.target.value
-                    ? new Date(e.target.value)
-                    : null;
-                  updateDocument({
-                    ...document,
-                    id: documentId,
-                    publishedDate: newDate,
-                  });
-                  updateDbDocument({
-                    ...(document as any),
-                    id: documentId,
-                    publishedDate: newDate,
-                  });
-                }}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+              {/* Published Date Picker */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Published:
+                </label>
+                <input
+                  type="datetime-local"
+                  value={
+                    document.publishedDate
+                      ? new Date(document.publishedDate)
+                          .toISOString()
+                          .slice(0, 16)
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const newDate = e.target.value
+                      ? new Date(e.target.value)
+                      : null;
+                    updateDocument({
+                      ...document,
+                      id: documentId,
+                      publishedDate: newDate,
+                    });
+                    updateDbDocument({
+                      ...(document as any),
+                      id: documentId,
+                      publishedDate: newDate,
+                    });
+                  }}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Scheduled Date Picker */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Schedule Email:
+                </label>
+                <input
+                  type="datetime-local"
+                  value={
+                    document.scheduledDate
+                      ? new Date(document.scheduledDate)
+                          .toISOString()
+                          .slice(0, 16)
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const newDate = e.target.value
+                      ? new Date(e.target.value)
+                      : null;
+                    updateDocument({
+                      ...document,
+                      id: documentId,
+                      scheduledDate: newDate,
+                    });
+                    updateDbDocument({
+                      ...(document as any),
+                      id: documentId,
+                      scheduledDate: newDate,
+                    });
+                  }}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
+
+            {/* Send Newsletter Button */}
+            <button
+              onClick={() => setIsNewsletterDialogOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <IconMail className="w-4 h-4" />
+              Send Newsletter
+            </button>
           </div>
         </div>
 
@@ -320,6 +368,14 @@ function RouteComponent() {
           highlightedPath={undefined}
         />
       </div>
+
+      <SendNewsletterDialog
+        documentId={documentId}
+        documentTitle={document.title || "Untitled"}
+        scheduledDate={document.scheduledDate}
+        isOpen={isNewsletterDialogOpen}
+        onClose={() => setIsNewsletterDialogOpen(false)}
+      />
     </div>
   );
 }

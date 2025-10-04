@@ -1,8 +1,6 @@
 import { createEmailQueueClient } from "../queue/bindings.ts";
 import type { EnqueueOptions } from "../queue/types.ts";
 import { resend } from "./resend.ts";
-import { render } from "@react-email/render";
-import { createElement } from "react";
 
 export type EmailTemplate = "welcome-newsletter" | "document-newsletter";
 
@@ -38,22 +36,22 @@ export type EmailJobPayload<T extends EmailTemplate = EmailTemplate> = {
 
 const QUEUE_NAME = "email";
 
-const renderEmailTemplate = async (
+const getEmailComponent = async (
   template: EmailTemplate,
   props: any
-): Promise<string> => {
+): Promise<React.ReactElement> => {
   switch (template) {
     case "welcome-newsletter": {
-      const WelcomeNewsletter = (
-        await import("@brain/email/emails/welcome-newsletter")
-      ).default;
-      return render(createElement(WelcomeNewsletter, props));
+      const { default: WelcomeNewsletter } = await import(
+        "@brain/email/emails/welcome-newsletter"
+      );
+      return <WelcomeNewsletter {...props} />;
     }
     case "document-newsletter": {
-      const DocumentNewsletter = (
-        await import("@brain/email/emails/document-newsletter")
-      ).default;
-      return render(createElement(DocumentNewsletter, props));
+      const { default: DocumentNewsletter } = await import(
+        "@brain/email/emails/document-newsletter"
+      );
+      return <DocumentNewsletter {...props} />;
     }
     default:
       throw new Error(`Unknown email template: ${template}`);
@@ -93,20 +91,20 @@ export const processEmailJobs = async (env: Env, batchSize = 10) => {
     try {
       const { template, to, subject, from, fromEmail, props } = job.data;
 
-      // Render the email template
-      const html = await renderEmailTemplate(template, props);
+      // Get the React email component
+      const emailComponent = await getEmailComponent(template, props);
 
       // Prepare from address
       const fromAddress = fromEmail
         ? `${from} <${fromEmail}@${process.env.RESEND_DOMAIN || "irere.dev"}>`
         : `${from} <no-reply@${process.env.RESEND_DOMAIN || "irere.dev"}>`;
 
-      // Send email via Resend
+      // Send email via Resend - pass the React element directly
       await resend.emails.send({
         from: fromAddress,
         to,
         subject,
-        html,
+        react: emailComponent,
       });
 
       await client.complete(QUEUE_NAME, job.id, job.leaseToken!);

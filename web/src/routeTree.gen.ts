@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as NewsletterRouteImport } from './routes/newsletter'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DevelopersRouteRouteImport } from './routes/_developers/route'
@@ -20,6 +22,16 @@ import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/d
 import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
 import { Route as AppEditorDocIdRouteImport } from './routes/_app/editor.$docId'
 
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewsletterRoute = NewsletterRouteImport.update({
   id: '/newsletter',
   path: '/newsletter',
@@ -73,6 +85,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/newsletter': typeof NewsletterRoute
+  '/unsubscribe': typeof UnsubscribeRoute
+  '/verify': typeof VerifyRoute
   '/documents': typeof AppDocumentsRoute
   '/developers': typeof DevelopersDevelopersRoute
   '/posts/$postId': typeof PostsPostIdRoute
@@ -83,6 +97,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/newsletter': typeof NewsletterRoute
+  '/unsubscribe': typeof UnsubscribeRoute
+  '/verify': typeof VerifyRoute
   '/documents': typeof AppDocumentsRoute
   '/developers': typeof DevelopersDevelopersRoute
   '/posts/$postId': typeof PostsPostIdRoute
@@ -96,6 +112,8 @@ export interface FileRoutesById {
   '/_developers': typeof DevelopersRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/newsletter': typeof NewsletterRoute
+  '/unsubscribe': typeof UnsubscribeRoute
+  '/verify': typeof VerifyRoute
   '/_app/documents': typeof AppDocumentsRoute
   '/_developers/developers': typeof DevelopersDevelopersRoute
   '/posts/$postId': typeof PostsPostIdRoute
@@ -108,6 +126,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/newsletter'
+    | '/unsubscribe'
+    | '/verify'
     | '/documents'
     | '/developers'
     | '/posts/$postId'
@@ -118,6 +138,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/newsletter'
+    | '/unsubscribe'
+    | '/verify'
     | '/documents'
     | '/developers'
     | '/posts/$postId'
@@ -130,6 +152,8 @@ export interface FileRouteTypes {
     | '/_developers'
     | '/login'
     | '/newsletter'
+    | '/unsubscribe'
+    | '/verify'
     | '/_app/documents'
     | '/_developers/developers'
     | '/posts/$postId'
@@ -143,12 +167,28 @@ export interface RootRouteChildren {
   DevelopersRouteRoute: typeof DevelopersRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   NewsletterRoute: typeof NewsletterRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
+  VerifyRoute: typeof VerifyRoute
   PostsPostIdRoute: typeof PostsPostIdRoute
   PostsIndexRoute: typeof PostsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/newsletter': {
       id: '/newsletter'
       path: '/newsletter'
@@ -254,6 +294,8 @@ const rootRouteChildren: RootRouteChildren = {
   DevelopersRouteRoute: DevelopersRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   NewsletterRoute: NewsletterRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
+  VerifyRoute: VerifyRoute,
   PostsPostIdRoute: PostsPostIdRoute,
   PostsIndexRoute: PostsIndexRoute,
 }

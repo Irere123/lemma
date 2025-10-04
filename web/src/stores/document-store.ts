@@ -74,6 +74,7 @@ export type Document = {
   markdown?: string | null;
   bannerImage?: string | null;
   publishedDate?: Date | null;
+  scheduledDate?: Date | null;
   sendAsNewsletter?: boolean | null;
 };
 
@@ -95,6 +96,9 @@ export type DocumentUpdate = PickPartial<
   | "subtitle"
   | "status"
   | "type"
+  | "scheduledDate"
+  | "publishedDate"
+  | "bannerImage"
 >;
 
 export type Store = {
