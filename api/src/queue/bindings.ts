@@ -1,21 +1,16 @@
 import type { QueueClientBindings, QueueClientOptions } from "./types.ts";
 import { createQueueClient } from "./client.ts";
 
-export type WorkerEnv = {
-  QUEUE_SHARDS_KV: KVNamespace;
-  EMAIL_QUEUE_SHARD: DurableObjectNamespace;
-};
-
-export const createQueueBindings = (env: WorkerEnv): QueueClientBindings => {
+export const createQueueBindings = (env: Env): QueueClientBindings => {
   return {
-    kvNamespace: env.QUEUE_SHARDS_KV as any,
+    kvNamespace: env.QUEUE_SHARDS_KV,
     durableObjects: {
-      EMAIL_QUEUE_SHARD: env.EMAIL_QUEUE_SHARD as any,
+      EMAIL_QUEUE_SHARD: env.EMAIL_QUEUE_SHARD,
     },
   };
 };
 
-export const createEmailQueueClient = (env: WorkerEnv) => {
+export const createEmailQueueClient = (env: Env) => {
   const bindings = createQueueBindings(env);
 
   const options: QueueClientOptions = {

@@ -33,12 +33,12 @@ import type {
   QueueStats,
 } from "./types.ts";
 
-type DurableObjectStorage = DurableObjectState["storage"];
-type DurableObjectTransaction = Parameters<
-  DurableObjectStorage["transaction"]
->[0] extends (txn: infer T) => unknown
-  ? T
-  : never;
+// type DurableObjectStorage = DurableObjectState["storage"];
+// type DurableObjectTransaction = Parameters<
+//   DurableObjectStorage["transaction"]
+// >[0] extends (txn: infer T) => unknown
+//   ? T
+//   : never;
 
 const parseRequest = async (request: Request) => {
   const json = await request.json();

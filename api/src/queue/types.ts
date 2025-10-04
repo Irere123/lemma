@@ -1,9 +1,3 @@
-import type {
-  DurableObjectNamespace,
-  DurableObjectStub,
-  DurableObjectState,
-} from "@cloudflare/workers-types";
-
 export type JobStatus = "waiting" | "delayed" | "active" | "dead";
 
 export type BackoffStrategy = "none" | "fixed" | "linear" | "exponential";
@@ -81,7 +75,7 @@ export type QueueShardMap = {
 
 export type QueueClientBindings = {
   kvNamespace: KVNamespace;
-  durableObjects: Record<string, DurableObjectNamespace>;
+  durableObjects: Record<string, DurableObjectNamespace<any>>;
 };
 
 export type QueueClientOptions = {
@@ -95,7 +89,7 @@ export type QueueDurableObjectEnv = {
 };
 
 export type QueueDurableObjectContext = {
-  state: DurableObjectState;
+  state: DurableObjectState<any>;
   env: QueueDurableObjectEnv;
 };
 
@@ -119,5 +113,3 @@ export type QueueDefinition = {
   durableObjectNamespace: string;
   shardCount?: number;
 };
-
-export type KVNamespace = import("@cloudflare/workers-types").KVNamespace;

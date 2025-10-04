@@ -1,5 +1,3 @@
-import type { DurableObjectStub } from "@cloudflare/workers-types";
-
 import { DEFAULT_SHARD_COUNT } from "./constants.ts";
 import { ensureShardMap, listShards, selectShard } from "./shards.ts";
 import type {

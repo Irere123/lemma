@@ -127,7 +127,9 @@ export const selectShard = async (
     throw new Error(`Durable object namespace ${namespaceName} not found`);
   }
 
-  const stub = namespace.get(namespace.idFromString(shardId));
+  const stub = namespace.get(
+    namespace.idFromString(shardId)
+  ) as DurableObjectStub<any>;
 
   const shardSelection: QueueShardSelection = {
     shardId,
@@ -169,7 +171,9 @@ export const listShards = async (
     }
     return {
       shardId,
-      stub: namespace.get(namespace.idFromString(shardId)),
+      stub: namespace.get(
+        namespace.idFromString(shardId)
+      ) as DurableObjectStub<any>,
     } satisfies QueueShardSelection;
   });
 };
