@@ -5,6 +5,15 @@
   "compatibility_date": "2025-07-12",
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "EMAIL_QUEUE_SHARD",
+        "class_name": "QueueDurableObject",
+        "script_name": "brainos-api",
+      },
+    ],
+  },
   "dev": {
     "port": 4000,
   },
@@ -29,6 +38,10 @@
           "binding": "CACHE_KV",
           "id": "e679d852f8094948baf97528648abc31",
         },
+        {
+          "binding": "QUEUE_SHARDS_KV",
+          "id": "preview_id",
+        },
       ],
     },
     "production": {
@@ -50,6 +63,10 @@
         {
           "binding": "CACHE_KV",
           "id": "e679d852f8094948baf97528648abc31",
+        },
+        {
+          "binding": "QUEUE_SHARDS_KV",
+          "id": "production_id",
         },
       ],
     },

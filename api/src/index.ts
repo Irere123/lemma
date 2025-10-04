@@ -10,6 +10,7 @@ import { createTRPCContext } from "./trpc/init";
 import { createRouter } from "./lib/utils";
 import { createAuth } from "./lib/auth";
 import { BASE_URL } from "./lib/constants";
+import { QueueDurableObject } from "./queue";
 
 const app = createRouter();
 
@@ -92,3 +93,5 @@ export default {
   port: env.PORT || 4000,
   fetch: app.fetch,
 };
+
+export { QueueDurableObject };
