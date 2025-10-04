@@ -11,7 +11,11 @@ import { LogoFooter } from "./logo-footer";
 import { getEmailInlineStyles, getEmailThemeClasses } from "./theme";
 import { baseUrl } from "../lib/constants";
 
-export function Footer() {
+interface FooterProps {
+  unsubscribeUrl?: string;
+}
+
+export function Footer({ unsubscribeUrl }: FooterProps = {}) {
   const themeClasses = getEmailThemeClasses();
   const lightStyles = getEmailInlineStyles("light");
 
@@ -66,7 +70,7 @@ export function Footer() {
       </Text>
       <Link
         className={`text-[14px] block ${themeClasses.mutedLink}`}
-        href="https://irere.dev/unsubcribe"
+        href={unsubscribeUrl || "https://irere.dev/unsubscribe"}
         title="Unsubscribe"
         style={{ color: lightStyles.mutedText.color }}
       >
