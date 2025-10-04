@@ -1,4 +1,3 @@
-import type { WorkerEnv } from "../queue/bindings.ts";
 import { createEmailQueueClient } from "../queue/bindings.ts";
 import type { EnqueueOptions } from "../queue/types.ts";
 import { resend } from "./resend.ts";
@@ -62,7 +61,7 @@ const renderEmailTemplate = async (
 };
 
 export const enqueueEmailJob = async <T extends EmailTemplate>(
-  env: WorkerEnv,
+  env: Env,
   payload: EmailJobPayload<T>,
   options?: EnqueueOptions
 ) => {
@@ -83,7 +82,7 @@ export const enqueueEmailJob = async <T extends EmailTemplate>(
   return result;
 };
 
-export const processEmailJobs = async (env: WorkerEnv, batchSize = 10) => {
+export const processEmailJobs = async (env: Env, batchSize = 10) => {
   const client = createEmailQueueClient(env);
 
   const jobs = await client.claim<EmailJobPayload>(QUEUE_NAME, batchSize);
@@ -134,14 +133,14 @@ export const processEmailJobs = async (env: WorkerEnv, batchSize = 10) => {
   return results;
 };
 
-export const processDelayedEmailJobs = async (env: WorkerEnv) => {
+export const processDelayedEmailJobs = async (env: Env) => {
   const client = createEmailQueueClient(env);
   const moved = await client.processDelayedJobs(QUEUE_NAME);
 
   return { moved };
 };
 
-export const getEmailQueueStats = async (env: WorkerEnv) => {
+export const getEmailQueueStats = async (env: Env) => {
   const client = createEmailQueueClient(env);
   const stats = await client.getStats(QUEUE_NAME);
 
@@ -150,7 +149,7 @@ export const getEmailQueueStats = async (env: WorkerEnv) => {
 
 // Helper function to enqueue document newsletter
 export const enqueueDocumentNewsletter = async (
-  env: WorkerEnv,
+  env: Env,
   document: DocumentData,
   recipients: Array<{ email: string; unsubscribeToken?: string }>,
   options?: EnqueueOptions
@@ -186,7 +185,7 @@ export const enqueueDocumentNewsletter = async (
 
 // Helper function to enqueue welcome newsletter
 export const enqueueWelcomeNewsletter = async (
-  env: WorkerEnv,
+  env: Env,
   email: string,
   token?: string,
   options?: EnqueueOptions
