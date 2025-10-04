@@ -13,6 +13,7 @@ export const documentSchema = z.object({
   content: z.any(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
+  scheduledDate: z.date().nullable().optional(),
   publishedDate: z.date().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -27,6 +28,7 @@ export const upsertDocumentSchema = z.object({
   content: z.any(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
+  scheduledDate: z.date().nullable().optional(),
   publishedDate: z.date().nullable().optional(),
 });
 
@@ -62,4 +64,10 @@ export const documentResponseSchema = z.object({
   data: z.any(),
 });
 
+export const sendNewsletterSchema = z.object({
+  documentId: z.string(),
+  sendImmediately: z.boolean().optional().default(false),
+});
+
 export type UpsertDocumentData = z.infer<typeof upsertDocumentSchema>;
+export type SendNewsletterData = z.infer<typeof sendNewsletterSchema>;

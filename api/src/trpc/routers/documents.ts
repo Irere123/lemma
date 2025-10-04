@@ -1,7 +1,9 @@
+import { TRPCError } from "@trpc/server";
 import {
   documentByIdSchema,
   documentsFilters,
   upsertDocumentSchema,
+  sendNewsletterSchema,
 } from "@api/schemas/documents";
 import {
   getAdminPublishedArticles,
@@ -9,6 +11,8 @@ import {
   getUserDocuments,
   upsertDocument,
 } from "@api/db/queries";
+import { getConfirmedSubscribers } from "@api/db/queries/subscribers";
+import { enqueueDocumentNewsletter } from "@api/services/email-queue";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 export const documentRouter = createTRPCRouter({
@@ -48,6 +52,85 @@ export const documentRouter = createTRPCRouter({
       return {
         documents: results,
         nextCursor,
+      };
+    }),
+
+  sendNewsletter: protectedProcedure
+    .input(sendNewsletterSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { documentId, sendImmediately } = input;
+
+      // Get the document
+      const document = await getDocumentById(ctx.db, documentId);
+
+      if (!document) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Document not found",
+        });
+      }
+
+      // Check if user owns the document
+      if (document.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to send this document",
+        });
+      }
+
+      // Get confirmed subscribers
+      const subscribers = await getConfirmedSubscribers(ctx.db);
+
+      if (subscribers.length === 0) {
+        return {
+          success: true,
+          message: "No confirmed subscribers found",
+          count: 0,
+        };
+      }
+
+      // Prepare recipients
+      const recipients = subscribers.map((sub) => ({
+        email: sub.email,
+        unsubscribeToken: sub.token,
+      }));
+
+      // Calculate delay based on scheduled date
+      let delayMs = 0;
+      if (!sendImmediately && document.scheduledDate) {
+        const now = new Date();
+        const scheduledTime = new Date(document.scheduledDate);
+        delayMs = Math.max(0, scheduledTime.getTime() - now.getTime());
+      }
+
+      // Enqueue emails with optional delay
+      const emailResults = await enqueueDocumentNewsletter(
+        ctx.env,
+        {
+          id: document.id,
+          title: document.title,
+          subtitle: document.subtitle,
+          type: document.type,
+          markdown: document.markdown,
+          bannerImage: document.bannerImage,
+          publishedDate: document.publishedDate,
+        },
+        recipients,
+        {
+          delayMs,
+          priority: sendImmediately ? 9 : 5,
+        }
+      );
+
+      return {
+        success: true,
+        message:
+          delayMs > 0
+            ? `Scheduled ${emailResults.length} emails for ${document.scheduledDate}`
+            : `Enqueued ${emailResults.length} emails for immediate delivery`,
+        count: emailResults.length,
+        scheduledFor: document.scheduledDate,
+        jobIds: emailResults.map((r) => r.jobId),
       };
     }),
 });

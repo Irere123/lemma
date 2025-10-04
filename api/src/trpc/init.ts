@@ -10,6 +10,7 @@ import { createAuth } from "@api/lib/auth";
 type TRPCContext = {
   user: User | undefined;
   db: DB;
+  env: Env;
 };
 
 export const createTRPCContext = async (
@@ -26,6 +27,7 @@ export const createTRPCContext = async (
   return {
     user: session?.user,
     db,
+    env,
   };
 };
 

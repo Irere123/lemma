@@ -7,6 +7,7 @@ import {
   Preview,
   Text,
   Hr,
+  Markdown,
 } from "@react-email/components";
 import { Footer } from "../components/footer";
 import { Logo } from "../components/logo";
@@ -99,14 +100,63 @@ export const DocumentNewsletter = ({
             }}
           />
 
-          <Text
-            className={`text-base leading-relaxed ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            {document.markdown
-              ? document.markdown.slice(0, 500) + "..."
-              : "Read the full article on our website."}
-          </Text>
+          {document.markdown ? (
+            <div
+              className={`text-base leading-relaxed ${themeClasses.text}`}
+              style={{ color: lightStyles.text.color }}
+            >
+              <Markdown
+                markdownCustomStyles={{
+                  h1: {
+                    fontSize: "24px",
+                    fontWeight: "bold",
+                    marginTop: "20px",
+                    marginBottom: "10px",
+                  },
+                  h2: {
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    marginTop: "18px",
+                    marginBottom: "8px",
+                  },
+                  h3: {
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    marginTop: "16px",
+                    marginBottom: "6px",
+                  },
+                  p: {
+                    marginTop: "0",
+                    marginBottom: "16px",
+                    lineHeight: "1.6",
+                  },
+                  blockQuote: {
+                    borderLeft: "4px solid #ddd",
+                    paddingLeft: "16px",
+                    marginLeft: "0",
+                    marginBottom: "16px",
+                    color: "#666",
+                  },
+                }}
+                markdownContainerStyles={{
+                  fontFamily: "inherit",
+                  fontSize: "16px",
+                  lineHeight: "1.6",
+                }}
+              >
+                {document.markdown.length > 1500
+                  ? document.markdown.slice(0, 1500) + "\n\n..."
+                  : document.markdown}
+              </Markdown>
+            </div>
+          ) : (
+            <Text
+              className={`text-base leading-relaxed ${themeClasses.text}`}
+              style={{ color: lightStyles.text.color }}
+            >
+              Read the full article on our website.
+            </Text>
+          )}
 
           <Link
             href={documentUrl}

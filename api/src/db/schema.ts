@@ -204,6 +204,7 @@ export const documents = createTable(
     content: jsonb("content").$type<any>(),
     markdown: text("markdown"),
     bannerImage: text("banner_image"),
+    scheduledDate: timestamp("scheduled_date"),
     publishedDate: timestamp("published_date"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -214,6 +215,7 @@ export const documents = createTable(
     index("documents_status_idx").on(table.status),
     index("documents_type_idx").on(table.type),
     index("documents_created_at_idx").on(table.createdAt),
+    index("documents_scheduled_date_idx").on(table.scheduledDate),
     index("documents_user_status_type_idx").on(
       table.userId,
       table.status,
