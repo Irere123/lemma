@@ -66,8 +66,6 @@ export const DocumentNewsletter = ({
             borderColor: lightStyles.container.borderColor,
           }}
         >
-          <Logo />
-
           {document.bannerImage && (
             <Img
               src={document.bannerImage}
@@ -163,7 +161,7 @@ export const DocumentNewsletter = ({
             className={`block text-center my-[32px] p-[12px_24px] bg-black text-white rounded-md text-sm font-medium no-underline ${themeClasses.button}`}
             style={{ backgroundColor: "#000", color: "#fff" }}
           >
-            read full article
+            Read full article
           </Link>
 
           <Hr
@@ -173,13 +171,6 @@ export const DocumentNewsletter = ({
               borderWidth: 1,
             }}
           />
-
-          <Text
-            className={themeClasses.mutedText}
-            style={{ color: lightStyles.mutedText.color }}
-          >
-            — irere
-          </Text>
 
           <style>{`
             .signature-blend {
@@ -199,15 +190,6 @@ export const DocumentNewsletter = ({
               filter: invert(1) brightness(1);
             }
           `}</style>
-
-          <Img
-            src={`${baseUrl}/email/signature.png`}
-            alt="Signature"
-            className="block w-[143px] h-[20px] signature-blend"
-          />
-
-          <br />
-          <br />
 
           <Footer unsubscribeUrl={unsubscribeUrl} />
 
