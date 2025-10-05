@@ -11,7 +11,6 @@ import { createRouter } from "./lib/utils";
 import { createAuth } from "./lib/auth";
 import { BASE_URL } from "./lib/constants";
 import { QueueDurableObject } from "./queue";
-// import { processEmailJobs } from "./services/email-queue";
 
 const app = createRouter();
 
@@ -98,10 +97,9 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ) {
-    console.log("Processing email jobs...");
-    // await processEmailJobs(env);
-    // ctx.waitUntil(processEmailJobs(env)); //   Ensure background tasks complete
-    console.log("Email jobs processed");
+    const { processEmailJobs } = await import("./services/email-queue");
+    await processEmailJobs(env);
+    ctx.waitUntil(processEmailJobs(env)); //   Ensure background tasks complete
   },
 };
 
