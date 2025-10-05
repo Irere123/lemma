@@ -137,30 +137,6 @@ function RouteComponent() {
         <div className="flex items-center justify-between px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Type:</label>
-              <select
-                value={document.type || "ARTICLE"}
-                onChange={(e) => {
-                  updateDbDocument({
-                    ...(document as any),
-                    id: documentId,
-                    type: e.target.value as any,
-                  });
-                  updateDocument({
-                    ...document,
-                    id: documentId,
-                    type: e.target.value as any,
-                  });
-                }}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="ARTICLE">Article</option>
-                <option value="NEWSLETTER">Newsletter</option>
-                <option value="NOTE">Note</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">
                 Status:
               </label>
@@ -218,7 +194,7 @@ function RouteComponent() {
               </button>
             )}
 
-            {document.status === "PUBLISHED" && document.type === "ARTICLE" && (
+            {document.status === "PUBLISHED" && (
               <a
                 href={`/posts/${documentId}`}
                 target="_blank"

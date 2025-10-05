@@ -1,6 +1,6 @@
 import { z } from "@hono/zod-openapi";
 
-import { documentStatusEnum, documentTypeEnum } from "@api/db/schema";
+import { documentStatusEnum } from "@api/db/schema";
 
 // Request
 
@@ -9,7 +9,6 @@ export const documentSchema = z.object({
   title: z.string().optional(),
   subtitle: z.string().optional(),
   status: z.enum(documentStatusEnum.enumValues).default("DRAFT"),
-  type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
   content: z.any(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
@@ -24,7 +23,6 @@ export const upsertDocumentSchema = z.object({
   title: z.string().optional(),
   subtitle: z.string().optional(),
   status: z.enum(documentStatusEnum.enumValues).default("DRAFT"),
-  type: z.enum(documentTypeEnum.enumValues).default("ARTICLE"),
   content: z.any(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
@@ -33,7 +31,6 @@ export const upsertDocumentSchema = z.object({
 });
 
 export const documentsFilters = z.object({
-  type: z.enum(documentTypeEnum.enumValues).optional(),
   status: z.enum(documentStatusEnum.enumValues).optional(),
   limit: z.number().min(1).max(100).optional().default(20),
   cursor: z.string().optional(),

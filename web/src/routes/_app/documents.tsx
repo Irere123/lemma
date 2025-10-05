@@ -78,17 +78,7 @@ function RouteComponent() {
                 <span className="text-sm text-gray-500">
                   {format(document.createdAt!, "yyyy-MM-dd")}
                 </span>
-                <span
-                  className={`text-xs py-1 px-2 rounded-full ${
-                    document.type === "ARTICLE"
-                      ? "bg-blue-100 text-blue-800"
-                      : document.type === "NEWSLETTER"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {document.type}
-                </span>
+
                 <span
                   className={`text-xs py-1 px-2 rounded-full ${
                     document.status === "PUBLISHED"
@@ -98,17 +88,16 @@ function RouteComponent() {
                 >
                   {document.status}
                 </span>
-                {document.status === "PUBLISHED" &&
-                  document.type === "ARTICLE" && (
-                    <a
-                      href={`/posts/${document.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      View Live
-                    </a>
-                  )}
+                {document.status === "PUBLISHED" && (
+                  <a
+                    href={`/posts/${document.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    View Live
+                  </a>
+                )}
               </div>
             </div>
           );

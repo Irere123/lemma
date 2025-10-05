@@ -186,11 +186,6 @@ export const documentStatusEnum = pgEnum("document_staus", [
   "DRAFT",
   "PUBLISHED",
 ]);
-export const documentTypeEnum = pgEnum("document_type", [
-  "ARTICLE",
-  "NEWSLETTER",
-  "NOTE",
-]);
 
 export const documents = createTable(
   "documents",
@@ -198,7 +193,6 @@ export const documents = createTable(
     id: text("id").primaryKey(),
     title: text("title"),
     subtitle: text("subtitle"),
-    type: documentTypeEnum(),
     status: documentStatusEnum(),
     userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
     content: jsonb("content").$type<any>(),
@@ -213,21 +207,15 @@ export const documents = createTable(
     // Add indexes for scalability
     index("documents_user_id_idx").on(table.userId),
     index("documents_status_idx").on(table.status),
-    index("documents_type_idx").on(table.type),
     index("documents_created_at_idx").on(table.createdAt),
     index("documents_scheduled_date_idx").on(table.scheduledDate),
-    index("documents_user_status_type_idx").on(
-      table.userId,
-      table.status,
-      table.type
-    ),
+    index("documents_user_status_idx").on(table.userId, table.status),
   ]
 );
 
 // Types
 export type Document = typeof documents.$inferSelect;
 export type DocumentInsert = typeof documents.$inferInsert;
-export type DocumentType = (typeof documentTypeEnum.enumValues)[number];
 export type DocumentStatus = (typeof documentStatusEnum.enumValues)[number];
 
 // API Keys

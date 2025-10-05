@@ -1,12 +1,7 @@
 import { and, desc, eq, lt } from "drizzle-orm";
 
 import type { DB } from "@api/db";
-import {
-  documents,
-  type Document,
-  type DocumentStatus,
-  type DocumentType,
-} from "@api/db/schema";
+import { documents, type Document, type DocumentStatus } from "@api/db/schema";
 import { generateId } from "@api/lib/utils";
 import type { UpsertDocumentData } from "@api/schemas";
 import { env } from "cloudflare:workers";
@@ -54,7 +49,6 @@ export const deleteDocument = async (
 type UserDocumentsData = {
   userId: string;
   status?: DocumentStatus;
-  type?: DocumentType;
   limit?: number;
   cursor?: string;
 };
@@ -72,10 +66,6 @@ export const getUserDocuments = async (
     filters.push(eq(documents.status, data.status));
   }
 
-  if (data.type) {
-    filters.push(eq(documents.type, data.type));
-  }
-
   // Add cursor-based pagination
   if (data.cursor) {
     filters.push(lt(documents.createdAt, new Date(data.cursor)));
@@ -88,7 +78,6 @@ export const getUserDocuments = async (
       id: documents.id,
       title: documents.title,
       subtitle: documents.subtitle,
-      type: documents.type,
       status: documents.status,
       userId: documents.userId,
       bannerImage: documents.bannerImage,
@@ -116,7 +105,6 @@ export const getAdminPublishedArticles = async (
       id: documents.id,
       title: documents.title,
       subtitle: documents.subtitle,
-      type: documents.type,
       status: documents.status,
       userId: documents.userId,
       bannerImage: documents.bannerImage,
@@ -155,7 +143,6 @@ export const getPublishedArticles = async (
       id: documents.id,
       title: documents.title,
       subtitle: documents.subtitle,
-      type: documents.type,
       status: documents.status,
       userId: documents.userId,
       bannerImage: documents.bannerImage,
@@ -165,9 +152,7 @@ export const getPublishedArticles = async (
       updatedAt: documents.updatedAt,
     })
     .from(documents)
-    .where(
-      and(eq(documents.status, "PUBLISHED"), eq(documents.type, "ARTICLE"))
-    )
+    .where(and(eq(documents.status, "PUBLISHED")))
     .orderBy(desc(documents.publishedDate), desc(documents.createdAt))
     .limit(safeLimit);
 
@@ -181,11 +166,7 @@ export const getPublishedArticleBySlug = async (
   // For now, we'll use the document ID as slug. might have a separate slug field
   const article = await db.query.documents.findFirst({
     where: (table, { and, eq }) =>
-      and(
-        eq(table.id, slug),
-        eq(table.status, "PUBLISHED"),
-        eq(table.type, "ARTICLE")
-      ),
+      and(eq(table.id, slug), eq(table.status, "PUBLISHED")),
   });
   return article;
 };
@@ -193,7 +174,6 @@ export const getPublishedArticleBySlug = async (
 // Filter by type and status
 
 type GetDocumentsByTypeAndStatusData = {
-  type: DocumentType;
   status: DocumentStatus;
 };
 
@@ -209,7 +189,6 @@ export const getDocumentsByTypeAndStatus = async (
       id: documents.id,
       title: documents.title,
       subtitle: documents.subtitle,
-      type: documents.type,
       status: documents.status,
       userId: documents.userId,
       bannerImage: documents.bannerImage,
@@ -219,9 +198,7 @@ export const getDocumentsByTypeAndStatus = async (
       updatedAt: documents.updatedAt,
     })
     .from(documents)
-    .where(
-      and(eq(documents.type, data.type), eq(documents.status, data.status))
-    )
+    .where(and(eq(documents.status, data.status)))
     .orderBy(desc(documents.createdAt))
     .limit(safeLimit);
 

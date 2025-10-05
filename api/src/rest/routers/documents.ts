@@ -200,7 +200,6 @@ documentsRouter.openapi(
         id: document.id,
         title: document.title,
         subtitle: document.subtitle,
-        type: document.type,
         markdown: document.markdown,
         bannerImage: document.bannerImage,
         publishedDate: document.publishedDate,

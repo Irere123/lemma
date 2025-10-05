@@ -8,7 +8,6 @@ export type DocumentData = {
   id: string;
   title: string | null;
   subtitle: string | null;
-  type: "ARTICLE" | "NEWSLETTER" | "NOTE" | null;
   markdown: string | null;
   bannerImage: string | null;
   publishedDate: Date | null;

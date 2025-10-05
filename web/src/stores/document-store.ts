@@ -62,7 +62,6 @@ export const createSetter: CreateSetter = (set, key) => (value) => {
 };
 
 export type Document = {
-  type: "ARTICLE" | "NEWSLETTER" | "NOTE" | null;
   status: "DRAFT" | "PUBLISHED" | null;
   id: string;
   createdAt: Date | null;
@@ -95,7 +94,6 @@ export type DocumentUpdate = PickPartial<
   | "updatedAt"
   | "subtitle"
   | "status"
-  | "type"
   | "scheduledDate"
   | "publishedDate"
   | "bannerImage"
