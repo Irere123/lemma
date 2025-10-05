@@ -26,7 +26,7 @@ jobs:
           environment: production
           packageManager: bun
           workingDirectory: "api"
-          wranglerVersion: "4.32.0"
+          wranglerVersion: "4.42.0"
 
       - name: Print deployment URL
         env:
