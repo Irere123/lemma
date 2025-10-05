@@ -9,7 +9,7 @@
     "port": 4000,
   },
   "triggers": {
-    "crons": ["*/30 * * * *"],
+    "crons": ["* * * * *"],
   },
   "env": {
     "local": {
