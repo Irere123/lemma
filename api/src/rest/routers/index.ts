@@ -3,6 +3,7 @@ import { createRouter } from "@api/lib/utils";
 import { protectedMiddleware, publicMiddleware } from "../middleware";
 import { documentsRouter } from "./documents";
 import { postsRouter } from "./posts";
+import { newsletterRouter } from "./newsletter";
 
 const routers = createRouter();
 
@@ -11,6 +12,7 @@ const routers = createRouter();
 routers.use(...publicMiddleware);
 
 routers.route("/posts", postsRouter);
+routers.route("/newsletter", newsletterRouter);
 
 // Authenticated routes
 

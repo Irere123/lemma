@@ -38,7 +38,7 @@ export const newsletterRouter = createTRPCRouter({
           })
           .returning();
 
-        await resend.emails.send({
+        resend.emails.send({
           from: `Irere Emmanuel <welcome@${process.env.RESEND_DOMAIN}>`,
           subject: "Welcome Abroad!",
           to: subCreated?.email as string,
