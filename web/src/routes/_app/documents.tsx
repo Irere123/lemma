@@ -5,19 +5,38 @@ import { format, isFuture } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/trpc/client";
-import { prefetch, trpc } from "@/trpc/server";
 
 export const Route = createFileRoute("/_app/documents")({
   component: RouteComponent,
-  loader: () => {
-    prefetch(trpc.documents.getUserDocuments.queryOptions({}));
+  loader: async ({ context }) => {
+    if (typeof window === "undefined") {
+      const { serverPrefetch } = await import("@/trpc/server");
+
+      // Get the request from context for cookie forwarding
+      const request = (context as any)?.request as Request | undefined;
+
+      await serverPrefetch({
+        request,
+        queryKey: [
+          ["documents", "getUserDocuments"],
+          { input: {}, type: "query" },
+        ],
+        fetchFn: (client) => client.documents.getUserDocuments.query({}),
+      });
+    }
   },
 });
 
 function RouteComponent() {
   const trpc = useTRPC();
 
-  const { data } = useQuery(trpc.documents.getUserDocuments.queryOptions({}));
+  const { data, isLoading } = useQuery(
+    trpc.documents.getUserDocuments.queryOptions({})
+  );
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   const documents = data?.documents || [];
 

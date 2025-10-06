@@ -3,14 +3,27 @@ import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 
 import { DateText, ListItem, ProfileHeader } from "@/components/landing";
-import { NewsletterSubscribeForm } from "@/components/newsletter-subscribe-form";
 import { useTRPC } from "@/trpc/client";
-import { prefetch, trpc } from "@/trpc/server";
 
 export const Route = createFileRoute("/posts/")({
   component: RouteComponent,
-  loader: () => {
-    prefetch(trpc.documents.getAdminPublishedArticles.queryOptions());
+  loader: async ({ context }) => {
+    // This is a public route, no authentication needed
+    if (typeof window === "undefined") {
+      const { serverPrefetch } = await import("@/trpc/server");
+
+      // Get the request from context for cookie forwarding
+      const request = (context as any)?.request as Request | undefined;
+
+      await serverPrefetch({
+        request,
+        queryKey: [
+          ["documents", "getAdminPublishedArticles"],
+          { input: undefined, type: "query" },
+        ],
+        fetchFn: (client) => client.documents.getAdminPublishedArticles.query(),
+      });
+    }
   },
 });
 

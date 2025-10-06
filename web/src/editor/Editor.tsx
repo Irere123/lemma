@@ -52,19 +52,22 @@ export default function Editor(props: Props) {
     (value: Descendant[]) =>
       documentStore
         .getState()
-        .updateDocument({ id: documentId, content: value, subtitle: "" }),
+        .updateDocument({ id: documentId, content: value }),
     [documentId]
   );
 
   // Use the document store hook to get reactive updates
   const document = useDocumentStore((state) => state.documents[documentId]);
 
-  const initialValueRef = useRef<Descendant[]>(undefined);
-  if (!initialValueRef.current) {
+  const initialValueRef = useRef<Descendant[] | undefined>(undefined);
+
+  // Initialize or update the initial value when document content becomes available
+  if (!initialValueRef.current && document?.content) {
     activeEditorsStore.addActiveEditor(documentId);
     initialValueRef.current = document?.content ?? getDefaultEditorValue();
   }
-  const initialValue = initialValueRef.current;
+
+  const initialValue = initialValueRef.current ?? getDefaultEditorValue();
 
   const editor = useSyncExternalStore(
     activeEditorsStore.subscribe,

@@ -5,6 +5,7 @@ declare module "@tanstack/react-start" {
     server: {
       requestContext: {
         fromFetch: boolean;
+        request?: Request;
       };
     };
   }
@@ -16,10 +17,11 @@ export const startInstance = createStart(() => {
   };
 });
 
-startInstance.createMiddleware().server(({ next }) => {
+startInstance.createMiddleware().server(({ next, request }) => {
   return next({
     context: {
       fromStartInstanceMw: true,
+      request, // Pass the request to context for cookie forwarding
     },
   });
 });

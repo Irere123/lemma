@@ -14,6 +14,34 @@ import {
 import { useTRPC } from "@/trpc/client";
 
 export const Route = createFileRoute("/_app")({
+  // Add beforeLoad for authentication check
+  beforeLoad: async ({ context }) => {
+    // This runs on both server and client
+    // You can add auth checks here
+    return {
+      // Pass any data you want to the loader
+    };
+  },
+  // Add loader for server-side data prefetching
+  loader: async ({ context }) => {
+    // Import server-side tRPC only in the loader
+    if (typeof window === "undefined") {
+      const { serverPrefetch } = await import("@/trpc/server");
+
+      // Get the request from context for cookie forwarding
+      const request = (context as any)?.request as Request | undefined;
+
+      // Prefetch user documents on the server with authentication
+      await serverPrefetch({
+        request,
+        queryKey: [
+          ["documents", "getUserDocuments"],
+          { input: {}, type: "query" },
+        ],
+        fetchFn: (client) => client.documents.getUserDocuments.query({}),
+      });
+    }
+  },
   component: RouteComponent,
 });
 
