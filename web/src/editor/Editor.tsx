@@ -1,12 +1,18 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type KeyboardEvent,
 } from "react";
-import { Transforms, type Descendant, type Path } from "slate";
+import {
+  Editor as SlateEditor,
+  Transforms,
+  type Descendant,
+  type Path,
+} from "slate";
 import { Editable, Slate } from "slate-react";
 import isHotkey from "is-hotkey";
 
@@ -74,6 +80,13 @@ export default function Editor(props: Props) {
     () => activeEditorsStore.getActiveEditor(documentId),
     () => activeEditorsStore.getActiveEditor(documentId)
   );
+
+  // Ensure an editor instance exists for this document
+  useEffect(() => {
+    if (!activeEditorsStore.getActiveEditor(documentId)) {
+      activeEditorsStore.addActiveEditor(documentId);
+    }
+  }, [documentId]);
 
   const renderElement = useMemo(() => {
     const ElementWithSideMenu = withBlockSideMenu(
@@ -207,18 +220,31 @@ export default function Editor(props: Props) {
 
   const onSlateChange = useCallback(
     (newValue: Descendant[]) => {
-      const isAstChange = editor.operations.some(
-        (op) => "set_selection" !== op.type
+      // Guard against invalid selections that reference non-existent paths
+      const selection = editor?.selection;
+      if (selection) {
+        const { anchor, focus } = selection;
+        const anchorValid = SlateEditor.hasPath(editor as any, anchor.path);
+        const focusValid = SlateEditor.hasPath(editor as any, focus.path);
+        if (!anchorValid || !focusValid) {
+          Transforms.deselect(editor as any);
+        }
+      }
+
+      const isAstChange = editor?.operations?.some(
+        (op) => op.type !== "set_selection"
       );
       if (isAstChange) {
         updateStoreDocument(newValue);
         onChange(newValue);
       }
     },
-    [editor.operations, updateStoreDocument, onChange]
+    [editor, updateStoreDocument, onChange]
   );
 
   useHighlightedPath(editor, highlightedPath, false);
+
+  if (!editor) return null;
 
   return (
     <Slate editor={editor} initialValue={initialValue} onChange={onSlateChange}>
