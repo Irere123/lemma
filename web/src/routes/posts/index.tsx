@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 
@@ -7,29 +7,12 @@ import { useTRPC } from "@/trpc/client";
 
 export const Route = createFileRoute("/posts/")({
   component: RouteComponent,
-  loader: async ({ context }) => {
-    // This is a public route, no authentication needed
-    if (typeof window === "undefined") {
-      const { serverPrefetch } = await import("@/trpc/server");
-
-      // Get the request from context for cookie forwarding
-      const request = (context as any)?.request as Request | undefined;
-
-      await serverPrefetch({
-        request,
-        queryKey: [
-          ["documents", "getAdminPublishedArticles"],
-          { input: undefined, type: "query" },
-        ],
-        fetchFn: (client) => client.documents.getAdminPublishedArticles.query(),
-      });
-    }
-  },
+  loader: async () => {},
 });
 
 function RouteComponent() {
   const trpc = useTRPC();
-  const { data: posts } = useSuspenseQuery(
+  const { data: posts, isLoading } = useQuery(
     trpc.documents.getAdminPublishedArticles.queryOptions()
   );
 
@@ -47,13 +30,15 @@ function RouteComponent() {
       />
 
       <div className="space-y-8">
-        {!posts || posts.length === 0 ? (
+        {isLoading ? (
+          <div className="py-8 text-center text-gray-500">Loading...</div>
+        ) : !posts || posts.length === 0 ? (
           <div className="py-8 text-center text-gray-500">
             No published articles yet.
           </div>
         ) : (
           <ul className="divide-y divide-neutral-200">
-            {posts.map((post) => (
+            {posts?.map((post) => (
               <li key={post.id} className="py-4">
                 <ListItem
                   to={`/posts/${post.id}`}
