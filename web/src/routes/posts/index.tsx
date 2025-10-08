@@ -45,8 +45,8 @@ function RouteComponent() {
                   left={
                     <DateText
                       date={
-                        post.createdAt
-                          ? format(new Date(post.createdAt), "yyyy-MM-dd")
+                        post.publishedDate
+                          ? format(new Date(post.publishedDate), "yyyy-MM-dd")
                           : undefined
                       }
                     />
