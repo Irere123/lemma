@@ -1,4 +1,4 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lt, asc } from "drizzle-orm";
 
 import type { DB } from "@api/db";
 import { documents, type Document, type DocumentStatus } from "@api/db/schema";
@@ -120,7 +120,7 @@ export const getAdminPublishedArticles = async (
         eq(documents.userId, env.ADMIN_USER_ID)
       )
     )
-    .orderBy(desc(documents.publishedDate), desc(documents.createdAt))
+    .orderBy(asc(documents.publishedDate), asc(documents.createdAt))
     .limit(safeLimit);
 
   return results;
