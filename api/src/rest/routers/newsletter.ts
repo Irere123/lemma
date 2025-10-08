@@ -1,7 +1,6 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
-import { WelcomeNewsletter } from "@brain/email/emails/welcome-newsletter";
 
 import { createRouter, generateId } from "@api/lib/utils";
 import { subscribers } from "@api/db/schema";
@@ -58,6 +57,10 @@ newsletterRouter.openapi(
       await db
         .insert(subscribers)
         .values({ id: generateId(), email: input.email, token });
+
+      const { WelcomeNewsletter } = await import(
+        "@brain/email/emails/welcome-newsletter"
+      );
 
       resend.emails.send({
         from: `Irere Emmanuel <welcome@${env.RESEND_DOMAIN}>`,

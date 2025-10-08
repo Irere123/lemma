@@ -10,7 +10,6 @@ import { createTRPCContext } from "./trpc/init";
 import { createRouter } from "./lib/utils";
 import { createAuth } from "./lib/auth";
 import { BASE_URL } from "./lib/constants";
-import { QueueDurableObject } from "./queue";
 
 const app = createRouter();
 
@@ -103,4 +102,4 @@ export default {
   },
 };
 
-export { QueueDurableObject };
+export { QueueDurableObject } from "./queue";
