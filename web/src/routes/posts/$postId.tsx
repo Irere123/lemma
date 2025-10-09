@@ -39,6 +39,28 @@ export const Route = createFileRoute("/posts/$postId")({
 
     return { post };
   },
+  head: async ({ loaderData }) => {
+    return {
+      meta: [
+        {
+          name: "title",
+          content: loaderData?.post?.title,
+        },
+        {
+          name: "description",
+          content: loaderData?.post?.subtitle,
+        },
+        {
+          name: "og:title",
+          content: loaderData?.post?.title,
+        },
+        {
+          name: "og:description",
+          content: loaderData?.post?.subtitle,
+        },
+      ],
+    };
+  },
 });
 
 function RouteComponent() {
