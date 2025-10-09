@@ -30,6 +30,10 @@ export const upsertDocumentSchema = z.object({
   publishedDate: z.date().nullable().optional(),
 });
 
+export const deleteDocumentSchema = z.object({
+  id: z.string(),
+});
+
 export const documentsFilters = z.object({
   status: z.enum(documentStatusEnum.enumValues).optional(),
   limit: z.number().min(1).max(100).optional().default(20),

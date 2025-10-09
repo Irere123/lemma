@@ -122,7 +122,7 @@ export const getAdminPublishedArticles = async (
         eq(documents.userId, env.ADMIN_USER_ID)
       )
     )
-    .orderBy(asc(documents.publishedDate))
+    .orderBy(desc(documents.publishedDate))
     .limit(safeLimit);
 
   return results;
@@ -155,7 +155,7 @@ export const getPublishedArticles = async (
     })
     .from(documents)
     .where(and(eq(documents.status, "PUBLISHED")))
-    .orderBy(asc(documents.publishedDate))
+    .orderBy(desc(documents.publishedDate))
     .limit(safeLimit);
 
   return publishedArticles;

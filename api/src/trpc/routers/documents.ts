@@ -4,12 +4,14 @@ import {
   documentsFilters,
   upsertDocumentSchema,
   sendNewsletterSchema,
+  deleteDocumentSchema,
 } from "@api/schemas/documents";
 import {
   getAdminPublishedArticles,
   getDocumentById,
   getUserDocuments,
   upsertDocument,
+  deleteDocument,
 } from "@api/db/queries";
 import { getConfirmedSubscribers } from "@api/db/queries/subscribers";
 import { enqueueDocumentNewsletter } from "@api/services/email-queue";
@@ -31,6 +33,12 @@ export const documentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const document = await upsertDocument(ctx.db, input, ctx.user.id);
       return document;
+    }),
+
+  deleteDocument: protectedProcedure
+    .input(deleteDocumentSchema)
+    .mutation(async ({ ctx, input }) => {
+      return deleteDocument(ctx.db, input.id);
     }),
 
   getUserDocuments: protectedProcedure
