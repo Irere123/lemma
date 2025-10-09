@@ -18,7 +18,7 @@ export const upsertDocument = async (
   if (data.id) {
     const [document] = await db
       .update(documents)
-      .set({ ...data })
+      .set({ ...data, updatedAt: new Date() })
       .where(eq(documents.id, data.id))
       .returning();
     return document;
@@ -31,6 +31,8 @@ export const upsertDocument = async (
         ...data,
         id: generateId(),
         userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
       .returning();
     return document;
