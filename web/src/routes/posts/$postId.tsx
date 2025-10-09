@@ -10,6 +10,7 @@ interface IPost {
   subtitle: string;
   content: any;
   createdAt: string;
+  publishedDate: string;
   updatedAt: string;
 }
 
@@ -105,12 +106,12 @@ function RouteComponent() {
           {post.subtitle && (
             <p className="text-lg text-neutral-600 mt-2">{post.subtitle}</p>
           )}
-          {post.createdAt ? (
+          {post.publishedDate ? (
             <time
-              dateTime={post.createdAt.toString()}
+              dateTime={post.publishedDate.toString()}
               className="text-xs text-neutral-500 mt-2 block"
             >
-              {format(new Date(post.createdAt), "MMMM d, yyyy")}
+              {format(new Date(post.publishedDate), "MMMM d, yyyy")}
             </time>
           ) : null}
         </header>
