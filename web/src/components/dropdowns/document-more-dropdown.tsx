@@ -1,5 +1,10 @@
 import * as React from "react";
-import { IconDots, IconTrash } from "@tabler/icons-react";
+import {
+  IconArrowUp,
+  IconArrowUpRight,
+  IconDots,
+  IconTrash,
+} from "@tabler/icons-react";
 
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
@@ -36,6 +41,14 @@ export function DocumentMoreDropdown({ documentId }: Props) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent sideOffset={10} align="end">
+        <DropdownMenuItem
+          onSelect={() => {
+            window.open(`/posts/${document.id}`, "_blank");
+          }}
+        >
+          <IconArrowUpRight />
+          View Live
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={handleOpenConfirm}>
           <IconTrash />
           Delete
