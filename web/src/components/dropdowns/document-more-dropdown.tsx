@@ -1,5 +1,7 @@
 import * as React from "react";
 import { IconArrowUpRight, IconDots, IconTrash } from "@tabler/icons-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
@@ -12,7 +14,6 @@ import {
 } from "../ui/dropdown-menu";
 import { format } from "date-fns";
 import { useDocumentStore } from "@/stores/document-store";
-import { useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 
 interface Props {
@@ -24,8 +25,18 @@ export function DocumentMoreDropdown({ documentId }: Props) {
   const deleteDocument = useDocumentStore((state) => state.deleteDocument);
   const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const deleteDocumentMutation = useMutation(
-    trpc.documents.deleteDocument.mutationOptions()
+    trpc.documents.deleteDocument.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          trpc.documents.getUserDocuments.queryOptions({
+            limit: 100,
+          })
+        );
+      },
+    })
   );
 
   const handleOpenConfirm = () => {
@@ -36,6 +47,7 @@ export function DocumentMoreDropdown({ documentId }: Props) {
     deleteDocument(documentId);
     deleteDocumentMutation.mutate({ id: documentId });
     setIsConfirmOpen(false);
+    navigate({ to: "/documents" });
   };
   return (
     <DropdownMenu>
