@@ -138,6 +138,7 @@ export const documentStore = createStore<Store>()(
             state.documents[document.id] = {
               ...state.documents[document.id],
               ...document,
+              updatedAt: new Date(),
             };
           }
         });

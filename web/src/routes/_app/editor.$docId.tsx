@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Descendant } from "slate";
 import { SendNewsletterDialog } from "@/components/send-newsletter-dialog";
 import { IconMail } from "@tabler/icons-react";
+import { EditorHeader } from "@/components/editor-header";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
@@ -45,15 +46,13 @@ function RouteComponent() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { docId: documentId } = Route.useParams();
-  const { mutateAsync: updateDbDocument } = useMutation(
-    trpc.documents.upsertDocument.mutationOptions()
-  );
+  const { mutateAsync: updateDbDocument, isPending: isUpsertLoading } =
+    useMutation(trpc.documents.upsertDocument.mutationOptions());
 
   // Fetch the full document from the database
   const {
     data: dbDocument,
     isLoading: isDocumentLoading,
-    isFetching: isDocumentFetching,
     error: documentError,
   } = useQuery(trpc.documents.getDocumentById.queryOptions({ id: documentId }));
 
@@ -272,109 +271,55 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+    <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden relative">
+      <EditorHeader
+        document={document}
+        isSynced={isSynced}
+        isUpsertLoading={isUpsertLoading}
+        onPublish={async () => {
+          const updatePayload = {
+            ...(document as any),
+            id: documentId,
+            status: "PUBLISHED" as const,
+            publishedDate: document.publishedDate || new Date(),
+          };
+          await updateDbDocument(updatePayload);
+          updateDocument({
+            ...document,
+            id: documentId,
+            status: "PUBLISHED",
+            publishedDate: document.publishedDate || new Date(),
+          });
+          // Invalidate queries to ensure UI is in sync
+          await queryClient.invalidateQueries({
+            queryKey: [
+              ["documents", "getDocumentById"],
+              { input: { id: documentId } },
+            ],
+          });
+        }}
+        onUnpublish={async () => {
+          const updatePayload = {
+            ...(document as any),
+            id: documentId,
+            status: "DRAFT" as const,
+          };
+          await updateDbDocument(updatePayload);
+          updateDocument({
+            ...document,
+            id: documentId,
+            status: "DRAFT",
+          });
+          // Invalidate queries to ensure UI is in sync
+          await queryClient.invalidateQueries({
+            queryKey: [
+              ["documents", "getDocumentById"],
+              { input: { id: documentId } },
+            ],
+          });
+        }}
+      />
       <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
-        {/* Top toolbar */}
-        <div className="flex items-center justify-between px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
-                Status:
-              </label>
-              <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  document.status === "PUBLISHED"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-yellow-100 text-yellow-800"
-                }`}
-              >
-                {document.status || "DRAFT"}
-              </span>
-            </div>
-
-            {/* Sync Status Indicator */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-2 w-2 rounded-full ${
-                  isSynced ? "bg-green-500" : "bg-yellow-500 animate-pulse"
-                }`}
-              />
-              <span className="text-xs text-gray-500">
-                {isSynced ? "All changes saved" : "Saving..."}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {document.status === "DRAFT" ? (
-              <button
-                onClick={async () => {
-                  const updatePayload = {
-                    ...(document as any),
-                    id: documentId,
-                    status: "PUBLISHED" as const,
-                    publishedDate: document.publishedDate || new Date(),
-                  };
-                  await updateDbDocument(updatePayload);
-                  updateDocument({
-                    ...document,
-                    id: documentId,
-                    status: "PUBLISHED",
-                    publishedDate: document.publishedDate || new Date(),
-                  });
-                  // Invalidate queries to ensure UI is in sync
-                  await queryClient.invalidateQueries({
-                    queryKey: [
-                      ["documents", "getDocumentById"],
-                      { input: { id: documentId } },
-                    ],
-                  });
-                }}
-                className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                Publish
-              </button>
-            ) : (
-              <button
-                onClick={async () => {
-                  const updatePayload = {
-                    ...(document as any),
-                    id: documentId,
-                    status: "DRAFT" as const,
-                  };
-                  await updateDbDocument(updatePayload);
-                  updateDocument({
-                    ...document,
-                    id: documentId,
-                    status: "DRAFT",
-                  });
-                  // Invalidate queries to ensure UI is in sync
-                  await queryClient.invalidateQueries({
-                    queryKey: [
-                      ["documents", "getDocumentById"],
-                      { input: { id: documentId } },
-                    ],
-                  });
-                }}
-                className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-              >
-                Unpublish
-              </button>
-            )}
-
-            {document.status === "PUBLISHED" && (
-              <a
-                href={`/posts/${documentId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                View Live
-              </a>
-            )}
-          </div>
-        </div>
-
         <div className="px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-700">
