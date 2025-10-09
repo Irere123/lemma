@@ -9,6 +9,7 @@ type Props = {
   isUpsertLoading: boolean;
   onPublish: () => void;
   onUnpublish: () => void;
+  onOpenSettings: () => void;
 };
 
 export function EditorHeader({
@@ -17,6 +18,7 @@ export function EditorHeader({
   onPublish,
   onUnpublish,
   isUpsertLoading,
+  onOpenSettings,
 }: Props) {
   return (
     <div className="w-full flex justify-between px-8 pt-4 pb-2 md:px-12">
@@ -68,7 +70,12 @@ export function EditorHeader({
             Unpublish
           </Button>
         )}
-        <Button variant="ghost" size="icon">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onOpenSettings}
+          aria-label="Open settings"
+        >
           <IconSettings />
         </Button>
         <DocumentMoreDropdown documentId={document.id} />

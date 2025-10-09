@@ -12,6 +12,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Descendant } from "slate";
 import { SendNewsletterDialog } from "@/components/send-newsletter-dialog";
+import { DocumentSettingsModal } from "@/components/modals/document-settings-modal";
 import { IconMail } from "@tabler/icons-react";
 import { EditorHeader } from "@/components/editor-header";
 
@@ -67,6 +68,7 @@ function RouteComponent() {
   });
 
   const [isNewsletterDialogOpen, setIsNewsletterDialogOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Load document from database into store when fetched
   // This runs synchronously with the render cycle
@@ -318,154 +320,9 @@ function RouteComponent() {
             ],
           });
         }}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
       <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
-        <div className="px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              Banner Image
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={document.bannerImage || ""}
-                onChange={(e) => {
-                  updateDocument({
-                    ...document,
-                    id: documentId,
-                    bannerImage: e.target.value,
-                  });
-                }}
-                onBlur={async (e) => {
-                  if (e.target.value !== document.bannerImage) {
-                    await updateDbDocument({
-                      ...(document as any),
-                      id: documentId,
-                      bannerImage: e.target.value,
-                    });
-                    // Invalidate queries after update
-                    await queryClient.invalidateQueries({
-                      queryKey: [
-                        ["documents", "getDocumentById"],
-                        { input: { id: documentId } },
-                      ],
-                    });
-                  }
-                }}
-                placeholder="Enter banner image URL"
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            {document.bannerImage && (
-              <div className="mt-2">
-                <img
-                  src={document.bannerImage}
-                  alt="Banner preview"
-                  className="w-full h-48 object-cover rounded-md"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="px-8 pt-4 pb-2 md:px-12 border-b border-gray-200">
-          <div className="flex items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
-              {/* Published Date Picker */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Published:
-                </label>
-                <input
-                  type="datetime-local"
-                  value={
-                    document.publishedDate
-                      ? new Date(document.publishedDate)
-                          .toISOString()
-                          .slice(0, 16)
-                      : ""
-                  }
-                  onChange={async (e) => {
-                    const newDate = e.target.value
-                      ? new Date(e.target.value)
-                      : null;
-                    updateDocument({
-                      ...document,
-                      id: documentId,
-                      publishedDate: newDate,
-                    });
-                    await updateDbDocument({
-                      ...(document as any),
-                      id: documentId,
-                      publishedDate: newDate,
-                    });
-                    // Invalidate queries after update
-                    await queryClient.invalidateQueries({
-                      queryKey: [
-                        ["documents", "getDocumentById"],
-                        { input: { id: documentId } },
-                      ],
-                    });
-                  }}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Scheduled Date Picker */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Schedule Email:
-                </label>
-                <input
-                  type="datetime-local"
-                  value={
-                    document.scheduledDate
-                      ? new Date(document.scheduledDate)
-                          .toISOString()
-                          .slice(0, 16)
-                      : ""
-                  }
-                  onChange={async (e) => {
-                    const newDate = e.target.value
-                      ? new Date(e.target.value)
-                      : null;
-                    updateDocument({
-                      ...document,
-                      id: documentId,
-                      scheduledDate: newDate,
-                    });
-                    await updateDbDocument({
-                      ...(document as any),
-                      id: documentId,
-                      scheduledDate: newDate,
-                    });
-                    // Invalidate queries after update
-                    await queryClient.invalidateQueries({
-                      queryKey: [
-                        ["documents", "getDocumentById"],
-                        { input: { id: documentId } },
-                      ],
-                    });
-                  }}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Send Newsletter Button */}
-            <button
-              onClick={() => setIsNewsletterDialogOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <IconMail className="w-4 h-4" />
-              Send Newsletter
-            </button>
-          </div>
-        </div>
-
         <Title
           documentId={documentId}
           className="px-8 pt-4 pb-1 md:px-12 md:pt-8"
@@ -479,6 +336,27 @@ function RouteComponent() {
           highlightedPath={undefined}
         />
       </div>
+
+      <DocumentSettingsModal
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        document={document}
+        isSaving={isUpsertLoading}
+        onSave={async (update) => {
+          updateDocument(update as any);
+          await updateDbDocument({
+            ...(document as any),
+            ...update,
+            id: documentId,
+          });
+          await queryClient.invalidateQueries({
+            queryKey: [
+              ["documents", "getDocumentById"],
+              { input: { id: documentId } },
+            ],
+          });
+        }}
+      />
 
       <SendNewsletterDialog
         documentId={documentId}
