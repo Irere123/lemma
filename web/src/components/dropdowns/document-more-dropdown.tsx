@@ -31,9 +31,7 @@ export function DocumentMoreDropdown({ documentId }: Props) {
     trpc.documents.deleteDocument.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries(
-          trpc.documents.getUserDocuments.queryOptions({
-            limit: 100,
-          })
+          trpc.documents.getUserDocuments.queryOptions({})
         );
       },
     })
