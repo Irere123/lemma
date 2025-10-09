@@ -1,10 +1,5 @@
 import * as React from "react";
-import {
-  IconArrowUp,
-  IconArrowUpRight,
-  IconDots,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconArrowUpRight, IconDots, IconTrash } from "@tabler/icons-react";
 
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
@@ -17,6 +12,8 @@ import {
 } from "../ui/dropdown-menu";
 import { format } from "date-fns";
 import { useDocumentStore } from "@/stores/document-store";
+import { useMutation } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
 
 interface Props {
   documentId: string;
@@ -26,11 +23,18 @@ export function DocumentMoreDropdown({ documentId }: Props) {
   const document = useDocumentStore((state) => state.documents[documentId]);
   const deleteDocument = useDocumentStore((state) => state.deleteDocument);
   const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
+  const trpc = useTRPC();
+  const deleteDocumentMutation = useMutation(
+    trpc.documents.deleteDocument.mutationOptions()
+  );
+
   const handleOpenConfirm = () => {
     setIsConfirmOpen(true);
   };
+
   const handleConfirmDelete = () => {
     deleteDocument(documentId);
+    deleteDocumentMutation.mutate({ id: documentId });
     setIsConfirmOpen(false);
   };
   return (
@@ -49,7 +53,10 @@ export function DocumentMoreDropdown({ documentId }: Props) {
           <IconArrowUpRight />
           View Live
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={handleOpenConfirm}>
+        <DropdownMenuItem
+          onSelect={handleOpenConfirm}
+          disabled={deleteDocumentMutation.isPending}
+        >
           <IconTrash />
           Delete
         </DropdownMenuItem>
