@@ -43,11 +43,10 @@ export const Route = createFileRoute("/posts/$postId")({
     return {
       meta: [
         {
-          name: "title",
-          content: loaderData?.post?.title,
+          title: loaderData?.post?.title,
         },
         {
-          name: "description",
+          description: loaderData?.post?.subtitle,
           content: loaderData?.post?.subtitle,
         },
         {
