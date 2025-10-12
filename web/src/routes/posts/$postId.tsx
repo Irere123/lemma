@@ -3,6 +3,8 @@ import { format } from "date-fns";
 
 import { ReadOnlyEditor } from "@/editor";
 import { useTRPC } from "@/trpc/client";
+import { useCopyToClipboard } from "@/hooks/use-copy-clipboard";
+import { toast } from "sonner";
 
 interface IPost {
   id: string;
@@ -72,6 +74,18 @@ function RouteComponent() {
     return null;
   }
 
+  const [copiedText, copy] = useCopyToClipboard();
+
+  const handleCopy = (text: string) => () => {
+    copy(text)
+      .then(() => {
+        toast.success("Copied to clipboard");
+      })
+      .catch((error) => {
+        toast.error("Failed to copy!");
+      });
+  };
+
   return (
     <main className="container mx-auto max-w-3xl px-6 py-10">
       <nav className="flex items-center justify-between mb-6">
@@ -97,6 +111,7 @@ function RouteComponent() {
         </Link>
         <button
           aria-label="Copy URL"
+          onClick={handleCopy(window.location.href)}
           className="group flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gray-100 transition-colors"
         >
           <div aria-hidden="true" style={{ opacity: 1, transform: "none" }}>
