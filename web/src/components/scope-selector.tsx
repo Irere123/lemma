@@ -1,10 +1,8 @@
-"use client";
-
 import { RESOURCES } from "@/utils/scopes";
-import type { Scope } from "@api/lib/scopes";
-import { FormDescription } from "./ui/form";
-import { ScrollArea } from "./ui/scroll-area";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import type { Scope } from "@brain/common/scopes";
+import { FormDescription } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Props = {
   selectedScopes: Scope[];

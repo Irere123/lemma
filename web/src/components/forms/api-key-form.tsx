@@ -3,15 +3,12 @@ import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import { useTRPC } from "@/trpc/client";
 import { RESOURCES } from "@/utils/scopes";
 import {
-  scopePresets,
   SCOPES,
-  scopesToName,
   type Scope,
   type ScopePreset,
-} from "@api/lib/scopes";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import z from "zod";
+  scopePresets,
+  scopesToName,
+} from "@brain/common/scopes";
 import {
   Form,
   FormControl,
@@ -19,18 +16,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Input } from "../ui/input";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { Button } from "../ui/button";
-import { IconLoader2 } from "@tabler/icons-react";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { ScopeSelector } from "../scope-selector";
+import { AnimatedSizeContainer } from "../ui/animated-size-container";
+import { Button } from "../ui/button";
+import { IconLoader } from "@tabler/icons-react";
 
 const formSchema = z.object({
   id: z.string().optional(),
-  name: z
-    .string()
-    .min(2, { message: "Key name must be at least 2 characters." }),
+  name: z.string().min(2, {
+    message: "Team name must be at least 2 characters.",
+  }),
   scopes: z.array(z.enum(SCOPES)).default(["apis.all"]),
 });
 
@@ -43,7 +44,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
   const [preset, setPreset] = useState<ScopePreset>(() =>
     data?.scopes
       ? (scopesToName(data.scopes).preset as ScopePreset)
-      : "all_access",
+      : "all_access"
   );
 
   const trpc = useTRPC();
@@ -58,7 +59,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
 
         onSuccess(data.key);
       },
-    }),
+    })
   );
 
   const form = useZodForm(formSchema, {
@@ -75,7 +76,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
       const detectedPreset = scopesToName(data.scopes).preset as ScopePreset;
       setPreset(detectedPreset);
 
-      // If it's restricted, make sure the formhas the correct scopes
+      // If it's restricted, make sure the form has the correct scopes
       if (detectedPreset === "restricted") {
         form.setValue("scopes", data.scopes as Scope[], { shouldDirty: true });
       }
@@ -94,15 +95,15 @@ export function ApiKeyForm({ onSuccess }: Props) {
         newScopes = ["apis.read"];
         break;
       case "restricted": {
-        // Kep existing scopes when switching to restricted mode
+        // Keep existing scopes when switching to restricted mode
         const currentScopes = form.getValues("scopes");
         // Get all valid scopes from RESOURCES
         const validScopes = RESOURCES.flatMap((resource) =>
-          resource.scopes.map((scope) => scope.scope),
+          resource.scopes.map((scope) => scope.scope)
         );
         // Only keep scopes that are defined in RESOURCES
         newScopes = currentScopes.filter((scope): scope is Scope =>
-          validScopes.some((validScope) => validScope === scope),
+          validScopes.some((validScope) => validScope === scope)
         );
         break;
       }
@@ -126,7 +127,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
 
     // Remove any existing scopes for this resource
     const filteredScopes = currentScopes.filter(
-      (currentScope) => !resource.scopes.some((s) => s.scope === currentScope),
+      (currentScope) => !resource.scopes.some((s) => s.scope === currentScope)
     );
 
     // Add the new scope if it's not empty
@@ -170,6 +171,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
             </FormItem>
           )}
         />
+
         <Tabs
           value={preset}
           className="mt-4 w-full"
@@ -187,6 +189,7 @@ export function ApiKeyForm({ onSuccess }: Props) {
             ))}
           </TabsList>
         </Tabs>
+
         <p className="text-sm text-[#878787] mt-4">
           This API key will have{" "}
           <span className="font-semibold">
@@ -194,17 +197,30 @@ export function ApiKeyForm({ onSuccess }: Props) {
           </span>
           .
         </p>
-        <ScopeSelector
-          selectedScopes={form.watch("scopes")}
-          onResourceScopeChange={handleResourceScopeChange}
-          description="Select which scopes this API key can access."
-          height="max-h-[300px]"
-        />
-        <Button type="submit" disabled={!form.formState.isDirty}>
+
+        <AnimatedSizeContainer height className="mt-4">
+          {preset === "restricted" && (
+            <ScopeSelector
+              selectedScopes={form.watch("scopes")}
+              onResourceScopeChange={handleResourceScopeChange}
+              description="Select which scopes this API key can access."
+              height="max-h-[300px]"
+            />
+          )}
+        </AnimatedSizeContainer>
+
+        <Button
+          className="mt-6 w-full"
+          type="submit"
+          disabled={!form.formState.isDirty || upsertApiKeyMutation.isPending}
+        >
           {upsertApiKeyMutation.isPending ? (
-            <IconLoader2 className="animate-spin" />
-          ) : null}
-          {data?.id ? "Update" : "Create"}
+            <IconLoader className="animate-spin" />
+          ) : data?.id ? (
+            "Update"
+          ) : (
+            "Create"
+          )}
         </Button>
       </form>
     </Form>
