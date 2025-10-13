@@ -1,0 +1,17 @@
+{
+  "name": "@brain/common",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./scopes": "./src/scopes.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ksuid": "^3.0.0"
+  }
+}

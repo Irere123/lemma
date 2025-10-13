@@ -33,6 +33,18 @@
         "drizzle-kit": "^0.31.4",
       },
     },
+    "packages/common": {
+      "name": "@brain/common",
+      "dependencies": {
+        "ksuid": "^3.0.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5.0.0",
+      },
+    },
     "packages/email": {
       "name": "@brain/email",
       "version": "1.0.0",
@@ -53,6 +65,7 @@
       "name": "web",
       "dependencies": {
         "@brain/api": "workspace:*",
+        "@brain/common": "workspace:*",
         "@hookform/resolvers": "^5.2.1",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -187,6 +200,8 @@
     "@better-fetch/fetch": ["@better-fetch/fetch@1.1.18", "", {}, "sha512-rEFOE1MYIsBmoMJtQbl32PGHHXuG2hDxvEd7rUHE0vCBoFQVSDqaVs9hkZEtHCxRoY+CljXKFCOuJ8uxqw1LcA=="],
 
     "@brain/api": ["@brain/api@workspace:api"],
+
+    "@brain/common": ["@brain/common@workspace:packages/common"],
 
     "@brain/email": ["@brain/email@workspace:packages/email"],
 
