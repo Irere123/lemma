@@ -4,10 +4,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, isFuture } from "date-fns";
 
 import { Button } from "@/components/ui/button";
+import { DocumentsSkeleton } from "@/components/skeletons";
 import { useTRPC } from "@/trpc/client";
 
 export const Route = createFileRoute("/_app/documents")({
   component: RouteComponent,
+  head: async () => {
+    return {
+      meta: [
+        {
+          title: "Documents",
+        },
+      ],
+    };
+  },
   loader: async ({ context }) => {
     if (typeof window === "undefined") {
       const { serverPrefetch } = await import("@/trpc/server");
@@ -35,7 +45,7 @@ function RouteComponent() {
   );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <DocumentsSkeleton />;
   }
 
   const documents = data?.documents || [];

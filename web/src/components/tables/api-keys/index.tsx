@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { ApiKeysSkeleton } from "@/components/skeletons";
 import { columns } from "./columns";
 import { EmptyState } from "./empty-state";
 
@@ -33,7 +34,11 @@ export function DataTable() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (!data || isLoading) {
+  if (isLoading) {
+    return <ApiKeysSkeleton />;
+  }
+
+  if (!data) {
     return null;
   }
 
