@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Descendant } from "slate";
 import { SendNewsletterDialog } from "@/components/send-newsletter-dialog";
 import { DocumentSettingsModal } from "@/components/modals/document-settings-modal";
+import { DocumentEditorSkeleton } from "@/components/skeletons";
 import { IconMail } from "@tabler/icons-react";
 import { EditorHeader } from "@/components/editor-header";
 
@@ -248,24 +249,7 @@ function RouteComponent() {
   }
 
   if (!isReady) {
-    return (
-      <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
-        <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
-          <div className="px-8 pt-8 pb-1 md:px-12 md:pt-12">
-            <div className="text-3xl font-semibold leading-tight text-gray-400 md:text-4xl">
-              Loading document...
-            </div>
-            <div className="mt-2 text-sm text-gray-500">
-              {isDocumentLoading
-                ? "Fetching document from database..."
-                : dbDocument && !document
-                  ? "Syncing document to editor..."
-                  : "Preparing editor..."}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <DocumentEditorSkeleton />;
   }
 
   if (!document) {
