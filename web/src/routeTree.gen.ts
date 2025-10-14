@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsIndexRouteImport } from './routes/posts/index'
 import { Route as PostsPostIdRouteImport } from './routes/posts/$postId'
 import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/developers'
+import { Route as AppNewsletterSettingsRouteImport } from './routes/_app/newsletter-settings'
 import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
 import { Route as AppEditorDocIdRouteImport } from './routes/_app/editor.$docId'
 
@@ -70,6 +71,11 @@ const DevelopersDevelopersRoute = DevelopersDevelopersRouteImport.update({
   path: '/developers',
   getParentRoute: () => DevelopersRouteRoute,
 } as any)
+const AppNewsletterSettingsRoute = AppNewsletterSettingsRouteImport.update({
+  id: '/newsletter-settings',
+  path: '/newsletter-settings',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppDocumentsRoute = AppDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/verify': typeof VerifyRoute
   '/documents': typeof AppDocumentsRoute
+  '/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/developers': typeof DevelopersDevelopersRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/posts': typeof PostsIndexRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/verify': typeof VerifyRoute
   '/documents': typeof AppDocumentsRoute
+  '/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/developers': typeof DevelopersDevelopersRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/posts': typeof PostsIndexRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/verify': typeof VerifyRoute
   '/_app/documents': typeof AppDocumentsRoute
+  '/_app/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/_developers/developers': typeof DevelopersDevelopersRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/posts/': typeof PostsIndexRoute
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/verify'
     | '/documents'
+    | '/newsletter-settings'
     | '/developers'
     | '/posts/$postId'
     | '/posts'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/verify'
     | '/documents'
+    | '/newsletter-settings'
     | '/developers'
     | '/posts/$postId'
     | '/posts'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/verify'
     | '/_app/documents'
+    | '/_app/newsletter-settings'
     | '/_developers/developers'
     | '/posts/$postId'
     | '/posts/'
@@ -245,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevelopersDevelopersRouteImport
       parentRoute: typeof DevelopersRouteRoute
     }
+    '/_app/newsletter-settings': {
+      id: '/_app/newsletter-settings'
+      path: '/newsletter-settings'
+      fullPath: '/newsletter-settings'
+      preLoaderRoute: typeof AppNewsletterSettingsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/documents': {
       id: '/_app/documents'
       path: '/documents'
@@ -264,11 +283,13 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteRouteChildren {
   AppDocumentsRoute: typeof AppDocumentsRoute
+  AppNewsletterSettingsRoute: typeof AppNewsletterSettingsRoute
   AppEditorDocIdRoute: typeof AppEditorDocIdRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDocumentsRoute: AppDocumentsRoute,
+  AppNewsletterSettingsRoute: AppNewsletterSettingsRoute,
   AppEditorDocIdRoute: AppEditorDocIdRoute,
 }
 

@@ -80,8 +80,11 @@ export const subscribers = createTable(
   "subscribers",
   {
     id: text().primaryKey(),
-    email: varchar().notNull(),
-    token: text().notNull(),
+    email: varchar().notNull().unique(),
+    token: text().notNull().unique(),
+    writerId: text("writer_id").references(() => user.id, {
+      onDelete: "cascade",
+    }),
     subscribedAt: timestamp("subscribed_at", {
       withTimezone: true,
     }).defaultNow(),
@@ -94,12 +97,39 @@ export const subscribers = createTable(
     index("email_idx").on(table.email),
     index("token_idx").on(table.token),
     index("confirmed_idx").on(table.isConfirmed),
+    index("writer_id_idx").on(table.writerId),
     unique("sub_constraint").on(table.email, table.token),
   ]
 );
 
 export type Subscriber = typeof subscribers.$inferSelect;
 export type SubscriberInsert = typeof subscribers.$inferInsert;
+
+//   Newsletter Settings
+export const newsletterSettings = createTable(
+  "newsletter_settings",
+  {
+    id: text("id").primaryKey(),
+    writerId: text("writer_id")
+      .references(() => user.id, { onDelete: "cascade" })
+      .notNull()
+      .unique(),
+    newsletterName: text("newsletter_name").notNull(),
+    fromName: text("from_name").notNull(),
+    logoUrl: text("logo_url"),
+    brandColor: text("brand_color").default("#000000"),
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("writer_newsletter_writer_id_idx").on(table.writerId),
+    index("writer_newsletter_active_idx").on(table.isActive),
+  ]
+);
+
+export type NewsletterSettings = typeof newsletterSettings.$inferSelect;
+export type NewsletterSettingsInsert = typeof newsletterSettings.$inferInsert;
 
 export const campaigns = createTable("campaigns", {
   id: text("id").primaryKey(),

@@ -1,18 +1,58 @@
 import { and, eq } from "drizzle-orm";
 import type { DB } from "@api/db";
 import { subscribers, type Subscriber } from "@api/db/schema";
+import { generateId } from "@api/lib/utils";
+
+// Types
+export type UpsertSubscriber = {
+  id?: string;
+  email: string;
+  token: string;
+  writerId: string | null;
+  subscribedAt?: Date;
+  unsubscribedAt?: Date;
+  confirmedAt?: Date;
+  isConfirmed?: boolean;
+  isUnsubscribed?: boolean;
+};
+
+export const upsertSubscriber = async (
+  db: DB,
+  subscriber: UpsertSubscriber
+) => {
+  if (subscriber.id) {
+    const [result] = await db
+      .update(subscribers)
+      .set(subscriber)
+      .where(eq(subscribers.id, subscriber.id))
+      .returning();
+
+    return result;
+  }
+
+  const [result] = await db
+    .insert(subscribers)
+    .values({
+      ...subscriber,
+      id: generateId(),
+    })
+    .returning();
+  return result;
+};
 
 /**
- * Get all confirmed and active subscribers
+ * Get confirmed and active subscribers for a specific writer
  */
 export const getConfirmedSubscribers = async (
-  db: DB
+  db: DB,
+  writerId: string
 ): Promise<Subscriber[]> => {
   const confirmedSubscribers = await db
     .select()
     .from(subscribers)
     .where(
       and(
+        eq(subscribers.writerId, writerId),
         eq(subscribers.isConfirmed, true),
         eq(subscribers.isUnsubscribed, false)
       )

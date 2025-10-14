@@ -1,24 +1,55 @@
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { subscribers } from "@api/db/schema";
-import { createTRPCRouter, publicProcedure } from "@api/trpc/init";
+
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "@api/trpc/init";
 import { generateId } from "@api/lib/utils";
-import { resend } from "@api/services/resend";
+import {
+  getWriterNewsletterSettings,
+  upsertWriterNewsletterSettings,
+} from "@api/db/queries/newsletter-settings";
+import { enqueueWelcomeNewsletter } from "@api/services/email-queue";
+import { newsletterSettingsSchema } from "@api/schemas/newsletter";
+import {
+  getSubscriberByEmail,
+  getSubscriberByToken,
+  upsertSubscriber,
+} from "@api/db/queries/subscribers";
 
 export const newsletterRouter = createTRPCRouter({
-  subscribe: publicProcedure
+  getWriterNewsletterSettings: protectedProcedure.query(async ({ ctx }) => {
+    const settings = await getWriterNewsletterSettings(ctx.db, ctx.user.id);
+    return settings;
+  }),
+  upsertNewsletterSettings: protectedProcedure
+    .input(newsletterSettingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const settings = await upsertWriterNewsletterSettings(ctx.db, {
+        writerId: ctx.user.id,
+        id: input.id,
+        logoUrl: input.logoUrl || null,
+        ...input,
+      });
+
+      return settings;
+    }),
+
+  /**
+   * Subscribe to the newsletter
+   * protected because we need to know the writerId
+   * send the api key or auth cookie when calling this endpoint
+   */
+  subscribe: protectedProcedure
     .input(
       z.object({
-        email: z.string().email(),
+        email: z.email(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const [sub] = await ctx.db
-        .select()
-        .from(subscribers)
-        .where(eq(subscribers.email, input.email))
-        .limit(1);
+      const sub = await getSubscriberByEmail(ctx.db, input.email);
 
       if (sub) {
         throw new TRPCError({
@@ -27,26 +58,42 @@ export const newsletterRouter = createTRPCRouter({
         });
       }
 
-      const { WelcomeNewsletter } = await import(
-        "@brain/email/emails/welcome-newsletter"
-      );
-
       try {
-        const [subCreated] = await ctx.db
-          .insert(subscribers)
-          .values({
-            id: generateId(),
-            email: input.email,
-            token: generateId("st"),
-          })
-          .returning();
-
-        resend.emails.send({
-          from: `Irere Emmanuel <welcome@${process.env.RESEND_DOMAIN}>`,
-          subject: "Welcome Abroad!",
-          to: subCreated?.email as string,
-          react: WelcomeNewsletter({ token: subCreated?.token as string }),
+        const subCreated = await upsertSubscriber(ctx.db, {
+          email: input.email,
+          token: generateId("st"),
+          writerId: ctx.user.id,
         });
+
+        const writerSettings = await getWriterNewsletterSettings(
+          ctx.db,
+          ctx.user.id
+        );
+
+        if (!writerSettings) {
+          throw new TRPCError({
+            message: "Writer newsletter not found.",
+            code: "NOT_FOUND",
+          });
+        }
+
+        // resend.emails.send({
+        //   from: `${writerSettings.fromName} <welcome@${process.env.RESEND_DOMAIN}>`,
+        //   subject: "Welcome Abroad!",
+        //   to: subCreated?.email as string,
+        //   react: DynamicWelcomeNewsletter({
+        //     token: subCreated?.token as string,
+        //     writerSettings,
+        //   }),
+        // });
+
+        await enqueueWelcomeNewsletter(
+          ctx.env,
+          subCreated?.email as string,
+          ctx.user.name,
+          writerSettings,
+          subCreated?.token as string
+        );
       } catch (error) {
         console.log(error);
         throw new TRPCError({
@@ -66,10 +113,7 @@ export const newsletterRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const sub = await ctx.db
-        .select()
-        .from(subscribers)
-        .where(eq(subscribers.token, input.token));
+      const sub = await getSubscriberByToken(ctx.db, input.token);
 
       if (!sub) {
         throw new TRPCError({
@@ -79,9 +123,14 @@ export const newsletterRouter = createTRPCRouter({
       }
 
       try {
-        await ctx.db
-          .update(subscribers)
-          .set({ isUnsubscribed: true, unsubscribedAt: new Date() });
+        await upsertSubscriber(ctx.db, {
+          id: sub.id,
+          isUnsubscribed: true,
+          email: sub.email,
+          token: sub.token,
+          unsubscribedAt: new Date(),
+          writerId: sub.writerId as string,
+        });
       } catch (error) {
         console.log(error);
         throw new TRPCError({
@@ -97,10 +146,7 @@ export const newsletterRouter = createTRPCRouter({
   confirmation: publicProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const sub = await ctx.db
-        .select()
-        .from(subscribers)
-        .where(eq(subscribers.token, input.token));
+      const sub = await getSubscriberByToken(ctx.db, input.token);
 
       if (!sub) {
         throw new TRPCError({
@@ -110,9 +156,14 @@ export const newsletterRouter = createTRPCRouter({
       }
 
       try {
-        await ctx.db
-          .update(subscribers)
-          .set({ confirmedAt: new Date(), isConfirmed: true });
+        await upsertSubscriber(ctx.db, {
+          id: sub.id,
+          isConfirmed: true,
+          confirmedAt: new Date(),
+          email: sub.email,
+          token: sub.token,
+          writerId: sub.writerId as string,
+        });
       } catch (error) {
         console.log(error);
         throw new TRPCError({

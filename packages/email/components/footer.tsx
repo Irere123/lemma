@@ -13,9 +13,10 @@ import { baseUrl } from "../lib/constants";
 
 interface FooterProps {
   unsubscribeUrl?: string;
+  customFooterText?: string | null;
 }
 
-export function Footer({ unsubscribeUrl }: FooterProps = {}) {
+export function Footer({ unsubscribeUrl, customFooterText }: FooterProps = {}) {
   const themeClasses = getEmailThemeClasses();
   const lightStyles = getEmailInlineStyles("light");
 
@@ -66,7 +67,7 @@ export function Footer({ unsubscribeUrl }: FooterProps = {}) {
         className={`text-xs ${themeClasses.secondaryText}`}
         style={{ color: lightStyles.secondaryText.color }}
       >
-        Irere Emmanuel - Kigali, Rwanda.
+        {customFooterText || "Irere Emmanuel - Kigali, Rwanda."}
       </Text>
       <Link
         className={`text-[14px] block ${themeClasses.mutedLink}`}

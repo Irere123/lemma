@@ -14,6 +14,7 @@ import {
   deleteDocument,
 } from "@api/db/queries";
 import { getConfirmedSubscribers } from "@api/db/queries/subscribers";
+import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
 import { enqueueDocumentNewsletter } from "@api/services/email-queue";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
@@ -68,7 +69,6 @@ export const documentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { documentId, sendImmediately } = input;
 
-      // Get the document
       const document = await getDocumentById(ctx.db, documentId);
 
       if (!document) {
@@ -78,7 +78,6 @@ export const documentRouter = createTRPCRouter({
         });
       }
 
-      // Check if user owns the document
       if (document.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -86,8 +85,19 @@ export const documentRouter = createTRPCRouter({
         });
       }
 
-      // Get confirmed subscribers
-      const subscribers = await getConfirmedSubscribers(ctx.db);
+      const writerSettings = await getWriterNewsletterSettings(
+        ctx.db,
+        ctx.user.id
+      );
+
+      if (!writerSettings) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Writer newsletter settings not found",
+        });
+      }
+
+      const subscribers = await getConfirmedSubscribers(ctx.db, ctx.user.id);
 
       if (subscribers.length === 0) {
         return {
@@ -97,13 +107,11 @@ export const documentRouter = createTRPCRouter({
         };
       }
 
-      // Prepare recipients
       const recipients = subscribers.map((sub) => ({
         email: sub.email,
         unsubscribeToken: sub.token,
       }));
 
-      // Calculate delay based on scheduled date
       let delayMs = 0;
       if (!sendImmediately && document.scheduledDate) {
         const now = new Date();
@@ -111,7 +119,6 @@ export const documentRouter = createTRPCRouter({
         delayMs = Math.max(0, scheduledTime.getTime() - now.getTime());
       }
 
-      // Enqueue emails with optional delay
       const emailResults = await enqueueDocumentNewsletter(
         ctx.env,
         {
@@ -122,6 +129,7 @@ export const documentRouter = createTRPCRouter({
           bannerImage: document.bannerImage,
           publishedDate: document.publishedDate,
         },
+        writerSettings,
         recipients,
         {
           delayMs,

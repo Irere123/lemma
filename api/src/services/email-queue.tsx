@@ -1,3 +1,4 @@
+import type { NewsletterSettings } from "@api/db/schema.ts";
 import { createEmailQueueClient } from "../queue/bindings.ts";
 import type { EnqueueOptions } from "../queue/types.ts";
 import { resend } from "./resend.ts";
@@ -15,10 +16,12 @@ export type DocumentData = {
 
 export type EmailTemplateProps = {
   "welcome-newsletter": {
+    writerSettings: NewsletterSettings;
     token?: string;
   };
   "document-newsletter": {
     document: DocumentData;
+    writerSettings: NewsletterSettings;
     recipientEmail: string;
     unsubscribeToken?: string;
   };
@@ -41,16 +44,16 @@ const getEmailComponent = async (
 ): Promise<React.ReactElement> => {
   switch (template) {
     case "welcome-newsletter": {
-      const { default: WelcomeNewsletter } = await import(
-        "@brain/email/emails/welcome-newsletter"
+      const { default: DynamicWelcomeNewsletter } = await import(
+        "@brain/email/emails/dynamic-welcome-newsletter"
       );
-      return <WelcomeNewsletter {...props} />;
+      return <DynamicWelcomeNewsletter {...props} />;
     }
     case "document-newsletter": {
-      const { default: DocumentNewsletter } = await import(
-        "@brain/email/emails/document-newsletter"
+      const { default: DynamicDocumentNewsletter } = await import(
+        "@brain/email/emails/dynamic-document-newsletter"
       );
-      return <DocumentNewsletter {...props} />;
+      return <DynamicDocumentNewsletter {...props} />;
     }
     default:
       throw new Error(`Unknown email template: ${template}`);
@@ -148,6 +151,7 @@ export const getEmailQueueStats = async (env: Env) => {
 export const enqueueDocumentNewsletter = async (
   env: Env,
   document: DocumentData,
+  writerSettings: NewsletterSettings,
   recipients: Array<{ email: string; unsubscribeToken?: string }>,
   options?: EnqueueOptions
 ) => {
@@ -166,6 +170,7 @@ export const enqueueDocumentNewsletter = async (
           document,
           recipientEmail: recipient.email,
           unsubscribeToken: recipient.unsubscribeToken,
+          writerSettings,
         },
       },
       options
@@ -184,6 +189,8 @@ export const enqueueDocumentNewsletter = async (
 export const enqueueWelcomeNewsletter = async (
   env: Env,
   email: string,
+  writerName: string,
+  writerSettings: NewsletterSettings,
   token?: string,
   options?: EnqueueOptions
 ) => {
@@ -192,11 +199,14 @@ export const enqueueWelcomeNewsletter = async (
     {
       template: "welcome-newsletter",
       to: email,
-      subject: "Welcome to the newsletter",
-      from: "Irere Emmanuel",
-      fromEmail: "newsletter",
+      subject: `Welcome to ${writerSettings.newsletterName}`,
+      from: writerSettings.fromName,
+      fromEmail: `${writerName.toLowerCase().replace(/\s+/g, ".")}@${
+        env.RESEND_DOMAIN
+      }`,
       props: {
         token,
+        writerSettings,
       },
     },
     options

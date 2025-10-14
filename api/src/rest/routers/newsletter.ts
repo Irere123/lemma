@@ -1,24 +1,27 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { env } from "cloudflare:workers";
-import { eq } from "drizzle-orm";
 
 import { createRouter, generateId } from "@api/lib/utils";
-import { subscribers } from "@api/db/schema";
-import { resend } from "@api/services/resend";
 import {
   getSubscriberByEmail,
   getSubscriberByToken,
+  upsertSubscriber,
 } from "@api/db/queries/subscribers";
+import { withAuth } from "@api/rest/middleware/auth";
+import { enqueueWelcomeNewsletter } from "@api/services/email-queue";
+import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
 
 const newsletterRouter = createRouter();
 
 // Subscribe
+// Protected
+// Send the api key or auth cookie when calling this endpoint
 newsletterRouter.openapi(
   createRoute({
     method: "post",
     path: "/subscribe",
     tags: ["Newsletter"],
-    summary: "Subscribe to newsletter",
+    summary: "Subscribe to newsletter (protected)",
     request: {
       body: {
         content: {
@@ -40,11 +43,14 @@ newsletterRouter.openapi(
         },
       },
       409: { description: "Already subscribed" },
+      404: { description: "Writer newsletter settings not found" },
       500: { description: "Internal error" },
     },
+    middleware: [withAuth],
   }),
   async (c) => {
     const db = c.get("db");
+    const session = c.get("session");
     const input = c.req.valid("json") as { email: string };
 
     const existing = await getSubscriberByEmail(db, input.email);
@@ -54,20 +60,27 @@ newsletterRouter.openapi(
 
     try {
       const token = generateId("st");
-      await db
-        .insert(subscribers)
-        .values({ id: generateId(), email: input.email, token });
-
-      const { WelcomeNewsletter } = await import(
-        "@brain/email/emails/welcome-newsletter"
+      const writerSettings = await getWriterNewsletterSettings(
+        db,
+        session.user.id
       );
 
-      resend.emails.send({
-        from: `Irere Emmanuel <welcome@${env.RESEND_DOMAIN}>`,
-        subject: "Welcome Abroad!",
-        to: input.email,
-        react: WelcomeNewsletter({ token }),
+      if (!writerSettings) {
+        return c.json({ error: "Writer newsletter settings not found" }, 404);
+      }
+
+      await upsertSubscriber(db, {
+        email: input.email,
+        token,
+        writerId: session.user.id,
       });
+
+      await enqueueWelcomeNewsletter(
+        env,
+        input.email,
+        session.user.name,
+        writerSettings
+      );
 
       return c.json({ success: true });
     } catch (error) {
@@ -116,10 +129,13 @@ newsletterRouter.openapi(
     }
 
     try {
-      await db
-        .update(subscribers)
-        .set({ isUnsubscribed: true, unsubscribedAt: new Date() })
-        .where(eq(subscribers.token, input.token));
+      await upsertSubscriber(db, {
+        id: sub.id,
+        isUnsubscribed: true,
+        email: sub.email,
+        token: sub.token,
+        writerId: sub.writerId,
+      });
 
       return c.json({ success: true });
     } catch (error) {
@@ -168,10 +184,14 @@ newsletterRouter.openapi(
     }
 
     try {
-      await db
-        .update(subscribers)
-        .set({ isConfirmed: true, confirmedAt: new Date() })
-        .where(eq(subscribers.token, input.token));
+      await upsertSubscriber(db, {
+        id: sub.id,
+        isConfirmed: true,
+        confirmedAt: new Date(),
+        email: sub.email,
+        token: sub.token,
+        writerId: sub.writerId,
+      });
 
       return c.json({ success: true });
     } catch (error) {
