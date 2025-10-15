@@ -1,4 +1,3 @@
-import { env as workerEnv } from "cloudflare:workers";
 import type { NewsletterSettings } from "@api/db/schema.ts";
 import { createEmailQueueClient } from "../queue/bindings.ts";
 import type { EnqueueOptions } from "../queue/types.ts";
