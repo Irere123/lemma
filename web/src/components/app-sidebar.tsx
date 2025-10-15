@@ -75,6 +75,11 @@ export function AppSidebar() {
               <Link to={`/developers`}>Developers</Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to={`/newsletter-settings`}>Newsletter</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter />

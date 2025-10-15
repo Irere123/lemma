@@ -1,3 +1,4 @@
+import { env as workerEnv } from "cloudflare:workers";
 import type { NewsletterSettings } from "@api/db/schema.ts";
 import { createEmailQueueClient } from "../queue/bindings.ts";
 import type { EnqueueOptions } from "../queue/types.ts";
@@ -96,18 +97,22 @@ export const processEmailJobs = async (env: Env, batchSize = 10) => {
       // Get the React email component
       const emailComponent = await getEmailComponent(template, props);
 
-      // Prepare from address
-      const fromAddress = fromEmail
-        ? `${from} <${fromEmail}@${process.env.RESEND_DOMAIN || "irere.dev"}>`
-        : `${from} <no-reply@${process.env.RESEND_DOMAIN || "irere.dev"}>`;
-
       // Send email via Resend - pass the React element directly
-      await resend.emails.send({
-        from: fromAddress,
-        to,
-        subject,
-        react: emailComponent,
-      });
+      if (fromEmail) {
+        await resend.emails.send({
+          from: fromEmail,
+          to,
+          subject,
+          react: emailComponent,
+        });
+      } else {
+        await resend.emails.send({
+          from: from,
+          to,
+          subject,
+          react: emailComponent,
+        });
+      }
 
       await client.complete(QUEUE_NAME, job.id, job.leaseToken!);
 
@@ -189,7 +194,6 @@ export const enqueueDocumentNewsletter = async (
 export const enqueueWelcomeNewsletter = async (
   env: Env,
   email: string,
-  writerName: string,
   writerSettings: NewsletterSettings,
   token?: string,
   options?: EnqueueOptions
@@ -201,7 +205,7 @@ export const enqueueWelcomeNewsletter = async (
       to: email,
       subject: `Welcome to ${writerSettings.newsletterName}`,
       from: writerSettings.fromName,
-      fromEmail: `${writerName.toLowerCase().replace(/\s+/g, ".")}@${
+      fromEmail: `${writerSettings.fromName.toLowerCase().replace(/\s+/g, ".")}@${
         env.RESEND_DOMAIN
       }`,
       props: {

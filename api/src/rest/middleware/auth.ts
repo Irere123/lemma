@@ -63,10 +63,9 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
   const keyHash = hash(token);
 
   // Check cache first for API key
-  const apiKeyUnparsed = await apiKeyCache.get(keyHash);
-  let apiKey: ApiKey | undefined;
+  let apiKey = JSON.parse((await apiKeyCache.get(keyHash)) as string);
 
-  if (!apiKeyUnparsed) {
+  if (!apiKey) {
     // If not cache, query database
     apiKey = await getApiKeyByToken(db, keyHash);
     if (apiKey) {
@@ -75,16 +74,14 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
     }
   }
 
-  apiKey = JSON.parse(apiKeyUnparsed as string);
-
   if (!apiKey) {
     throw new HTTPException(401, { message: "Invalid API key" });
   }
 
   // Check cache first for user
-  let userValue = await userCache.get(apiKey.userId);
-  let user;
-  if (!userValue) {
+  let user = JSON.parse((await userCache.get(apiKey.userId)) as string);
+
+  if (!user) {
     // If not cache, query database
     user = await getUserById(db, apiKey.userId);
     if (user) {
@@ -92,8 +89,6 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
       await userCache.set(apiKey.userId, user);
     }
   }
-
-  user = JSON.parse(userValue);
 
   if (!user) {
     throw new HTTPException(401, { message: "User not found" });

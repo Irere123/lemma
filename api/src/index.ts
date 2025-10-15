@@ -96,9 +96,11 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ) {
+    console.log("== Processing email jobs ===");
     const { processEmailJobs } = await import("./services/email-queue");
     await processEmailJobs(env);
     ctx.waitUntil(processEmailJobs(env)); //   Ensure background tasks complete
+    console.log("== Processed email jobs ===");
   },
 };
 

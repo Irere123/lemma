@@ -54,6 +54,7 @@ newsletterRouter.openapi(
     const input = c.req.valid("json") as { email: string };
 
     const existing = await getSubscriberByEmail(db, input.email);
+
     if (existing) {
       return c.json({ error: "Already joined the newsletter." }, 409);
     }
@@ -75,12 +76,7 @@ newsletterRouter.openapi(
         writerId: session.user.id,
       });
 
-      await enqueueWelcomeNewsletter(
-        env,
-        input.email,
-        session.user.name,
-        writerSettings
-      );
+      await enqueueWelcomeNewsletter(env, input.email, writerSettings);
 
       return c.json({ success: true });
     } catch (error) {
