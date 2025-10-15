@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@brain/email": "workspace:*",
+    "@brain/common": "workspace:*",
     "@hono/trpc-server": "^0.4.0",
     "@hono/zod-openapi": "^1.1.0",
     "@scalar/hono-api-reference": "^0.9.16",

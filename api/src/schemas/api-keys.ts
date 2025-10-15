@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi";
-import { SCOPES } from "@api/lib/scopes";
+import { SCOPES } from "@brain/common/scopes";
 
 export const upsertApiKeySchema = z.object({
   id: z.string().optional(),

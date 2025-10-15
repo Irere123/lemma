@@ -3,7 +3,7 @@ import { IconDots } from "@tabler/icons-react";
 import { formatDistanceToNow } from "date-fns";
 
 import type { RouterOutputs } from "@api/trpc/routers/_app";
-import { scopesToName } from "@api/lib/scopes";
+import { scopesToName } from "@brain/common/scopes";
 import { useApiKeysModalStore } from "@/stores/api-keys-modal";
 import {
   DropdownMenu,
