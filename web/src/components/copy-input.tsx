@@ -24,31 +24,37 @@ export function CopyInput({ value, className }: Props) {
     }, 2000);
   };
 
+  // Show first 8 and last 8 characters with ellipsis
+  const displayValue =
+    value.length > 20 ? `${value.slice(0, 8)}...${value.slice(-8)}` : value;
+
   return (
     <button
       type="button"
       onClick={handleClipboard}
       className={cn(
-        "flex items-center relative w-full border py-2 px-4 cursor-pointer",
+        "flex items-center relative w-full border border-input bg-background text-foreground py-2 px-4 cursor-pointer rounded-md hover:bg-accent transition-colors",
         className
       )}
     >
-      <div className="pr-8 text-[#878787] text-sm truncate">{value}</div>
+      <div className="pr-8 text-muted-foreground text-sm font-mono overflow-hidden text-left flex-1 min-w-0">
+        {displayValue}
+      </div>
 
       <motion.div
-        className="absolute right-4 top-2.5"
+        className="absolute right-4 top-2.5 text-muted-foreground"
         initial={{ opacity: 1, scale: 1 }}
         animate={{ opacity: isCopied ? 0 : 1, scale: isCopied ? 0 : 1 }}
       >
-        <IconCopy />
+        <IconCopy className="w-4 h-4" />
       </motion.div>
 
       <motion.div
-        className="absolute right-4 top-2.5"
+        className="absolute right-4 top-2.5 text-green-600"
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: isCopied ? 1 : 0, scale: isCopied ? 1 : 0 }}
       >
-        <IconCheck />
+        <IconCheck className="w-4 h-4" />
       </motion.div>
     </button>
   );

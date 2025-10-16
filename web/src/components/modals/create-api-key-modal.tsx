@@ -65,7 +65,7 @@ export function CreateApiKeyModal() {
         }, 500);
       }}
     >
-      <DialogContent>{content}</DialogContent>
+      <DialogContent className="max-w-[455px]">{content}</DialogContent>
     </Dialog>
   );
 }
