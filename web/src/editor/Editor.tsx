@@ -145,26 +145,30 @@ export default function Editor(props: Props) {
       },
       {
         hotkey: "mod+shift+4",
-        callback: () => toggleElement(editor, ElementType.BulletedList),
+        callback: () => toggleElement(editor, ElementType.HeadingFour),
       },
       {
         hotkey: "mod+shift+5",
-        callback: () => toggleElement(editor, ElementType.NumberedList),
+        callback: () => toggleElement(editor, ElementType.BulletedList),
       },
       {
         hotkey: "mod+shift+6",
-        callback: () => toggleElement(editor, ElementType.CheckListItem),
+        callback: () => toggleElement(editor, ElementType.NumberedList),
       },
       {
         hotkey: "mod+shift+7",
-        callback: () => toggleElement(editor, ElementType.Blockquote),
+        callback: () => toggleElement(editor, ElementType.CheckListItem),
       },
       {
         hotkey: "mod+shift+8",
-        callback: () => toggleElement(editor, ElementType.CodeBlock),
+        callback: () => toggleElement(editor, ElementType.Blockquote),
       },
       {
         hotkey: "mod+shift+9",
+        callback: () => toggleElement(editor, ElementType.CodeBlock),
+      },
+      {
+        hotkey: "mod+shift+0",
         callback: () => toggleElement(editor, ElementType.Paragraph),
       },
       {

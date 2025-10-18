@@ -46,6 +46,15 @@ export default function EditorElement(props: EditorElementProps) {
           {children}
         </h3>
       );
+    case ElementType.HeadingFour:
+      return (
+        <h4
+          className={`text-lg font-semibold mt-3 mb-1 ${className}`}
+          {...attributes}
+        >
+          {children}
+        </h4>
+      );
     case ElementType.ListItem:
       return (
         <li className={`${className} py-0.5`} {...attributes}>

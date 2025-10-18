@@ -5,6 +5,7 @@ import {
   IconH1,
   IconH2,
   IconH3,
+  IconH4,
   IconList,
   IconListCheck,
   IconListNumbers,
@@ -60,6 +61,12 @@ export default function ChangeBlockOptions(props: ChangeBlockOptionsProps) {
           element={element}
           Icon={IconH3}
           tooltip="Heading 3"
+        />
+        <BlockButton
+          format={ElementType.HeadingFour}
+          element={element}
+          Icon={IconH4}
+          tooltip="Heading 4"
         />
       </div>
       <div className="flex items-center justify-center">

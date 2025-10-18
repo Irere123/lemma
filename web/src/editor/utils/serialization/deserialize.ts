@@ -59,8 +59,10 @@ export default function deserialize(
         return { id: createNodeId(), type: ElementType.HeadingOne, children };
       } else if (node.depth === 2) {
         return { id: createNodeId(), type: ElementType.HeadingTwo, children };
-      } else {
+      } else if (node.depth === 3) {
         return { id: createNodeId(), type: ElementType.HeadingThree, children };
+      } else {
+        return { id: createNodeId(), type: ElementType.HeadingFour, children };
       }
 
     case "list":

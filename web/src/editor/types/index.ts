@@ -9,6 +9,7 @@ export enum ElementType {
   HeadingOne = "heading-one",
   HeadingTwo = "heading-two",
   HeadingThree = "heading-three",
+  HeadingFour = "heading-four",
   ListItem = "list-item",
   BulletedList = "bulleted-list",
   NumberedList = "numbered-list",
@@ -56,6 +57,12 @@ export type HeadingTwoElement = {
 export type HeadingThreeElement = {
   id: string;
   type: ElementType.HeadingThree;
+  children: Descendant[];
+};
+
+export type HeadingFourElement = {
+  id: string;
+  type: ElementType.HeadingFour;
   children: Descendant[];
 };
 
@@ -165,6 +172,7 @@ export type ReferenceableBlockElement =
   | HeadingOneElement
   | HeadingTwoElement
   | HeadingThreeElement
+  | HeadingFourElement
   | ListItem
   | CheckListItem
   | Blockquote

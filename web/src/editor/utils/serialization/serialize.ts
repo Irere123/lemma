@@ -130,6 +130,8 @@ export default function serialize(
       return `## ${children}\n`;
     case ElementType.HeadingThree:
       return `### ${children}\n`;
+    case ElementType.HeadingFour:
+      return `#### ${children}\n`;
 
     case ElementType.Blockquote:
       // For some reason, marked is parsing blockquotes w/ one new line

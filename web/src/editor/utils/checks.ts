@@ -10,6 +10,7 @@ export const isReferenceableBlockElement = (
     element.type === ElementType.HeadingOne ||
     element.type === ElementType.HeadingTwo ||
     element.type === ElementType.HeadingThree ||
+    element.type === ElementType.HeadingFour ||
     element.type === ElementType.ListItem ||
     element.type === ElementType.Blockquote ||
     element.type === ElementType.CodeBlock ||
@@ -26,11 +27,13 @@ export const isTextType = (
   | ElementType.Paragraph
   | ElementType.HeadingOne
   | ElementType.HeadingTwo
-  | ElementType.HeadingThree => {
+  | ElementType.HeadingThree
+  | ElementType.HeadingFour => {
   return (
     type === ElementType.Paragraph ||
     type === ElementType.HeadingOne ||
     type === ElementType.HeadingTwo ||
-    type === ElementType.HeadingThree
+    type === ElementType.HeadingThree ||
+    type === ElementType.HeadingFour
   );
 };

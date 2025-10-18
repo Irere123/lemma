@@ -29,6 +29,7 @@ const BLOCK_SHORTCUTS: Array<
   { match: /^# $/, type: ElementType.HeadingOne },
   { match: /^## $/, type: ElementType.HeadingTwo },
   { match: /^### $/, type: ElementType.HeadingThree },
+  { match: /^#### $/, type: ElementType.HeadingFour },
   { match: /^```$/, type: ElementType.CodeBlock },
   { match: /^---$/, type: ElementType.ThematicBreak },
   { match: /^\*\*\*$/, type: ElementType.ThematicBreak },
