@@ -89,7 +89,6 @@ Define what is public, private, or gated. Total control over visibility.
 ### Thought Capture
 
 - Markdown-native
-- Bidirectional linking
 - Tags and categories
 - Full-text search
 - Version history
