@@ -36,6 +36,7 @@ import {
 import { ElementType, Mark } from "./types";
 import { getDefaultEditorValue } from "./utils/constants";
 import { documentStore, useDocumentStore } from "@/stores/document-store";
+import AddLinkPopover from "./AddLinkPopover";
 
 type Props = {
   documentId: string;
@@ -252,6 +253,12 @@ export default function Editor(props: Props) {
         canBeVisible={toolbarCanBeVisible && !addLinkPopoverState.isVisible}
         setAddLinkPopoverState={setAddLinkPopoverState}
       />
+      {addLinkPopoverState.isVisible ? (
+        <AddLinkPopover
+          addLinkPopoverState={addLinkPopoverState}
+          setAddLinkPopoverState={setAddLinkPopoverState}
+        />
+      ) : null}
       <Editable
         className={`overflow-hidden placeholder-gray-400 focus:outline-none ${className}`}
         data-testid="editor"
