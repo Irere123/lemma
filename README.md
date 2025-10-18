@@ -67,15 +67,11 @@ Visit `http://localhost:3000` to begin using BrainOS.
 
 ## Architecture
 
-### Knowledge Graph
-
-All notes, ideas, and insights become nodes in a graph. Relationships are formed via tags, references, and semantic links.
-
 ### API-First Design
 
 Your knowledge is accessible via REST and GraphQL. External apps can query, subscribe to, and integrate your ideas.
 
-### Multi-Channel Publishing
+### Write once, publish anywhere.
 
 Single source of truth distributed across:
 
@@ -102,22 +98,12 @@ Define what is public, private, or gated. Total control over visibility.
 
 - REST API and GraphQL
 - Webhook support
-- RSS/Atom feeds
-- OPML export
 
 ### Distribution
 
 - Newsletter scheduling
 - SEO-ready blog
 - Private drafts
-- Cross-posting integrations
-
-### Analytics
-
-- Knowledge graph visualization
-- API usage metrics
-- Subscriber engagement tracking
-- Popular content analysis
 
 ## Use Cases
 
