@@ -4,6 +4,7 @@ import { protectedMiddleware, publicMiddleware } from "../middleware";
 import { documentsRouter } from "./documents";
 import { postsRouter } from "./posts";
 import { newsletterRouter } from "./newsletter";
+import { uploadsRouter } from "./uploads";
 
 const routers = createRouter();
 
@@ -19,5 +20,6 @@ routers.route("/newsletter", newsletterRouter);
 routers.use(...protectedMiddleware);
 
 routers.route("/documents", documentsRouter);
+routers.route("/uploads", uploadsRouter);
 
 export { routers };

@@ -1,7 +1,7 @@
-import type { NewsletterSettings } from "@api/db/schema.ts";
-import { createEmailQueueClient } from "../queue/bindings.ts";
-import type { EnqueueOptions } from "../queue/types.ts";
-import { resend } from "./resend.ts";
+import type { NewsletterSettings } from "@api/db/schema";
+import { createEmailQueueClient } from "../queue/bindings";
+import type { EnqueueOptions } from "../queue/types";
+import { resend } from "./resend";
 
 export type EmailTemplate = "welcome-newsletter" | "document-newsletter";
 
@@ -38,22 +38,20 @@ export type EmailJobPayload<T extends EmailTemplate = EmailTemplate> = {
 
 const QUEUE_NAME = "email";
 
-const getEmailComponent = async (
-  template: EmailTemplate,
-  props: any
-): Promise<React.ReactElement> => {
+const renderEmailTemplate = async (template: EmailTemplate, props: any) => {
   switch (template) {
     case "welcome-newsletter": {
       const { default: DynamicWelcomeNewsletter } = await import(
         "@brain/email/emails/dynamic-welcome-newsletter"
       );
-      return <DynamicWelcomeNewsletter {...props} />;
+
+      return DynamicWelcomeNewsletter(props);
     }
     case "document-newsletter": {
       const { default: DynamicDocumentNewsletter } = await import(
         "@brain/email/emails/dynamic-document-newsletter"
       );
-      return <DynamicDocumentNewsletter {...props} />;
+      return DynamicDocumentNewsletter(props);
     }
     default:
       throw new Error(`Unknown email template: ${template}`);
@@ -94,7 +92,7 @@ export const processEmailJobs = async (env: Env, batchSize = 10) => {
       const { template, to, subject, from, fromEmail, props } = job.data;
 
       // Get the React email component
-      const emailComponent = await getEmailComponent(template, props);
+      const emailComponent = await renderEmailTemplate(template, props);
 
       // Send email via Resend - pass the React element directly
       if (fromEmail) {
@@ -204,9 +202,9 @@ export const enqueueWelcomeNewsletter = async (
       to: email,
       subject: `Welcome to ${writerSettings.newsletterName}`,
       from: writerSettings.fromName,
-      fromEmail: `${writerSettings.fromName.toLowerCase().replace(/\s+/g, ".")}@${
-        env.RESEND_DOMAIN
-      }`,
+      fromEmail: `${writerSettings.fromName
+        .toLowerCase()
+        .replace(/\s+/g, ".")}@${env.RESEND_DOMAIN}`,
       props: {
         token,
         writerSettings,

@@ -51,6 +51,12 @@
           },
         ],
       },
+      "r2_buckets": [
+        {
+          "bucket_name": "brainos-files",
+          "binding": "brainos_files",
+        },
+      ],
     },
     "production": {
       "observability": {
@@ -91,6 +97,12 @@
           },
         ],
       },
+      "r2_buckets": [
+        {
+          "bucket_name": "brainos-files",
+          "binding": "brainos_files",
+        },
+      ],
     },
-  },
+  }
 }

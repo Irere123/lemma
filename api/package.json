@@ -11,27 +11,30 @@
     "migrate:prod": "cross-env NODE_ENV=production bun run ./scripts/migrate.ts"
   },
   "dependencies": {
-    "@brain/email": "workspace:*",
     "@brain/common": "workspace:*",
+    "@brain/email": "workspace:*",
     "@hono/trpc-server": "^0.4.0",
     "@hono/zod-openapi": "^1.1.0",
     "@scalar/hono-api-reference": "^0.9.16",
     "@trpc/server": "^11.4.3",
+    "aws4fetch": "^1.0.20",
     "better-auth": "^1.2.12",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.2",
     "hono": "^4.8.4",
+    "jimp": "^1.6.0",
     "ksuid": "^3.0.0",
+    "neverthrow": "^8.2.0",
     "postgres": "^3.4.7",
     "resend": "^4.6.0",
     "superjson": "^2.2.2",
-    "wrangler": "^4.26.0",
     "zod": "^4.1.5"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^24.1.0",
     "cross-env": "^10.0.0",
-    "drizzle-kit": "^0.31.4"
+    "drizzle-kit": "^0.31.4",
+    "wrangler": "^4.46.0"
   }
 }
