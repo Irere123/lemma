@@ -1,8 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
 import { createRouter } from "@api/lib/utils";
-import { documentSchema } from "@api/schemas";
-import { getDocumentById } from "@api/db/queries";
+import { documentSchema, documentsResponseSchema } from "@api/schemas";
+import { getAdminPublishedArticles, getDocumentById } from "@api/db/queries";
 import { validateResponse } from "@api/lib/validate-response";
 
 const postsRouter = createRouter();
@@ -20,8 +20,7 @@ postsRouter.openapi(
     },
     responses: {
       200: {
-        description:
-          "Retrieve all user related blog, articles, and notes documents",
+        description: "Retrieve post by ID",
         content: {
           "application/json": {
             schema: documentSchema,
@@ -37,6 +36,36 @@ postsRouter.openapi(
     const document = await getDocumentById(db, filters.id);
 
     return c.json(validateResponse(document, documentSchema));
+  }
+);
+
+postsRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/admin/articles",
+    tags: ["Admin"],
+    summary: "Retrieve all admin (irere) published articles",
+    responses: {
+      200: {
+        description: "Retrieve all admin (irere) published articles",
+        content: {
+          "application/json": {
+            schema: documentsResponseSchema,
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const db = c.get("db");
+    const articles = await getAdminPublishedArticles(db);
+
+    return c.json(
+      validateResponse(
+        { nextCursor: null, data: articles },
+        documentsResponseSchema
+      )
+    );
   }
 );
 

@@ -1,20 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 
 import { DateText, ListItem, ProfileHeader } from "@/components/landing";
-import { useTRPC } from "@/trpc/client";
+import type { IPost } from "@/lib/types";
 
 export const Route = createFileRoute("/posts/")({
   component: RouteComponent,
-  loader: async () => {},
+  loader: async () => {
+    const posts: { data: IPost[] } = await (
+      await fetch(
+        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/v1/posts/admin/articles`,
+        {
+          credentials: "include",
+        }
+      )
+    ).json();
+
+    return { posts: posts.data };
+  },
 });
 
 function RouteComponent() {
-  const trpc = useTRPC();
-  const { data: posts, isLoading } = useQuery(
-    trpc.documents.getAdminPublishedArticles.queryOptions()
-  );
+  const { posts } = Route.useLoaderData();
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
@@ -30,9 +37,7 @@ function RouteComponent() {
       />
 
       <div className="space-y-8">
-        {isLoading ? (
-          <div className="py-8 text-center text-gray-500">Loading...</div>
-        ) : !posts || posts.length === 0 ? (
+        {!posts || posts.length === 0 ? (
           <div className="py-8 text-center text-gray-500">
             No published articles yet.
           </div>

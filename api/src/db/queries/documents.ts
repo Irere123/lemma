@@ -99,7 +99,7 @@ export const getUserDocuments = async (
 export const getAdminPublishedArticles = async (
   db: DB,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Omit<Document, "content" | "markdown">[]> => {
+) => {
   const safeLimit = Math.min(limit, MAX_PAGE_SIZE);
 
   const results = await db

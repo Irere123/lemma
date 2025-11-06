@@ -58,7 +58,7 @@ export const documentListItemSchema = documentSchema.omit({
 
 export const documentsResponseSchema = z.object({
   nextCursor: z.nullable(z.string()),
-  data: z.array(documentListItemSchema),
+  data: z.array(documentListItemSchema).optional().default([]),
 });
 
 export const documentResponseSchema = z.object({

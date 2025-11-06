@@ -5,36 +5,18 @@ import { ReadOnlyEditor } from "@/editor";
 import { useTRPC } from "@/trpc/client";
 import { useCopyToClipboard } from "@/hooks/use-copy-clipboard";
 import { toast } from "sonner";
-
-interface IPost {
-  id: string;
-  title: string;
-  subtitle: string;
-  content: any;
-  createdAt: string;
-  publishedDate: string;
-  updatedAt: string;
-}
+import type { IPost } from "@/lib/types";
 
 export const Route = createFileRoute("/posts/$postId")({
   component: RouteComponent,
   loader: async ({ params, context }) => {
     const { postId } = params;
 
-    // Get the request from context for cookie forwarding
-    const request = (context as any)?.request as Request | undefined;
-
-    // Forward cookies from the incoming request
-    const cookieHeader = request?.headers.get("cookie");
-
     const post: IPost = await (
       await fetch(
         `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/v1/posts/${postId}`,
         {
           credentials: "include",
-          headers: {
-            ...(cookieHeader ? { cookie: cookieHeader } : {}),
-          },
         }
       )
     ).json();
