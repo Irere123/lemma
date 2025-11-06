@@ -23,6 +23,8 @@ app.use(
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowHeaders: [
       "Authorization",
+      "Access-Control-Allow-Credentials",
+      "Cookie",
       "Content-Type",
       "accept-language",
       "x-trpc-source",

@@ -16,7 +16,9 @@ import { userCache } from "@api/cache/user-cache";
 import { expandScopes } from "@brain/common/scopes";
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
-  const sessionCookie = getSessionCookie(c.req.raw.headers);
+  const sessionCookie = getSessionCookie(c.req.raw.headers, {
+    cookiePrefix: "brain",
+  });
   const authHeader = c.req.header("Authorization");
 
   if (sessionCookie) {
@@ -32,7 +34,7 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
       });
     }
 
-    c.set("session", session.session);
+    c.set("session", session);
     c.set("scopes", expandScopes(["apis.all"]));
 
     await next();
