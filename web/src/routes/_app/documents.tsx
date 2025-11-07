@@ -1,11 +1,12 @@
 import { IconFilter2, IconClock, IconMail } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { format, isFuture } from "date-fns";
+import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { DocumentsSkeleton } from "@/components/skeletons";
 import { useTRPC } from "@/trpc/client";
+import { formatWithTimezone } from "@/lib/date";
 
 export const Route = createFileRoute("/_app/documents")({
   component: RouteComponent,
@@ -63,9 +64,12 @@ function RouteComponent() {
       </div>
       <div className="border border-border border-dashed py-3 px-4 rounded-md">
         {documents.map((document) => {
+          const scheduledInfo = document.scheduledDate
+            ? formatWithTimezone(document.scheduledDate)
+            : null;
+
           const hasScheduledNewsletter =
-            document.scheduledDate &&
-            isFuture(new Date(document.scheduledDate));
+            scheduledInfo && new Date(scheduledInfo.iso) > new Date();
 
           return (
             <div
@@ -83,7 +87,7 @@ function RouteComponent() {
                       {document.title ?? "Untitled"}
                     </span>
                   </Link>
-                  {hasScheduledNewsletter && (
+                  {hasScheduledNewsletter && scheduledInfo && (
                     <div className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
                       <IconMail className="w-3 h-3" />
                       <IconClock className="w-3 h-3" />
@@ -96,10 +100,10 @@ function RouteComponent() {
                     {document.subtitle}
                   </p>
                 )}
-                {hasScheduledNewsletter && (
+                {hasScheduledNewsletter && scheduledInfo && (
                   <p className="text-xs text-purple-600 mt-1">
-                    Newsletter scheduled for{" "}
-                    {format(new Date(document.scheduledDate!), "PPp")}
+                    Newsletter scheduled for {scheduledInfo.label} (
+                    {scheduledInfo.timeZone})
                   </p>
                 )}
               </div>

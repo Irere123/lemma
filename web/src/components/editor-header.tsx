@@ -1,6 +1,11 @@
 import type { Document } from "@/stores/document-store";
 import { Button } from "./ui/button";
-import { IconGlobe, IconGlobeOff, IconSettings } from "@tabler/icons-react";
+import {
+  IconGlobe,
+  IconGlobeOff,
+  IconSettings,
+  IconMail,
+} from "@tabler/icons-react";
 import { DocumentMoreDropdown } from "./dropdowns";
 
 type Props = {
@@ -10,6 +15,7 @@ type Props = {
   onPublish: () => void;
   onUnpublish: () => void;
   onOpenSettings: () => void;
+  onOpenNewsletter?: () => void;
 };
 
 export function EditorHeader({
@@ -19,6 +25,7 @@ export function EditorHeader({
   onUnpublish,
   isUpsertLoading,
   onOpenSettings,
+  onOpenNewsletter,
 }: Props) {
   return (
     <div className="w-full flex justify-between px-8 pt-4 pb-2 md:px-12">
@@ -68,6 +75,16 @@ export function EditorHeader({
           >
             <IconGlobeOff />
             Unpublish
+          </Button>
+        )}
+        {onOpenNewsletter && (
+          <Button
+            onClick={onOpenNewsletter}
+            variant="ghost"
+            size="icon"
+            aria-label="Send newsletter"
+          >
+            <IconMail className="w-4 h-4" />
           </Button>
         )}
         <Button

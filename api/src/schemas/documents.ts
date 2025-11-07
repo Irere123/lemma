@@ -21,14 +21,14 @@ export const documentSchema = z.object({
 
 export const upsertDocumentSchema = z.object({
   id: z.string().optional(),
-  title: z.string().optional(),
-  subtitle: z.string().optional().nullable(),
+  title: z.string().nullable().optional(),
+  subtitle: z.string().nullable().optional(),
   status: z.enum(documentStatusEnum.enumValues).optional().default("DRAFT"),
   content: z.any().optional(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
-  scheduledDate: z.date().nullable().optional(),
-  publishedDate: z.date().nullable().optional(),
+  scheduledDate: z.coerce.date().nullable().optional(),
+  publishedDate: z.coerce.date().nullable().optional(),
 });
 
 export const deleteDocumentSchema = z.object({
@@ -73,8 +73,20 @@ export const documentResponseSchema = z.object({
 
 export const sendNewsletterSchema = z.object({
   documentId: z.string(),
-  sendImmediately: z.boolean().optional().default(false),
+  sendImmediately: z.boolean().default(false),
+});
+
+export const sendNewsletterResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  count: z.number(),
+  scheduledFor: z.string().nullable(),
+  scheduleMode: z.enum(["immediate", "scheduled", "past"]),
+  jobIds: z.array(z.string()),
 });
 
 export type UpsertDocumentData = z.infer<typeof upsertDocumentSchema>;
 export type SendNewsletterData = z.infer<typeof sendNewsletterSchema>;
+export type SendNewsletterResponse = z.infer<
+  typeof sendNewsletterResponseSchema
+>;

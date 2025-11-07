@@ -14,7 +14,6 @@ import type { Descendant } from "slate";
 import { SendNewsletterDialog } from "@/components/send-newsletter-dialog";
 import { DocumentSettingsModal } from "@/components/modals/document-settings-modal";
 import { DocumentEditorSkeleton } from "@/components/skeletons";
-import { IconMail } from "@tabler/icons-react";
 import { EditorHeader } from "@/components/editor-header";
 import { DocumentBanner } from "@/components/document-banner";
 
@@ -263,6 +262,7 @@ function RouteComponent() {
         document={document}
         isSynced={isSynced}
         isUpsertLoading={isUpsertLoading}
+        onOpenNewsletter={() => setIsNewsletterDialogOpen(true)}
         onPublish={async () => {
           const updatePayload = {
             ...(document as any),
@@ -350,6 +350,20 @@ function RouteComponent() {
         scheduledDate={document.scheduledDate}
         isOpen={isNewsletterDialogOpen}
         onClose={() => setIsNewsletterDialogOpen(false)}
+        onScheduleUpdate={async (scheduledDate) => {
+          updateDocument({ id: documentId, scheduledDate } as any);
+          await updateDbDocument({
+            ...(document as any),
+            id: documentId,
+            scheduledDate,
+          });
+          await queryClient.invalidateQueries({
+            queryKey: [
+              ["documents", "getDocumentById"],
+              { input: { id: documentId } },
+            ],
+          });
+        }}
       />
     </div>
   );

@@ -98,31 +98,27 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ) {
-    console.log("== Processing scheduled jobs ===");
-
     const { processDelayedEmailJobs, processEmailJobs } = await import(
       "./services/email-queue"
     );
 
-    // First, move delayed jobs that are ready to be processed
-    const delayedResult = await processDelayedEmailJobs(env);
-    console.log(
-      `== Moved ${delayedResult.moved} delayed jobs to waiting queue ===`
-    );
-
-    // Then, process the waiting jobs and send emails
-    const results = await processEmailJobs(env);
-    console.log(
-      `== Processed ${results.length} email jobs (${
-        results.filter((r) => r.status === "completed").length
-      } completed, ${
-        results.filter((r) => r.status === "failed").length
-      } failed) ===`
-    );
-
-    // Ensure background tasks complete
     ctx.waitUntil(
-      Promise.all([processDelayedEmailJobs(env), processEmailJobs(env)])
+      (async () => {
+        console.log("== Processing scheduled email jobs ==");
+        const delayedResult = await processDelayedEmailJobs(env);
+        console.log(
+          `== Moved ${delayedResult.moved} delayed email jobs to waiting queue ==`
+        );
+
+        const results = await processEmailJobs(env);
+        const completed = results.filter(
+          (job) => job.status === "completed"
+        ).length;
+        const failed = results.filter((job) => job.status === "failed").length;
+        console.log(
+          `== Processed ${results.length} email jobs (${completed} completed, ${failed} failed) ==`
+        );
+      })()
     );
   },
 };

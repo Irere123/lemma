@@ -5,6 +5,7 @@ export interface DocumentData {
   markdown: string | null;
   bannerImage: string | null;
   publishedDate: Date | null;
+  scheduledDate: Date | null;
 }
 
 export interface NewsletterSettings {

@@ -18,6 +18,10 @@ import {
 import { getConfirmedSubscribers } from "@api/db/queries/subscribers";
 import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
 import { enqueueDocumentNewsletter } from "@api/services/email-queue";
+import {
+  computeNewsletterSchedule,
+  type NewsletterScheduleResult,
+} from "@api/lib/scheduling";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 export const documentRouter = createTRPCRouter({
@@ -118,11 +122,19 @@ export const documentRouter = createTRPCRouter({
 
       const subscribers = await getConfirmedSubscribers(ctx.db, ctx.user.id);
 
+      const schedule = computeNewsletterSchedule({
+        sendImmediately: sendImmediately ?? false,
+        scheduledDate: document.scheduledDate ?? undefined,
+      });
+
       if (subscribers.length === 0) {
         return {
           success: true,
           message: "No confirmed subscribers found",
           count: 0,
+          scheduledFor: schedule.scheduledFor,
+          scheduleMode: schedule.mode,
+          jobIds: [],
         };
       }
 
@@ -131,12 +143,8 @@ export const documentRouter = createTRPCRouter({
         unsubscribeToken: sub.token,
       }));
 
-      let delayMs = 0;
-      if (!sendImmediately && document.scheduledDate) {
-        const now = new Date();
-        const scheduledTime = new Date(document.scheduledDate);
-        delayMs = Math.max(0, scheduledTime.getTime() - now.getTime());
-      }
+      const priority =
+        sendImmediately ?? false ? 9 : schedule.mode === "scheduled" ? 6 : 8;
 
       const emailResults = await enqueueDocumentNewsletter({
         env: ctx.env,
@@ -144,19 +152,25 @@ export const documentRouter = createTRPCRouter({
         writerSettings,
         recipients,
         options: {
-          delayMs,
-          priority: sendImmediately ? 9 : 5,
+          delayMs: schedule.delayMs,
+          priority,
         },
       });
 
+      const buildMessage = (result: NewsletterScheduleResult) => {
+        if (result.mode === "scheduled" && result.scheduledFor) {
+          return `Scheduled ${emailResults.length} emails for ${result.scheduledFor}`;
+        }
+
+        return `Enqueued ${emailResults.length} emails for immediate delivery`;
+      };
+
       return {
         success: true,
-        message:
-          delayMs > 0
-            ? `Scheduled ${emailResults.length} emails for ${document.scheduledDate}`
-            : `Enqueued ${emailResults.length} emails for immediate delivery`,
+        message: buildMessage(schedule),
         count: emailResults.length,
-        scheduledFor: document.scheduledDate,
+        scheduledFor: schedule.scheduledFor,
+        scheduleMode: schedule.mode,
         jobIds: emailResults.map((r) => r.jobId),
       };
     }),
