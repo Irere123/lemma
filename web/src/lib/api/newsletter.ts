@@ -1,4 +1,5 @@
 import { client } from "./client";
+import { serverEnv } from "@/lib/env-runtime";
 
 export const subscribeToNewsletter = async (email: string) => {
   const response = await client.post(
@@ -6,7 +7,7 @@ export const subscribeToNewsletter = async (email: string) => {
     { email },
     {
       headers: {
-        Authorization: `Bearer ${process.env.BRAIN_API_KEY}`,
+        Authorization: `Bearer ${serverEnv.BRAIN_API_KEY}`,
       },
     }
   );
