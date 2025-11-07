@@ -100,9 +100,9 @@ export default {
   ) {
     console.log("== Processing email jobs ===");
     const { processEmailJobs } = await import("./services/email-queue");
-    await processEmailJobs(env);
+    const results = await processEmailJobs(env);
+    console.log("== Processed email jobs ===", results);
     ctx.waitUntil(processEmailJobs(env)); //   Ensure background tasks complete
-    console.log("== Processed email jobs ===");
   },
 };
 
