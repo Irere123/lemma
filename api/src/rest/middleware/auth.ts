@@ -9,7 +9,6 @@ import {
   getUserById,
   getApiKeyByToken,
   updatedApiKeyLastUsedAt,
-  type ApiKey,
 } from "@api/db/queries";
 import { apiKeyCache } from "@api/cache/api-keys-cache";
 import { userCache } from "@api/cache/user-cache";

@@ -221,6 +221,7 @@ export const documents = createTable(
   "documents",
   {
     id: text("id").primaryKey(),
+    slug: text("slug"),
     title: text("title"),
     subtitle: text("subtitle"),
     status: documentStatusEnum(),
@@ -240,6 +241,7 @@ export const documents = createTable(
     index("documents_created_at_idx").on(table.createdAt),
     index("documents_scheduled_date_idx").on(table.scheduledDate),
     index("documents_user_status_idx").on(table.userId, table.status),
+    unique("documents_slug_unique").on(table.slug),
   ]
 );
 

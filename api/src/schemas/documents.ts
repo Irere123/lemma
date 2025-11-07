@@ -6,6 +6,7 @@ import { documentStatusEnum } from "@api/db/schema";
 
 export const documentSchema = z.object({
   id: z.string(),
+  slug: z.string().nullable().optional(),
   title: z.string().optional(),
   subtitle: z.string().optional(),
   status: z.enum(documentStatusEnum.enumValues).default("DRAFT"),

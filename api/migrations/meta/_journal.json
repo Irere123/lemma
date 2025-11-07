@@ -71,6 +71,13 @@
       "when": 1760415249262,
       "tag": "0009_neat_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1762509821044,
+      "tag": "0010_fresh_corsair",
+      "breakpoints": true
     }
   ]
 }

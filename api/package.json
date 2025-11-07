@@ -8,7 +8,9 @@
     "types": "wrangler types --env local",
     "generate-migration": "drizzle-kit generate",
     "migrate:local": "bun run ./scripts/migrate.ts",
-    "migrate:prod": "cross-env NODE_ENV=production bun run ./scripts/migrate.ts"
+    "migrate:prod": "cross-env NODE_ENV=production bun run ./scripts/migrate.ts",
+    "seed-slugs:local": "bun run ./scripts/seed-slugs.ts",
+    "seed-slugs:prod": "cross-env NODE_ENV=production bun run ./scripts/seed-slugs.ts"
   },
   "dependencies": {
     "@brain/common": "workspace:*",
@@ -27,6 +29,7 @@
     "neverthrow": "^8.2.0",
     "postgres": "^3.4.7",
     "resend": "^4.6.0",
+    "slugify": "^1.6.6",
     "superjson": "^2.2.2",
     "zod": "^4.1.5"
   },
