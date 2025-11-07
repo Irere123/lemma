@@ -1,7 +1,7 @@
+import { Resend } from "resend";
 import type { NewsletterSettings } from "@api/db/schema";
 import { createEmailQueueClient } from "../queue/bindings";
 import type { EnqueueOptions } from "../queue/types";
-import { resend } from "./resend";
 
 export type EmailTemplate = "welcome-newsletter" | "document-newsletter";
 
@@ -82,6 +82,7 @@ export const enqueueEmailJob = async <T extends EmailTemplate>(
 
 export const processEmailJobs = async (env: Env, batchSize = 10) => {
   const client = createEmailQueueClient(env);
+  const resend = new Resend(env.RESEND_API_KEY);
 
   const jobs = await client.claim<EmailJobPayload>(QUEUE_NAME, batchSize);
 
