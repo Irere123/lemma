@@ -14,24 +14,7 @@ import {
   getEmailInlineStyles,
   getEmailThemeClasses,
 } from "../components/theme";
-import { baseUrl } from "../lib/constants";
-
-interface DocumentData {
-  id: string;
-  title: string | null;
-  subtitle: string | null;
-  markdown: string | null;
-  bannerImage: string | null;
-  publishedDate: Date | null;
-}
-
-interface NewsletterSettings {
-  id: string;
-  fromName: string;
-  newsletterName: string;
-  logoUrl: string | null;
-  brandColor: string;
-}
+import type { DocumentData, NewsletterSettings } from "../types";
 
 interface Props {
   document: DocumentData;
@@ -54,9 +37,8 @@ export const DynamicDocumentNewsletter = ({
     document.title ||
     `New content from ${writerSettings.fromName}`;
 
-  const documentUrl = `${baseUrl}/posts/${document.id}`;
   const unsubscribeUrl = unsubscribeToken
-    ? `${baseUrl}/unsubscribe?token=${unsubscribeToken}&writer=${writerSettings.id}`
+    ? `${writerSettings.baseUrl}/unsubscribe?token=${unsubscribeToken}&writer=${writerSettings.id}`
     : undefined;
 
   return (

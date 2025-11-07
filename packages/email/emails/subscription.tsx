@@ -12,18 +12,10 @@ import {
   getEmailInlineStyles,
   getEmailThemeClasses,
 } from "../components/theme";
-import { baseUrl } from "../lib/constants";
-
-interface WriterNewsletterSettings {
-  id: string;
-  newsletterName: string;
-  fromName: string;
-  logoUrl: string | null;
-  brandColor: string | null;
-}
+import type { NewsletterSettings } from "../types";
 
 interface Props {
-  writerSettings: WriterNewsletterSettings;
+  writerSettings: NewsletterSettings;
   token?: string;
 }
 
@@ -92,9 +84,9 @@ export const NewsletterSubscriptionEmail = ({
             Before we go further, confirm your email to stay in the loop.
           </Text>
 
-          {token && (
+          {token && writerSettings.confirmationUrl ? (
             <Link
-              href={`${baseUrl}/verify?token=${token}&writer=${writerSettings.id}`}
+              href={`${writerSettings.confirmationUrl}/?token=${token}&writer=${writerSettings.id}`}
               className={`my-[24px] p-[12px_24px] text-white rounded-md text-sm font-medium ${themeClasses.button}`}
               style={{
                 backgroundColor: writerSettings.brandColor ?? undefined,
@@ -103,7 +95,7 @@ export const NewsletterSubscriptionEmail = ({
             >
               Confirm your email
             </Link>
-          )}
+          ) : null}
 
           <style>{`
             .signature-blend {
