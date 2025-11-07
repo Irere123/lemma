@@ -98,11 +98,32 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ) {
-    console.log("== Processing email jobs ===");
-    const { processEmailJobs } = await import("./services/email-queue");
+    console.log("== Processing scheduled jobs ===");
+
+    const { processDelayedEmailJobs, processEmailJobs } = await import(
+      "./services/email-queue"
+    );
+
+    // First, move delayed jobs that are ready to be processed
+    const delayedResult = await processDelayedEmailJobs(env);
+    console.log(
+      `== Moved ${delayedResult.moved} delayed jobs to waiting queue ===`
+    );
+
+    // Then, process the waiting jobs and send emails
     const results = await processEmailJobs(env);
-    console.log("== Processed email jobs ===", results);
-    ctx.waitUntil(processEmailJobs(env)); //   Ensure background tasks complete
+    console.log(
+      `== Processed ${results.length} email jobs (${
+        results.filter((r) => r.status === "completed").length
+      } completed, ${
+        results.filter((r) => r.status === "failed").length
+      } failed) ===`
+    );
+
+    // Ensure background tasks complete
+    ctx.waitUntil(
+      Promise.all([processDelayedEmailJobs(env), processEmailJobs(env)])
+    );
   },
 };
 
