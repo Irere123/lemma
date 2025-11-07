@@ -115,6 +115,7 @@ export const newsletterSettings = createTable(
       .notNull()
       .unique(),
     newsletterName: text("newsletter_name").notNull(),
+    confirmationUrl: text("confirmation_url"),
     fromName: text("from_name").notNull(),
     logoUrl: text("logo_url"),
     brandColor: text("brand_color").default("#000000"),

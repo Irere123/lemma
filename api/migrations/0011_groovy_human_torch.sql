@@ -1,0 +1,1 @@
+ALTER TABLE "brainos_newsletter_settings" ADD COLUMN "confirmation_url" text;
