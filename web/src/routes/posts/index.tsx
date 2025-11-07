@@ -2,19 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 
 import { DateText, ListItem, ProfileHeader } from "@/components/landing";
-import type { IPost } from "@/lib/types";
+import { getAdminArticles } from "@/lib/api/posts";
 
 export const Route = createFileRoute("/posts/")({
   component: RouteComponent,
   loader: async () => {
-    const posts: { data: IPost[] } = await (
-      await fetch(
-        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/v1/posts/admin/articles`,
-        {
-          credentials: "include",
-        }
-      )
-    ).json();
+    const posts = await getAdminArticles();
 
     return { posts: posts.data };
   },
@@ -46,7 +39,7 @@ function RouteComponent() {
             {posts?.map((post) => (
               <li key={post.id} className="py-4">
                 <ListItem
-                  to={`/posts/${post.id}`}
+                  to={`/posts/${post.slug}`}
                   left={
                     <DateText
                       date={

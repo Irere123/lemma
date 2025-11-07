@@ -1,25 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 import { ReadOnlyEditor } from "@/editor";
 import { useTRPC } from "@/trpc/client";
 import { useCopyToClipboard } from "@/hooks/use-copy-clipboard";
-import { toast } from "sonner";
-import type { IPost } from "@/lib/types";
+import { getPostBySlug } from "@/lib/api/posts";
 
-export const Route = createFileRoute("/posts/$postId")({
+export const Route = createFileRoute("/posts/$slug")({
   component: RouteComponent,
-  loader: async ({ params, context }) => {
-    const { postId } = params;
+  loader: async ({ params }) => {
+    const { slug } = params;
 
-    const post: IPost = await (
-      await fetch(
-        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/v1/posts/${postId}`,
-        {
-          credentials: "include",
-        }
-      )
-    ).json();
+    const post = await getPostBySlug(slug);
 
     return { post };
   },

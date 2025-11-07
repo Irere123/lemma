@@ -17,7 +17,7 @@ import { Route as DevelopersRouteRouteImport } from './routes/_developers/route'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsIndexRouteImport } from './routes/posts/index'
-import { Route as PostsPostIdRouteImport } from './routes/posts/$postId'
+import { Route as PostsSlugRouteImport } from './routes/posts/$slug'
 import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/developers'
 import { Route as AppNewsletterSettingsRouteImport } from './routes/_app/newsletter-settings'
 import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
@@ -61,9 +61,9 @@ const PostsIndexRoute = PostsIndexRouteImport.update({
   path: '/posts/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PostsPostIdRoute = PostsPostIdRouteImport.update({
-  id: '/posts/$postId',
-  path: '/posts/$postId',
+const PostsSlugRoute = PostsSlugRouteImport.update({
+  id: '/posts/$slug',
+  path: '/posts/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevelopersDevelopersRoute = DevelopersDevelopersRouteImport.update({
@@ -96,7 +96,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AppDocumentsRoute
   '/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/developers': typeof DevelopersDevelopersRoute
-  '/posts/$postId': typeof PostsPostIdRoute
+  '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
   '/editor/$docId': typeof AppEditorDocIdRoute
 }
@@ -109,7 +109,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AppDocumentsRoute
   '/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/developers': typeof DevelopersDevelopersRoute
-  '/posts/$postId': typeof PostsPostIdRoute
+  '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
   '/editor/$docId': typeof AppEditorDocIdRoute
 }
@@ -125,7 +125,7 @@ export interface FileRoutesById {
   '/_app/documents': typeof AppDocumentsRoute
   '/_app/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/_developers/developers': typeof DevelopersDevelopersRoute
-  '/posts/$postId': typeof PostsPostIdRoute
+  '/posts/$slug': typeof PostsSlugRoute
   '/posts/': typeof PostsIndexRoute
   '/_app/editor/$docId': typeof AppEditorDocIdRoute
 }
@@ -140,7 +140,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/newsletter-settings'
     | '/developers'
-    | '/posts/$postId'
+    | '/posts/$slug'
     | '/posts'
     | '/editor/$docId'
   fileRoutesByTo: FileRoutesByTo
@@ -153,7 +153,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/newsletter-settings'
     | '/developers'
-    | '/posts/$postId'
+    | '/posts/$slug'
     | '/posts'
     | '/editor/$docId'
   id:
@@ -168,7 +168,7 @@ export interface FileRouteTypes {
     | '/_app/documents'
     | '/_app/newsletter-settings'
     | '/_developers/developers'
-    | '/posts/$postId'
+    | '/posts/$slug'
     | '/posts/'
     | '/_app/editor/$docId'
   fileRoutesById: FileRoutesById
@@ -181,7 +181,7 @@ export interface RootRouteChildren {
   NewsletterRoute: typeof NewsletterRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   VerifyRoute: typeof VerifyRoute
-  PostsPostIdRoute: typeof PostsPostIdRoute
+  PostsSlugRoute: typeof PostsSlugRoute
   PostsIndexRoute: typeof PostsIndexRoute
 }
 
@@ -243,11 +243,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/posts/$postId': {
-      id: '/posts/$postId'
-      path: '/posts/$postId'
-      fullPath: '/posts/$postId'
-      preLoaderRoute: typeof PostsPostIdRouteImport
+    '/posts/$slug': {
+      id: '/posts/$slug'
+      path: '/posts/$slug'
+      fullPath: '/posts/$slug'
+      preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_developers/developers': {
@@ -317,7 +317,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsletterRoute: NewsletterRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   VerifyRoute: VerifyRoute,
-  PostsPostIdRoute: PostsPostIdRoute,
+  PostsSlugRoute: PostsSlugRoute,
   PostsIndexRoute: PostsIndexRoute,
 }
 export const routeTree = rootRouteImport
