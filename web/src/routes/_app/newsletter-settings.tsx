@@ -1,14 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IconLetterA } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
 
 import { useTRPC } from "@/trpc/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useZodForm } from "@/hooks/use-zod-form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useMemo, useEffect } from "react";
 
 export const Route = createFileRoute("/_app/newsletter-settings")({
   component: NewsletterSettingsPage,
+});
+
+const newsletterSettingsSchema = z.object({
+  id: z.string().optional(),
+  newsletterName: z.string().min(1, "Newsletter name is required"),
+  fromName: z.string().min(1, "From name is required"),
+  logoUrl: z.string().optional(),
+  brandColor: z.string().optional(),
+  isActive: z.boolean().default(true),
+  confirmationUrl: z.string().optional(),
 });
 
 function NewsletterSettingsPage() {
@@ -20,44 +41,52 @@ function NewsletterSettingsPage() {
   );
 
   const upsertMutation = useMutation(
-    trpc.newsletter.upsertNewsletterSettings.mutationOptions()
+    trpc.newsletter.upsertNewsletterSettings.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.newsletter.getWriterNewsletterSettings.queryKey(),
+        });
+        toast.success("Newsletter settings updated");
+      },
+      onError: (error) => {
+        toast.error(error.message);
+        queryClient.invalidateQueries({
+          queryKey: trpc.newsletter.getWriterNewsletterSettings.queryKey(),
+        });
+      },
+    })
   );
 
   const initial = useMemo(
     () => ({
-      id: settings?.id ?? "",
-      newsletterName: settings?.newsletterName ?? "",
-      fromName: settings?.fromName ?? "",
-      logoUrl: settings?.logoUrl ?? "",
+      id: settings?.id,
+      newsletterName: settings?.newsletterName,
+      fromName: settings?.fromName,
+      logoUrl: settings?.logoUrl ?? undefined,
       brandColor: settings?.brandColor ?? "#000000",
       isActive: settings?.isActive ?? true,
+      confirmationUrl: settings?.confirmationUrl ?? undefined,
     }),
     [settings]
   );
 
-  const [newsletterName, setNewsletterName] = useState(initial.newsletterName);
-  const [fromName, setFromName] = useState(initial.fromName);
-  const [logoUrl, setLogoUrl] = useState(initial.logoUrl ?? "");
-  const [brandColor, setBrandColor] = useState(initial.brandColor);
-  const [isActive, setIsActive] = useState(initial.isActive);
-  const [result, setResult] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const form = useZodForm(newsletterSettingsSchema, {
+    defaultValues: initial,
+  });
 
   useEffect(() => {
-    setNewsletterName(initial.newsletterName);
-    setFromName(initial.fromName);
-    setLogoUrl(initial.logoUrl ?? "");
-    setBrandColor(initial.brandColor);
-    setIsActive(initial.isActive);
-  }, [
-    initial.newsletterName,
-    initial.fromName,
-    initial.logoUrl,
-    initial.brandColor,
-    initial.isActive,
-  ]);
+    if (settings) {
+      form.reset({
+        id: settings.id,
+        newsletterName: settings.newsletterName,
+        fromName: settings.fromName,
+        logoUrl: settings.logoUrl ?? undefined,
+        brandColor: settings.brandColor ?? "#000000",
+        isActive: settings.isActive ?? true,
+        confirmationUrl: settings.confirmationUrl ?? undefined,
+      });
+    }
+  }, [settings, form]);
 
   if (isLoading) {
     return (
@@ -73,44 +102,17 @@ function NewsletterSettingsPage() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResult(null);
-
-    if (!newsletterName.trim()) {
-      setResult({ type: "error", message: "Newsletter name is required" });
-      return;
-    }
-    if (!fromName.trim()) {
-      setResult({ type: "error", message: "From name is required" });
-      return;
-    }
-    if (!/^#[0-9A-Fa-f]{6}$/.test(brandColor)) {
-      setResult({ type: "error", message: "Brand color must be a valid hex" });
-      return;
-    }
-
-    try {
-      await upsertMutation.mutateAsync({
-        id: initial.id || undefined,
-        newsletterName: newsletterName.trim(),
-        fromName: fromName.trim(),
-        logoUrl: logoUrl?.trim() || undefined,
-        brandColor: brandColor,
-        isActive,
-      });
-      setResult({ type: "success", message: "Settings saved" });
-      // Soft refetch
-      queryClient.invalidateQueries({
-        queryKey: trpc.newsletter.getWriterNewsletterSettings.queryKey(),
-      });
-    } catch (error: any) {
-      setResult({
-        type: "error",
-        message: error?.message || "Failed to save settings",
-      });
-    }
-  };
+  function onSubmit(values: z.infer<typeof newsletterSettingsSchema>) {
+    upsertMutation.mutate({
+      id: values.id,
+      newsletterName: values.newsletterName,
+      fromName: values.fromName,
+      logoUrl: values.logoUrl || undefined,
+      brandColor: values.brandColor || undefined,
+      isActive: values.isActive,
+      confirmationUrl: values.confirmationUrl || undefined,
+    });
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -125,124 +127,118 @@ function NewsletterSettingsPage() {
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-card border border-border rounded-lg p-6 space-y-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="newsletterName"
-                className="text-sm text-muted-foreground"
-              >
-                Newsletter name
-              </label>
-              <input
-                id="newsletterName"
-                type="text"
-                value={newsletterName}
-                onChange={(e) => setNewsletterName(e.target.value)}
-                placeholder="My Newsletter"
-                className="bg-background text-foreground h-10 rounded-md border border-input px-3 outline-none placeholder:text-muted-foreground focus:border-ring"
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="bg-card border border-border rounded-lg p-6 space-y-6"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="newsletterName"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Newsletter name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="fromName"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col gap-2">
+                    <FormLabel>From name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmationUrl"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Subscriber confirmation URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="https://your-domain.com/confirmation"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="brandColor"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Brand color</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="color"
+                        {...field}
+                        value={field.value ?? "#000000"}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Active (accepts new subscribers)</FormLabel>
+                    <FormControl>
+                      <input
+                        id={field.name}
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="h-4 w-4 accent-primary"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <input
+                        id={field.name}
+                        type="hidden"
+                        value={field.value}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
               />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="fromName"
-                className="text-sm text-muted-foreground"
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                type="submit"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={upsertMutation.isPending}
               >
-                From name
-              </label>
-              <input
-                id="fromName"
-                type="text"
-                value={fromName}
-                onChange={(e) => setFromName(e.target.value)}
-                placeholder="Your Name or Brand"
-                className="bg-background text-foreground h-10 rounded-md border border-input px-3 outline-none placeholder:text-muted-foreground focus:border-ring"
-              />
+                {upsertMutation.isPending ? "Saving..." : "Save settings"}
+              </Button>
             </div>
-
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <label
-                htmlFor="logoUrl"
-                className="text-sm text-muted-foreground"
-              >
-                Logo URL (optional)
-              </label>
-              <input
-                id="logoUrl"
-                type="url"
-                value={logoUrl || ""}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://..."
-                className="bg-background text-foreground h-10 rounded-md border border-input px-3 outline-none placeholder:text-muted-foreground focus:border-ring"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="brandColor"
-                className="text-sm text-muted-foreground"
-              >
-                Brand color
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  id="brandColor"
-                  type="text"
-                  value={brandColor}
-                  onChange={(e) => setBrandColor(e.target.value)}
-                  placeholder="#000000"
-                  className="bg-background text-foreground h-10 rounded-md border border-input px-3 outline-none placeholder:text-muted-foreground focus:border-ring w-full"
-                />
-                <input
-                  aria-label="Pick brand color"
-                  type="color"
-                  value={brandColor}
-                  onChange={(e) => setBrandColor(e.target.value)}
-                  className="h-10 w-12 rounded-md border border-input bg-background p-1"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                id="isActive"
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              <label htmlFor="isActive" className="text-sm text-foreground">
-                Active (accepts new subscribers)
-              </label>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3">
-            <Button
-              type="submit"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={upsertMutation.isPending}
-            >
-              {upsertMutation.isPending ? "Saving..." : "Save settings"}
-            </Button>
-          </div>
-
-          {result && (
-            <div
-              className={`rounded-md border p-3 text-sm ${
-                result.type === "success"
-                  ? "border-green-300 bg-green-50 text-green-900"
-                  : "border-red-300 bg-red-50 text-red-900"
-              }`}
-            >
-              {result.message}
-            </div>
-          )}
-        </form>
+          </form>
+        </Form>
       </div>
     </div>
   );

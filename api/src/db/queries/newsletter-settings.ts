@@ -9,7 +9,9 @@ type UpsertWriterNewsletterSettings = {
   newsletterName: string;
   fromName: string;
   logoUrl: string | null;
-  brandColor: string;
+  brandColor: string | null;
+  confirmationUrl: string | null;
+  isActive: boolean;
 };
 
 export const getWriterNewsletterSettings = async (

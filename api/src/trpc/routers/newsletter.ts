@@ -30,8 +30,12 @@ export const newsletterRouter = createTRPCRouter({
       const settings = await upsertWriterNewsletterSettings(ctx.db, {
         writerId: ctx.user.id,
         id: input.id,
+        newsletterName: input.newsletterName,
+        fromName: input.fromName,
         logoUrl: input.logoUrl || null,
-        ...input,
+        brandColor: input.brandColor || null,
+        confirmationUrl: input.confirmationUrl || null,
+        isActive: input.isActive,
       });
 
       return settings;
