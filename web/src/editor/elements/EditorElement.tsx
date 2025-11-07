@@ -8,6 +8,7 @@ import TagElement from "./TagElement";
 import CalloutElement from "./CalloutElement";
 import ToggleElement from "./ToggleElement";
 import DividerElement from "./DividerElement";
+import ImageElement from "./ImageElement";
 import { ElementType } from "../types";
 
 export type EditorElementProps = {
@@ -151,7 +152,12 @@ export default function EditorElement(props: EditorElementProps) {
           {children}
         </DividerElement>
       );
-
+    case ElementType.Image:
+      return (
+        <ImageElement element={element} attributes={attributes}>
+          {children}
+        </ImageElement>
+      );
     default:
       return (
         <ParagraphElement

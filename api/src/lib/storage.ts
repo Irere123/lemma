@@ -9,6 +9,21 @@ interface imageOptions {
   headers?: Record<string, string>;
 }
 
+type SignedUrlMethod = "PUT" | "GET";
+
+type SignedUrlOptions = {
+  key: string;
+  method: SignedUrlMethod;
+  expiresIn?: number;
+  headers?: Record<string, string>;
+};
+
+type SignedUrlResult = {
+  url: string;
+  expiresIn: number;
+  headers: Record<string, string>;
+};
+
 class StorageClient {
   private client: AwsClient;
 
@@ -35,10 +50,15 @@ class StorageClient {
       uploadBody = body;
     }
 
-    const headers = {
-      "Content-Length": uploadBody.size.toString(),
+    const headers: Record<string, string> = {
       ...opts?.headers,
-    } as any;
+    };
+
+    const contentLength = this.getBodySize(uploadBody);
+
+    if (typeof contentLength === "number") {
+      headers["Content-Length"] = contentLength.toString();
+    }
 
     if (opts?.contentType) {
       headers["Content-Type"] = opts.contentType;
@@ -71,25 +91,29 @@ class StorageClient {
     key,
     method,
     expiresIn,
-  }: {
-    key: string;
-    method: "PUT" | "GET";
-    expiresIn: number;
-  }) {
+    headers = {},
+  }: SignedUrlOptions): Promise<SignedUrlResult> {
     const url = new URL(`${env.R2_BUCKET_URL}/${key}`);
 
-    url.searchParams.set("X-Amz-Expires", String(expiresIn));
+    const ttl = expiresIn ?? 600;
+
+    url.searchParams.set("X-Amz-Expires", String(ttl));
 
     try {
       const response = await this.client.sign(url, {
         method,
+        headers,
         aws: {
           signQuery: true,
           allHeaders: true,
         },
       });
 
-      return response.url;
+      return {
+        url: response.url,
+        expiresIn: ttl,
+        headers,
+      };
     } catch (error) {
       console.error("storage.getSignedUrl failed", error);
       throw new Error("Failed to generate signed url. Please try again later.");
@@ -100,11 +124,22 @@ class StorageClient {
     key: string;
 
     expiresIn?: number;
+    contentType?: string;
+    headers?: Record<string, string>;
   }) {
+    const headers: Record<string, string> = {
+      ...opts.headers,
+    };
+
+    if (opts.contentType) {
+      headers["Content-Type"] = opts.contentType;
+    }
+
     return await this.getSignedUrl({
       key: opts.key,
       method: "PUT",
-      expiresIn: opts.expiresIn || 600,
+      headers,
+      expiresIn: opts.expiresIn,
     });
   }
 
@@ -112,8 +147,65 @@ class StorageClient {
     return await this.getSignedUrl({
       key: opts.key,
       method: "GET",
-      expiresIn: opts.expiresIn || 600,
+      expiresIn: opts.expiresIn,
     });
+  }
+
+  private getBodySize(
+    body:
+      | Blob
+      | ArrayBuffer
+      | ArrayBufferView
+      | string
+      | { [key: string]: unknown }
+  ) {
+    if (typeof body === "string") {
+      const bufferCtor = (
+        globalThis as unknown as {
+          Buffer?: { byteLength?(input: string): number };
+        }
+      ).Buffer;
+
+      if (bufferCtor?.byteLength) {
+        return bufferCtor.byteLength(body);
+      }
+
+      return new TextEncoder().encode(body).byteLength;
+    }
+
+    if (typeof Blob !== "undefined" && body instanceof Blob) {
+      return body.size;
+    }
+
+    if (body instanceof ArrayBuffer) {
+      return body.byteLength;
+    }
+
+    if (ArrayBuffer.isView(body)) {
+      return body.byteLength;
+    }
+
+    if (body && typeof body === "object") {
+      const candidate = body as {
+        size?: unknown;
+        length?: unknown;
+        byteLength?: unknown;
+      };
+
+      if (typeof candidate.size === "number") {
+        return candidate.size;
+      }
+
+      if (typeof candidate.byteLength === "number") {
+        return candidate.byteLength;
+      }
+
+      if (typeof candidate.length === "number") {
+        return candidate.length;
+      }
+    }
+
+    return undefined;
   }
 
   private base64ToArrayBuffer(base64: string, opts?: imageOptions) {

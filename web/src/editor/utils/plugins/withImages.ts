@@ -55,28 +55,24 @@ export const uploadAndInsertImage = async (
   const uploadingToast = toast.info("uploading image...");
 
   try {
-    // get a presigned url from your backend
-    const { preSignedUrl } = await getPreSignedUrl({
+    const { preSignedUrl, filename } = await getPreSignedUrl({
       fileSize: file.size,
       contentType: file.type,
       filename: file.name,
     });
 
-    // upload file to r2
-    const res = await fetch(preSignedUrl, {
-      method: "PUT",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-
-    if (!res.ok) {
+    try {
+      await axios.put(preSignedUrl, file, {
+        headers: { "Content-Type": file.type },
+      });
+    } catch {
       toast.dismiss(uploadingToast);
       toast.error("upload failed");
       return;
     }
 
-    // use the public file url (strip query params)
-    const fileUrl = preSignedUrl.split("?")[0];
+    const fileUrl = `https://assets.irere.dev/${filename}`;
+
     insertImage(editor, fileUrl, path);
 
     toast.dismiss(uploadingToast);

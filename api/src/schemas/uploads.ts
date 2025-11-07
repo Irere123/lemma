@@ -59,3 +59,38 @@ export const preSignedUrlErrorResponseSchema = z.object({
     example: "File size exceeds the maximum allowed size",
   }),
 });
+
+export const directUploadResponseSchema = z.object({
+  url: z.string().openapi({
+    description: "The publicly accessible URL of the uploaded file",
+    example: "https://cdn.example.com/uploads/file_123.jpg",
+  }),
+  key: z.string().openapi({
+    description: "The storage key used to identify the file",
+    example: "file_01HZYZJCH1VYH927TFXW3KQV5M.jpg",
+  }),
+  filename: z.string().openapi({
+    description: "The storage filename assigned to the uploaded file",
+    example: "file_01HZYZJCH1VYH927TFXW3KQV5M.jpg",
+  }),
+  originalFilename: z.string().openapi({
+    description: "The original filename supplied by the client",
+    example: "cover.jpg",
+  }),
+  contentType: z.string().openapi({
+    description: "The MIME type detected for the uploaded file",
+    example: "image/jpeg",
+  }),
+  fileSize: z.number().openapi({
+    description: "The size of the uploaded file in bytes",
+    example: 512000,
+  }),
+  uploadedBy: z.string().openapi({
+    description: "The identifier of the user who performed the upload",
+    example: "user_123",
+  }),
+  uploadedAt: z.string().openapi({
+    description: "ISO timestamp indicating when the upload completed",
+    example: "2024-01-01T12:00:00.000Z",
+  }),
+});
