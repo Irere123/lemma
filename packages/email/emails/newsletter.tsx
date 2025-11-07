@@ -9,8 +9,6 @@ import {
   Hr,
   Markdown,
 } from "@react-email/components";
-import { Footer } from "../components/footer";
-import { Logo } from "../components/logo";
 import {
   EmailThemeProvider,
   getEmailInlineStyles,
@@ -22,20 +20,29 @@ interface DocumentData {
   id: string;
   title: string | null;
   subtitle: string | null;
-  type: "ARTICLE" | "NEWSLETTER" | "NOTE" | null;
   markdown: string | null;
   bannerImage: string | null;
   publishedDate: Date | null;
 }
 
+interface NewsletterSettings {
+  id: string;
+  fromName: string;
+  newsletterName: string;
+  logoUrl: string | null;
+  brandColor: string;
+}
+
 interface Props {
   document: DocumentData;
+  writerSettings: NewsletterSettings;
   recipientEmail: string;
   unsubscribeToken?: string;
 }
 
-export const DocumentNewsletter = ({
+export const DynamicDocumentNewsletter = ({
   document,
+  writerSettings,
   recipientEmail,
   unsubscribeToken,
 }: Props) => {
@@ -45,11 +52,11 @@ export const DocumentNewsletter = ({
   const previewText =
     document.subtitle ||
     document.title ||
-    "New content from irere.dev newsletter";
+    `New content from ${writerSettings.fromName}`;
 
   const documentUrl = `${baseUrl}/posts/${document.id}`;
   const unsubscribeUrl = unsubscribeToken
-    ? `${baseUrl}/unsubscribe?token=${unsubscribeToken}`
+    ? `${baseUrl}/unsubscribe?token=${unsubscribeToken}&writer=${writerSettings.id}`
     : undefined;
 
   return (
@@ -66,6 +73,24 @@ export const DocumentNewsletter = ({
             borderColor: lightStyles.container.borderColor,
           }}
         >
+          {/* Custom Logo or Newsletter Name */}
+          {writerSettings.logoUrl ? (
+            <Img
+              src={writerSettings.logoUrl}
+              alt={writerSettings.fromName}
+              className="w-full h-auto mb-[30px] max-w-[200px] mx-auto"
+            />
+          ) : (
+            <div className="text-center mb-[30px]">
+              <Heading
+                className={`text-[24px] font-bold ${themeClasses.heading}`}
+                style={{ color: writerSettings.brandColor }}
+              >
+                {writerSettings.newsletterName}
+              </Heading>
+            </div>
+          )}
+
           {document.bannerImage && (
             <Img
               src={document.bannerImage}
@@ -98,7 +123,7 @@ export const DocumentNewsletter = ({
             }}
           />
 
-          {document.markdown ? (
+          {document.markdown && (
             <div
               className={`text-base leading-relaxed ${themeClasses.text}`}
               style={{ color: lightStyles.text.color }}
@@ -142,27 +167,10 @@ export const DocumentNewsletter = ({
                   lineHeight: "1.6",
                 }}
               >
-                {document.markdown.length > 1500
-                  ? document.markdown.slice(0, 1500) + "\n\n..."
-                  : document.markdown}
+                {document.markdown}
               </Markdown>
             </div>
-          ) : (
-            <Text
-              className={`text-base leading-relaxed ${themeClasses.text}`}
-              style={{ color: lightStyles.text.color }}
-            >
-              Read the full article on our website.
-            </Text>
           )}
-
-          <Link
-            href={documentUrl}
-            className={`block text-center my-[32px] p-[12px_24px] bg-black text-white rounded-md text-sm font-medium no-underline ${themeClasses.button}`}
-            style={{ backgroundColor: "#000", color: "#fff" }}
-          >
-            Read full article
-          </Link>
 
           <Hr
             className="my-[26px]"
@@ -172,34 +180,13 @@ export const DocumentNewsletter = ({
             }}
           />
 
-          <style>{`
-            .signature-blend {
-              filter: none;
-            }
-
-            @media (prefers-color-scheme: dark) {
-              .signature-blend:not([class^="x_"]) {
-                filter: invert(1) brightness(1);
-              }
-            }
-
-            [data-ogsb] .signature-blend,
-            [data-ogsc] .signature-blend,
-            [data-ogac] .signature-blend,
-            [data-ogab] .signature-blend {
-              filter: invert(1) brightness(1);
-            }
-          `}</style>
-
-          <Footer unsubscribeUrl={unsubscribeUrl} />
-
           {unsubscribeUrl && (
             <Text
               className={`text-xs text-center mt-[20px] ${themeClasses.mutedText}`}
               style={{ color: lightStyles.mutedText.color }}
             >
               You're receiving this email because you subscribed to{" "}
-              {recipientEmail}.{" "}
+              {writerSettings.newsletterName} ({recipientEmail}).{" "}
               <Link
                 href={unsubscribeUrl}
                 style={{ color: lightStyles.mutedText.color }}
@@ -214,4 +201,4 @@ export const DocumentNewsletter = ({
   );
 };
 
-export default DocumentNewsletter;
+export default DynamicDocumentNewsletter;

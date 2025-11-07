@@ -27,7 +27,10 @@ interface Props {
   token?: string;
 }
 
-export const DynamicWelcomeNewsletter = ({ writerSettings, token }: Props) => {
+export const NewsletterSubscriptionEmail = ({
+  writerSettings,
+  token,
+}: Props) => {
   const themeClasses = getEmailThemeClasses();
   const lightStyles = getEmailInlineStyles("light");
 
@@ -69,24 +72,24 @@ export const DynamicWelcomeNewsletter = ({ writerSettings, token }: Props) => {
             className={`text-[21px] font-normal text-center p-0 my-[30px] mx-0 ${themeClasses.heading}`}
             style={{ color: lightStyles.text.color }}
           >
-            you're in.
+            You're in.
           </Heading>
 
           <Text
             className={`text-base ${themeClasses.text}`}
             style={{ color: lightStyles.text.color }}
           >
-            hey, i'm {writerSettings.fromName}.
+            Hey, I'm {writerSettings.fromName}.
             <br />
             <br />
-            welcome to {writerSettings.newsletterName} — <br />
+            Welcome to {writerSettings.newsletterName} <br />
             <br />
-            this newsletter is more than just writing — it's a way to operate.
-            you'll get updates, systems i'm testing, and frameworks that might
+            This newsletter is more than just writing, it's a way to operate.
+            You'll get updates, systems I'm testing, and frameworks that might
             help you move a bit faster and think a bit clearer.
             <br />
             <br />
-            before we go further, confirm your email to stay in the loop.
+            Before we go further, confirm your email to stay in the loop.
           </Text>
 
           {token && (
@@ -98,7 +101,7 @@ export const DynamicWelcomeNewsletter = ({ writerSettings, token }: Props) => {
                 color: "#fff",
               }}
             >
-              verify your email
+              Confirm your email
             </Link>
           )}
 
@@ -126,4 +129,4 @@ export const DynamicWelcomeNewsletter = ({ writerSettings, token }: Props) => {
   );
 };
 
-export default DynamicWelcomeNewsletter;
+export default NewsletterSubscriptionEmail;
