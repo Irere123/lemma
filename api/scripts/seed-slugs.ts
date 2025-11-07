@@ -49,7 +49,7 @@ async function main() {
   console.log(`Found ${rows.length} documents to update`);
 
   for (const row of rows) {
-    const base = slugify(row.title ?? row.id);
+    const base = slugify(row.title ?? row.id, { lower: true, strict: true });
     const uniqueSlug = await ensureUniqueSlug(db, base);
 
     await db

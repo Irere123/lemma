@@ -1,11 +1,11 @@
 import { and, desc, eq, ne, lt } from "drizzle-orm";
-import slugify from "slugify";
 
 import { env } from "cloudflare:workers";
 
 import type { DB } from "@api/db";
 import { documents, type Document, type DocumentStatus } from "@api/db/schema";
 import { generateId } from "@api/lib/utils";
+import { slugifyString } from "@api/db/utils/slugify";
 import type { UpsertDocumentData } from "@api/schemas";
 
 // Default page size for pagination
@@ -44,7 +44,7 @@ export const upsertDocument = async (
   if (data.id) {
     const updateValues: any = { ...data, updatedAt: new Date() };
     if (Object.prototype.hasOwnProperty.call(data, "title")) {
-      const base = slugify(data.title ?? "");
+      const base = slugifyString(data.title ?? generateId());
       const safeBase = base || generateId();
       updateValues.slug = await ensureUniqueSlug(db, safeBase, data.id);
     }
@@ -57,7 +57,7 @@ export const upsertDocument = async (
   }
 
   try {
-    const base = slugify(data.title ?? "");
+    const base = slugifyString(data.title ?? generateId());
     const safeBase = base || generateId();
     const slug = await ensureUniqueSlug(db, safeBase);
 
