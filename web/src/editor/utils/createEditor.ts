@@ -11,16 +11,19 @@ import withNodeId from "./plugins/withNodeId";
 import withAutoMarkdown from "./plugins/withAutoMarkdown";
 import withBlockBreakout from "./plugins/withBlockBreakout";
 import withLinks from "./plugins/withLinks";
+import withImages from "./plugins/withImages";
 
 const createCustomEditor = () =>
   withNormalization(
     withCustomDeleteBackward(
       withAutoMarkdown(
         withHtml(
-          withBlockBreakout(
-            withVoidElements(
-              withTags(
-                withLinks(withNodeId(withHistory(withReact(createEditor()))))
+          withImages(
+            withBlockBreakout(
+              withVoidElements(
+                withTags(
+                  withLinks(withNodeId(withHistory(withReact(createEditor()))))
+                )
               )
             )
           )

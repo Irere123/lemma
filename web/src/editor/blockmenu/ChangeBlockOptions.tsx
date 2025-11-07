@@ -6,6 +6,7 @@ import {
   IconH2,
   IconH3,
   IconH4,
+  IconPhoto,
   IconList,
   IconListCheck,
   IconListNumbers,
@@ -15,8 +16,9 @@ import {
 import { ReactEditor, useSlate } from "slate-react";
 
 import { ElementType } from "../types";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { isElementActive, toggleElement } from "../utils/formatting";
+import { uploadAndInsertImage } from "../utils/plugins/withImages";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 type BlockButtonProps = {
@@ -90,6 +92,12 @@ export default function ChangeBlockOptions(props: ChangeBlockOptionsProps) {
         />
       </div>
       <div className="flex items-center justify-center">
+        <ImageButton
+          format={ElementType.Image}
+          element={element}
+          Icon={IconPhoto}
+          tooltip="Image"
+        />
         <BlockButton
           format={ElementType.Blockquote}
           element={element}
@@ -129,6 +137,64 @@ const BlockButton = ({
       <Icon
         size={18}
         className={isActive ? "text-green-500" : "text-neutral-800"}
+      />
+    </DropdownMenuItem>
+  );
+};
+
+const ImageButton = ({
+  format,
+  element,
+  Icon,
+  className = "",
+}: BlockButtonProps) => {
+  const editor = useSlate();
+  const path = useMemo(
+    () => ReactEditor.findPath(editor, element),
+    [editor, element]
+  );
+  const isActive = isElementActive(editor, format, path);
+
+  const onClick = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = false;
+    input.className = "absolute invisible hidden w-0 h-0";
+
+    input.onchange = async (e) => {
+      if (!e.target) {
+        document.body.removeChild(input);
+        return;
+      }
+
+      const inputElement = e.target as HTMLInputElement;
+
+      if (!inputElement.files || inputElement.files.length <= 0) {
+        document.body.removeChild(input);
+        return;
+      }
+
+      await uploadAndInsertImage(editor, inputElement.files[0], path);
+      document.body.removeChild(input);
+    };
+
+    document.body.appendChild(input);
+    input.click();
+  }, [editor, path]);
+
+  return (
+    <DropdownMenuItem
+      className={`flex cursor-pointer items-center rounded px-2 py-2 hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-gray-700 dark:active:bg-gray-600 ${className}`}
+      onClick={onClick}
+    >
+      <Icon
+        size={18}
+        className={
+          isActive
+            ? "text-primary-500 dark:text-primary-400"
+            : "text-gray-800 dark:text-gray-200"
+        }
       />
     </DropdownMenuItem>
   );
