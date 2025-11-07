@@ -77,23 +77,24 @@ export const newsletterRouter = createTRPCRouter({
           });
         }
 
-        // resend.emails.send({
-        //   from: `${writerSettings.fromName} <welcome@${process.env.RESEND_DOMAIN}>`,
-        //   subject: "Welcome Abroad!",
-        //   to: subCreated?.email as string,
-        //   react: DynamicWelcomeNewsletter({
-        //     token: subCreated?.token as string,
-        //     writerSettings,
-        //   }),
-        // });
+        if (!subCreated) {
+          throw new TRPCError({
+            message: "Subscription not created",
+            code: "INTERNAL_SERVER_ERROR",
+          });
+        }
 
-        await enqueueWelcomeNewsletter(
-          ctx.env,
-          subCreated?.email as string,
-          ctx.user.name,
+        await enqueueWelcomeNewsletter({
+          env: ctx.env,
+          email: subCreated.email,
           writerSettings,
-          subCreated?.token as string
-        );
+          token: subCreated.token,
+          options: {
+            delayMs: 0,
+            priority: 9,
+            maxAttempts: 5,
+          },
+        });
       } catch (error) {
         console.log(error);
         throw new TRPCError({

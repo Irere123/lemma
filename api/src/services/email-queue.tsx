@@ -1,9 +1,10 @@
 import { Resend } from "resend";
 import type { NewsletterSettings } from "@api/db/schema";
+
 import { createEmailQueueClient } from "../queue/bindings";
 import type { EnqueueOptions } from "../queue/types";
 
-export type EmailTemplate = "welcome-newsletter" | "document-newsletter";
+export type EmailTemplate = "subscription" | "newsletter";
 
 export type DocumentData = {
   id: string;
@@ -15,11 +16,11 @@ export type DocumentData = {
 };
 
 export type EmailTemplateProps = {
-  "welcome-newsletter": {
+  subscription: {
     writerSettings: NewsletterSettings;
     token?: string;
   };
-  "document-newsletter": {
+  newsletter: {
     document: DocumentData;
     writerSettings: NewsletterSettings;
     recipientEmail: string;
@@ -40,18 +41,18 @@ const QUEUE_NAME = "email";
 
 const renderEmailTemplate = async (template: EmailTemplate, props: any) => {
   switch (template) {
-    case "welcome-newsletter": {
-      const { default: DynamicWelcomeNewsletter } = await import(
-        "@brain/email/emails/dynamic-welcome-newsletter"
+    case "subscription": {
+      const { default: SubscriptionEmailTemplate } = await import(
+        "@brain/email/emails/subscription"
       );
 
-      return DynamicWelcomeNewsletter(props);
+      return SubscriptionEmailTemplate(props);
     }
-    case "document-newsletter": {
-      const { default: DynamicDocumentNewsletter } = await import(
-        "@brain/email/emails/dynamic-document-newsletter"
+    case "newsletter": {
+      const { default: NewsletterEmailTemplate } = await import(
+        "@brain/email/emails/newsletter"
       );
-      return DynamicDocumentNewsletter(props);
+      return NewsletterEmailTemplate(props);
     }
     default:
       throw new Error(`Unknown email template: ${template}`);
@@ -151,24 +152,32 @@ export const getEmailQueueStats = async (env: Env) => {
 };
 
 // Helper function to enqueue document newsletter
-export const enqueueDocumentNewsletter = async (
-  env: Env,
-  document: DocumentData,
-  writerSettings: NewsletterSettings,
-  recipients: Array<{ email: string; unsubscribeToken?: string }>,
-  options?: EnqueueOptions
-) => {
+export const enqueueDocumentNewsletter = async ({
+  document,
+  env,
+  writerSettings,
+  recipients,
+  options,
+}: {
+  env: Env;
+  document: DocumentData;
+  writerSettings: NewsletterSettings;
+  recipients: Array<{ email: string; unsubscribeToken?: string }>;
+  options?: EnqueueOptions;
+}) => {
   const results = [];
 
   for (const recipient of recipients) {
     const result = await enqueueEmailJob(
       env,
       {
-        template: "document-newsletter",
+        template: "newsletter",
         to: recipient.email,
         subject: document.title || "New Newsletter from irere.dev",
-        from: "Irere Emmanuel",
-        fromEmail: "newsletter",
+        from: writerSettings.fromName,
+        fromEmail: `${writerSettings.fromName
+          .toLowerCase()
+          .replace(/\s+/g, ".")}@${env.RESEND_DOMAIN}`,
         props: {
           document,
           recipientEmail: recipient.email,
@@ -189,17 +198,23 @@ export const enqueueDocumentNewsletter = async (
 };
 
 // Helper function to enqueue welcome newsletter
-export const enqueueWelcomeNewsletter = async (
-  env: Env,
-  email: string,
-  writerSettings: NewsletterSettings,
-  token?: string,
-  options?: EnqueueOptions
-) => {
+export const enqueueWelcomeNewsletter = async ({
+  email,
+  env,
+  writerSettings,
+  options,
+  token,
+}: {
+  env: Env;
+  email: string;
+  writerSettings: NewsletterSettings;
+  token?: string;
+  options?: EnqueueOptions;
+}) => {
   return enqueueEmailJob(
     env,
     {
-      template: "welcome-newsletter",
+      template: "subscription",
       to: email,
       subject: `Welcome to ${writerSettings.newsletterName}`,
       from: writerSettings.fromName,

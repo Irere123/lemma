@@ -76,7 +76,17 @@ newsletterRouter.openapi(
         writerId: session.user.id,
       });
 
-      await enqueueWelcomeNewsletter(env, input.email, writerSettings);
+      await enqueueWelcomeNewsletter({
+        env,
+        email: input.email,
+        writerSettings,
+        token,
+        options: {
+          delayMs: 0,
+          priority: 9,
+          maxAttempts: 5,
+        },
+      });
 
       return c.json({ success: true });
     } catch (error) {
