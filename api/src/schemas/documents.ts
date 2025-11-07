@@ -8,7 +8,7 @@ export const documentSchema = z.object({
   id: z.string(),
   slug: z.string().nullable().optional(),
   title: z.string().optional(),
-  subtitle: z.string().optional(),
+  subtitle: z.string().optional().nullable(),
   status: z.enum(documentStatusEnum.enumValues).default("DRAFT"),
   content: z.any(),
   markdown: z.string().nullable().optional(),
@@ -22,7 +22,7 @@ export const documentSchema = z.object({
 export const upsertDocumentSchema = z.object({
   id: z.string().optional(),
   title: z.string().optional(),
-  subtitle: z.string().optional(),
+  subtitle: z.string().optional().nullable(),
   status: z.enum(documentStatusEnum.enumValues).optional().default("DRAFT"),
   content: z.any().optional(),
   markdown: z.string().nullable().optional(),
