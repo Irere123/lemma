@@ -1,4 +1,4 @@
-import { createRoute } from "@hono/zod-openapi";
+import { createRoute, z } from "@hono/zod-openapi";
 
 import { createRouter } from "@api/lib/utils";
 import {
@@ -6,9 +6,14 @@ import {
   documentsResponseSchema,
   upsertDocumentResponseSchema,
   upsertDocumentSchema,
+  updateBannerImageSchema,
 } from "@api/schemas";
 import { withRequiredScope } from "@api/rest/middleware";
-import { getUserDocuments, upsertDocument } from "@api/db/queries";
+import {
+  getUserDocuments,
+  upsertDocument,
+  updateDocumentBannerImage,
+} from "@api/db/queries";
 import { validateResponse } from "@api/lib/validate-response";
 
 const documentsRouter = createRouter();
@@ -51,7 +56,7 @@ documentsRouter.openapi(
       ? userDocuments.slice(0, filters.limit)
       : userDocuments;
     const nextCursor = hasMore
-      ? (results.at(-1)?.createdAt?.toISOString() ?? null)
+      ? results.at(-1)?.createdAt?.toISOString() ?? null
       : null;
 
     return c.json(
@@ -95,6 +100,53 @@ documentsRouter.openapi(
     const result = await upsertDocument(db, input, session.user.id);
 
     return c.json(validateResponse(result, upsertDocumentResponseSchema));
+  }
+);
+
+documentsRouter.openapi(
+  createRoute({
+    method: "patch",
+    path: "/:id/banner",
+    tags: ["Documents"],
+    summary: "Update the banner image of a document",
+    request: {
+      params: z.object({ id: z.string() }),
+      body: {
+        content: {
+          "application/json": {
+            schema: updateBannerImageSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Updated document",
+        content: {
+          "application/json": {
+            schema: upsertDocumentResponseSchema,
+          },
+        },
+      },
+    },
+    middleware: [withRequiredScope("documents.write")],
+  }),
+  async (c) => {
+    const db = c.get("db");
+    const session = c.get("session");
+    const { id } = c.req.valid("param");
+    const { bannerImage } = c.req.valid("json");
+
+    const updated = await updateDocumentBannerImage(
+      db,
+      id,
+      session.user.id,
+      bannerImage ?? null
+    );
+
+    return c.json(
+      validateResponse({ data: updated }, upsertDocumentResponseSchema)
+    );
   }
 );
 

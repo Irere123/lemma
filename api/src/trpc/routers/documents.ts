@@ -5,6 +5,7 @@ import {
   upsertDocumentSchema,
   sendNewsletterSchema,
   deleteDocumentSchema,
+  updateBannerImageSchema,
 } from "@api/schemas/documents";
 import {
   getAdminPublishedArticles,
@@ -12,6 +13,7 @@ import {
   getUserDocuments,
   upsertDocument,
   deleteDocument,
+  updateDocumentBannerImage,
 } from "@api/db/queries";
 import { getConfirmedSubscribers } from "@api/db/queries/subscribers";
 import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
@@ -36,6 +38,23 @@ export const documentRouter = createTRPCRouter({
       return document;
     }),
 
+  updateBannerImage: protectedProcedure
+    .input(updateBannerImageSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!input.documentId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Document ID is required",
+        });
+      }
+      return updateDocumentBannerImage(
+        ctx.db,
+        input.documentId,
+        ctx.user.id,
+        input.bannerImage
+      );
+    }),
+
   deleteDocument: protectedProcedure
     .input(deleteDocumentSchema)
     .mutation(async ({ ctx, input }) => {
@@ -56,7 +75,7 @@ export const documentRouter = createTRPCRouter({
         ? userDocuments.slice(0, input.limit)
         : userDocuments;
       const nextCursor = hasMore
-        ? (results.at(-1)?.createdAt?.toISOString() ?? null)
+        ? results.at(-1)?.createdAt?.toISOString() ?? null
         : null;
       return {
         documents: results,

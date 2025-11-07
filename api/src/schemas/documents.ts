@@ -50,6 +50,11 @@ export const upsertDocumentResponseSchema = z.object({
   data: documentSchema,
 });
 
+export const updateBannerImageSchema = z.object({
+  documentId: z.string().optional(),
+  bannerImage: z.string(),
+});
+
 // Lightweight document schema without heavy content fields
 export const documentListItemSchema = documentSchema.omit({
   content: true,

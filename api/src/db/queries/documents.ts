@@ -134,6 +134,21 @@ export const getDocumentById = async (db: DB, id: string) => {
   });
 };
 
+export const updateDocumentBannerImage = async (
+  db: DB,
+  id: string,
+  userId: string,
+  bannerImage: string | null
+) => {
+  const [document] = await db
+    .update(documents)
+    .set({ bannerImage, updatedAt: new Date() })
+    .where(and(eq(documents.id, id), eq(documents.userId, userId)))
+    .returning();
+
+  return document;
+};
+
 export const getPublishedArticles = async (
   db: DB,
   limit: number = DEFAULT_PAGE_SIZE
