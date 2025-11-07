@@ -38,3 +38,13 @@ export const getUntitledTitle = (documentId: string) => {
 
   return getResult();
 };
+
+// Returns a public asset URL from a storage key/filename
+export const getAssetUrl = (key: string) => {
+  if (!key) return "";
+  const base = "https://assets.irere.dev";
+  // Avoid duplicate slashes
+  const normalizedBase = String(base).replace(/\/$/, "");
+  const normalizedKey = String(key).replace(/^\//, "");
+  return `${normalizedBase}/${normalizedKey}`;
+};

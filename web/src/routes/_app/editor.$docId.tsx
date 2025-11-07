@@ -16,6 +16,7 @@ import { DocumentSettingsModal } from "@/components/modals/document-settings-mod
 import { DocumentEditorSkeleton } from "@/components/skeletons";
 import { IconMail } from "@tabler/icons-react";
 import { EditorHeader } from "@/components/editor-header";
+import { DocumentBanner } from "@/components/document-banner";
 
 const SYNC_DEBOUNCE_MS = 1000;
 
@@ -307,6 +308,7 @@ function RouteComponent() {
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
       <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
+        <DocumentBanner documentId={documentId} className="pt-2" />
         <Title
           documentId={documentId}
           className="px-8 pt-4 pb-1 md:px-12 md:pt-8"
