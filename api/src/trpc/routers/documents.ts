@@ -138,23 +138,16 @@ export const documentRouter = createTRPCRouter({
         delayMs = Math.max(0, scheduledTime.getTime() - now.getTime());
       }
 
-      const emailResults = await enqueueDocumentNewsletter(
-        ctx.env,
-        {
-          id: document.id,
-          title: document.title,
-          subtitle: document.subtitle,
-          markdown: document.markdown,
-          bannerImage: document.bannerImage,
-          publishedDate: document.publishedDate,
-        },
+      const emailResults = await enqueueDocumentNewsletter({
+        env: ctx.env,
+        document,
         writerSettings,
         recipients,
-        {
+        options: {
           delayMs,
           priority: sendImmediately ? 9 : 5,
-        }
-      );
+        },
+      });
 
       return {
         success: true,
