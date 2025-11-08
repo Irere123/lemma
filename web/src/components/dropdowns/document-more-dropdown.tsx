@@ -61,7 +61,7 @@ export function DocumentMoreDropdown({ documentId }: Props) {
           }}
         >
           <IconArrowUpRight />
-          View Live
+          Preview
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={handleOpenConfirm}
