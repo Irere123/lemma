@@ -107,8 +107,6 @@ export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
     filters.push(lt(documents.createdAt, new Date(data.cursor)));
   }
 
-  // Execute query with all applicable filters
-  // Exclude heavy fields (content, markdown) from list queries
   const userDocuments = await db
     .select({
       id: documents.id,
@@ -117,6 +115,7 @@ export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
       subtitle: documents.subtitle,
       status: documents.status,
       userId: documents.userId,
+      markdown: documents.markdown,
       bannerImage: documents.bannerImage,
       scheduledDate: documents.scheduledDate,
       publishedDate: documents.publishedDate,
