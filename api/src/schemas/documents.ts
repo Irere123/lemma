@@ -59,7 +59,6 @@ export const updateBannerImageSchema = z.object({
 // Lightweight document schema without heavy content fields
 export const documentListItemSchema = documentSchema.omit({
   content: true,
-  markdown: true,
 });
 
 export const documentsResponseSchema = z.object({
