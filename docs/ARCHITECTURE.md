@@ -444,4 +444,5 @@ DurableObject receives fail request
 
 - [Learn about the Queue System →](./QUEUE_SYSTEM.md)
 - [Learn about Email Service →](./EMAIL_SERVICE.md)
+- [Learn about Collections Feature →](./COLLECTIONS_SUMMARY.md)
 - [Contributing Guide →](./CONTRIBUTING.md)
