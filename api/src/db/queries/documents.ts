@@ -92,10 +92,7 @@ type UserDocumentsData = {
   cursor?: string;
 };
 
-export const getUserDocuments = async (
-  db: DB,
-  data: UserDocumentsData
-): Promise<Omit<Document, "content" | "markdown">[]> => {
+export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
   const limit = Math.min(data.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
 
   // Build filter conditions dynamically
