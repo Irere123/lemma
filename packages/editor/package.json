@@ -1,0 +1,46 @@
+{
+  "name": "@brain/editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "import": "./src/types/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "@tabler/icons-react": "^3.35.0",
+    "clsx": "^2.1.1",
+    "is-hotkey": "^0.2.0",
+    "prism-react-renderer": "^2.4.1",
+    "react-popper": "^2.3.0",
+    "slate": "^0.118.0",
+    "slate-history": "^0.113.1",
+    "slate-hyperscript": "^0.100.0",
+    "slate-react": "^0.117.4",
+    "tailwind-merge": "^3.3.1",
+    "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/is-hotkey": "^0.1.10",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.9.2"
+  }
+}

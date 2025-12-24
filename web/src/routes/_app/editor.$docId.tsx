@@ -232,7 +232,7 @@ function RouteComponent() {
   if (documentError) {
     return (
       <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
-        <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
+        <div className="mx-auto flex w-full flex-1 flex-col md:w-lg lg:w-160 xl:w-3xl">
           <div className="px-8 pt-8 pb-1 md:px-12 md:pt-12">
             <div className="text-3xl font-semibold leading-tight text-red-600 md:text-4xl">
               Error loading document
@@ -307,7 +307,7 @@ function RouteComponent() {
         }}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
-      <div className="mx-auto flex w-full flex-1 flex-col md:w-128 lg:w-160 xl:w-192">
+      <div className="mx-auto flex w-full flex-1 flex-col md:w-lg lg:w-160 xl:w-3xl">
         <DocumentBanner documentId={documentId} className="pt-2" />
         <Title
           documentId={documentId}

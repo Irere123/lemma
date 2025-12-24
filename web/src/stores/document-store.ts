@@ -15,7 +15,8 @@ import {
 } from "./document-store-utils";
 import { caseInsensitiveStringEqual } from "@/lib/utils";
 import type { Descendant } from "slate";
-import type { PickPartial } from "@/editor/types/utils";
+
+type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 localforage.config({
   name: "irere.dev",
