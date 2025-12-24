@@ -5,7 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { SidebarTrigger, useSidebar } from "./ui/sidebar";
 import { useTRPC } from "@/trpc/client";
 import { Button } from "./ui/button";
-import { getDefaultEditorValue } from "@/editor/utils/constants";
+import { getDefaultEditorValue } from "@/components/editor";
 import { documentStore } from "@/stores/document-store";
 
 export function AppHeader() {

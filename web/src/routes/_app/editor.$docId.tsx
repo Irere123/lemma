@@ -1,5 +1,4 @@
-import { Editor, slateToMarkdown } from "@/editor";
-import Title from "@/editor/Title";
+import { BrainEditor, BrainTitle, slateToMarkdown } from "@/components/editor";
 import { getUntitledTitle } from "@/lib/utils";
 import {
   documentStore,
@@ -309,13 +308,13 @@ function RouteComponent() {
       />
       <div className="mx-auto flex w-full flex-1 flex-col md:w-lg lg:w-160 xl:w-3xl">
         <DocumentBanner documentId={documentId} className="pt-2" />
-        <Title
+        <BrainTitle
           documentId={documentId}
           className="px-8 pt-4 pb-1 md:px-12 md:pt-8"
           onChange={onTitleChange}
           onChangeSubtitle={onSubtitleChange}
         />
-        <Editor
+        <BrainEditor
           documentId={documentId}
           className="px-8 pt-2 pb-8 md:px-12 md:pb-12"
           onChange={onEditorValueChange}

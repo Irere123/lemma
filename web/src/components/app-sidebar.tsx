@@ -12,7 +12,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useTRPC } from "@/trpc/client";
-import { getDefaultEditorValue } from "@/editor/utils/constants";
+import { getDefaultEditorValue } from "@/components/editor";
 import { documentStore } from "@/stores/document-store";
 
 export function AppSidebar() {

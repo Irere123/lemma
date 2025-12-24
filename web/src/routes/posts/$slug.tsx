@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-import { ReadOnlyEditor } from "@/editor";
+import { BrainReadOnlyEditor } from "@/components/editor";
 import { useTRPC } from "@/trpc/client";
 import { useCopyToClipboard } from "@/hooks/use-copy-clipboard";
 import { getPostBySlug } from "@/lib/api/posts";
@@ -128,7 +128,7 @@ function RouteComponent() {
         </header>
 
         <section className="prose prose-neutral max-w-none">
-          <ReadOnlyEditor
+          <BrainReadOnlyEditor
             content={post.content || []}
             className="text-base leading-7"
           />
