@@ -64,11 +64,21 @@ export default function Editor(props: EditorProps) {
   const isMounted = useIsMounted();
   const { editorStore, documentStore, createEditor } = useEditorContext();
 
+  // Memoize getSnapshot to prevent infinite loops
+  const getDocumentSnapshot = useCallback(() => {
+    return documentStore?.getDocument(documentId);
+  }, [documentStore, documentId]);
+
+  // Memoize getServerSnapshot as well
+  const getDocumentServerSnapshot = useCallback(() => {
+    return documentStore?.getDocument(documentId);
+  }, [documentStore, documentId]);
+
   // Subscribe to document store for reactive updates
   const document = useSyncExternalStore(
     documentStore?.subscribe ?? (() => () => {}),
-    () => documentStore?.getDocument(documentId),
-    () => documentStore?.getDocument(documentId)
+    getDocumentSnapshot,
+    getDocumentServerSnapshot
   );
 
   const updateStoreDocument = useCallback(
@@ -95,11 +105,21 @@ export default function Editor(props: EditorProps) {
 
   const initialValue = initialValueRef.current ?? getDefaultEditorValue();
 
+  // Memoize getSnapshot for editor store to prevent infinite loops
+  const getEditorSnapshot = useCallback(() => {
+    return editorStore?.getActiveEditor(documentId);
+  }, [editorStore, documentId]);
+
+  // Memoize getServerSnapshot as well
+  const getEditorServerSnapshot = useCallback(() => {
+    return editorStore?.getActiveEditor(documentId);
+  }, [editorStore, documentId]);
+
   // Get or create editor instance
   const editor = useSyncExternalStore(
     editorStore?.subscribe ?? (() => () => {}),
-    () => editorStore?.getActiveEditor(documentId),
-    () => editorStore?.getActiveEditor(documentId)
+    getEditorSnapshot,
+    getEditorServerSnapshot
   );
 
   // Create a local editor if no store provided

@@ -91,23 +91,56 @@ const editorStoreAdapter: EditorStoreApi = {
   subscribe: (listener: () => void) => activeEditorsStore.subscribe(listener),
 };
 
-// Document store adapter
+// Cache for document objects to ensure stable references
+// Maps documentId to the last returned document object
+const documentCache = new Map<string, { id: string; title: string | null; subtitle: string | null; content?: Descendant[] }>();
+
+// Document store adapter with caching to prevent infinite loops
 const documentStoreAdapter: DocumentStoreApi = {
   getDocument: (documentId: string) => {
     const state = documentStore.getState();
     const doc = state.documents[documentId];
-    if (!doc) return undefined;
-    return {
+    if (!doc) {
+      documentCache.delete(documentId);
+      return undefined;
+    }
+    
+    const cached = documentCache.get(documentId);
+    const currentDoc = {
       id: doc.id,
       title: doc.title,
       subtitle: doc.subtitle,
       content: doc.content,
     };
+    
+    // If cached and the primitive values match, return cached for stable reference
+    // For content, we compare by reference - if the store maintains the same reference,
+    // the content hasn't changed
+    if (cached && 
+        cached.id === currentDoc.id &&
+        cached.title === currentDoc.title &&
+        cached.subtitle === currentDoc.subtitle &&
+        cached.content === currentDoc.content) {
+      return cached;
+    }
+    
+    // Update cache and return new object
+    documentCache.set(documentId, currentDoc);
+    return currentDoc;
   },
   updateDocument: (update) => {
+    // Invalidate cache for this document when it's updated
+    if (update.id) {
+      documentCache.delete(update.id);
+    }
     documentStore.getState().updateDocument(update);
   },
-  subscribe: (listener: () => void) => documentStore.subscribe(listener),
+  subscribe: (listener: () => void) => {
+    // Subscribe to store changes
+    // Note: We don't clear the cache here because the cache comparison
+    // in getDocument will handle detecting changes
+    return documentStore.subscribe(listener);
+  },
 };
 
 // Configure image upload for the editor

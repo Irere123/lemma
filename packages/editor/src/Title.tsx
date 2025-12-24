@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useEditorContext } from "./context";
 
 export type TitleProps = {
@@ -24,11 +24,21 @@ export default function Title(props: TitleProps) {
   const titleRef = useRef<HTMLDivElement | null>(null);
   const subtitleRef = useRef<HTMLDivElement | null>(null);
 
+  // Memoize getSnapshot to prevent infinite loops
+  const getSnapshot = useCallback(() => {
+    return documentStore?.getDocument(documentId);
+  }, [documentStore, documentId]);
+
+  // Memoize getServerSnapshot as well
+  const getServerSnapshot = useCallback(() => {
+    return documentStore?.getDocument(documentId);
+  }, [documentStore, documentId]);
+
   // Subscribe to document store for reactive updates
   const document = useSyncExternalStore(
     documentStore?.subscribe ?? (() => () => {}),
-    () => documentStore?.getDocument(documentId),
-    () => documentStore?.getDocument(documentId)
+    getSnapshot,
+    getServerSnapshot
   );
 
   const emitTitleChange = () => {
