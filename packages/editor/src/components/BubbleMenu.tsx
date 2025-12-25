@@ -67,9 +67,9 @@ export function BubbleMenu({ className }: BubbleMenuProps) {
   }, [showLinkInput, view])
 
   const handleFormat = useCallback(
-    (command: (view: any) => boolean) => {
+    (command: (state: any, dispatch?: any, view?: any) => boolean) => {
       if (view) {
-        command(view)
+        command(view.state, view.dispatch, view)
         view.focus()
       }
     },

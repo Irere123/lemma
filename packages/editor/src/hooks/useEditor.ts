@@ -1,13 +1,15 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
-import { EditorState, Transaction } from 'prosemirror-state'
-import { EditorView } from 'prosemirror-view'
-import type { Node as ProseMirrorNode } from 'prosemirror-model'
-import { schema, getDefaultDoc } from '../schema'
+import { EditorState, Transaction, type Plugin } from 'prosemirror-state'
+import { EditorView, type NodeViewConstructor } from 'prosemirror-view'
+import type { Node as ProseMirrorNode, Schema } from 'prosemirror-model'
+import { schema as defaultSchema, getDefaultDoc } from '../schema'
 import { createEditorPlugins, type EditorPluginOptions } from '../plugins'
 
 export interface UseEditorOptions extends EditorPluginOptions {
-  /** Initial document content */
+  /** Initial document content (also accepts 'doc' for compatibility) */
   content?: ProseMirrorNode
+  /** Alias for content - initial document content */
+  doc?: ProseMirrorNode
   /** Called when document changes */
   onUpdate?: (doc: ProseMirrorNode) => void
   /** Called on every transaction */
@@ -16,6 +18,12 @@ export interface UseEditorOptions extends EditorPluginOptions {
   editable?: boolean
   /** Auto focus on mount */
   autoFocus?: boolean
+  /** Custom plugins (overrides default plugins if provided) */
+  plugins?: Plugin[]
+  /** Custom node views */
+  nodeViews?: Record<string, NodeViewConstructor>
+  /** Custom schema */
+  schema?: Schema
 }
 
 export interface UseEditorReturn {
@@ -45,11 +53,15 @@ export interface UseEditorReturn {
 export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
   const {
     content,
+    doc: docProp,
     onUpdate,
     onTransaction,
     editable = true,
     autoFocus = false,
     placeholder,
+    plugins: customPlugins,
+    nodeViews,
+    schema = defaultSchema,
   } = options
 
   const [view, setView] = useState<EditorView | null>(null)
@@ -57,6 +69,8 @@ export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
   const [isFocused, setIsFocused] = useState(false)
   const containerRef = useRef<HTMLElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const nodeViewsRef = useRef(nodeViews)
+  nodeViewsRef.current = nodeViews
 
   // Callbacks refs to avoid stale closures
   const onUpdateRef = useRef(onUpdate)
@@ -66,14 +80,17 @@ export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
 
   // Create initial state
   const initialState = useMemo(() => {
-    const plugins = createEditorPlugins({ placeholder, schema })
-    const doc = content || getDefaultDoc()
+    // Use custom plugins if provided, otherwise create default plugins
+    const plugins = customPlugins || createEditorPlugins({ placeholder, schema })
+    // Support both 'content' and 'doc' prop names
+    const initialDoc = content || docProp || getDefaultDoc()
 
     return EditorState.create({
-      doc,
+      doc: initialDoc,
+      schema,
       plugins,
     })
-  }, [content, placeholder])
+  }, [content, docProp, placeholder, customPlugins, schema])
 
   // Set container callback
   const setContainer = useCallback(
@@ -94,6 +111,7 @@ export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
         const editorView = new EditorView(element, {
           state: initialState,
           editable: () => editable,
+          nodeViews: nodeViewsRef.current,
 
           dispatchTransaction(transaction) {
             const newState = editorView.state.apply(transaction)

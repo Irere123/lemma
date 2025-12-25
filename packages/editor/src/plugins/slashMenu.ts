@@ -34,8 +34,10 @@ export function createSlashMenuPlugin(options: SlashMenuPluginOptions = {}): Plu
       },
 
       apply(tr, value, _oldState, newState): SlashMenuState {
-        // Check if menu was explicitly closed
+        // Check for meta updates
         const meta = tr.getMeta(slashMenuPluginKey)
+
+        // Handle explicit close
         if (meta?.close) {
           return {
             isOpen: false,
@@ -43,6 +45,11 @@ export function createSlashMenuPlugin(options: SlashMenuPluginOptions = {}): Plu
             searchTerm: '',
             triggerPos: null,
           }
+        }
+
+        // Handle explicit open with new state
+        if (meta?.open && meta?.state) {
+          return meta.state
         }
 
         // If menu is open, check for updates to search term

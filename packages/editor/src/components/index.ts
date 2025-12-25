@@ -1,4 +1,5 @@
 export { Editor, type EditorProps, type EditorHandle } from './Editor'
+export { EditorProvider, type EditorProviderProps } from './EditorProvider'
 export { EditorContent, type EditorContentProps, type EditorContentHandle } from './EditorContent'
 export { BubbleMenu, bubbleMenuStyles, type BubbleMenuProps } from './BubbleMenu'
 export { DragHandle, dragHandleComponentStyles, type DragHandleProps } from './DragHandle'

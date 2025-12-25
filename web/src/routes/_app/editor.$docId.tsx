@@ -125,7 +125,7 @@ function RouteComponent() {
       // Convert Slate content to markdown if content exists
       const updateData = { ...documentUpdate }
       if (documentUpdate.content) {
-        updateData.markdown = slateToMarkdown(documentUpdate.content as Descendant[])
+        updateData.markdown = await slateToMarkdown(documentUpdate.content as Descendant[])
 
         // If content is being updated and document is published, set status back to DRAFT
         if (document?.status === 'PUBLISHED') {

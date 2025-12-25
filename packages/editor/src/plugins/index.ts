@@ -79,6 +79,8 @@ export {
   dragHandlePluginKey,
   startDrag,
   updateDropPosition,
+  endDrag,
+  insertBlockAfter,
   getDragHandleState,
   dragHandleStyles,
   type DragHandleState,

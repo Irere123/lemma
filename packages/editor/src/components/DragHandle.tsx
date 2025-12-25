@@ -1,9 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useFloating, offset, shift, autoUpdate } from '@floating-ui/react'
-import { TextSelection } from 'prosemirror-state'
+import { useFloating, offset, shift, autoUpdate, flip } from '@floating-ui/react'
 import { useEditorView } from '../context/EditorContext'
-import { useEditorState } from '../hooks'
-import { getDragHandleState, startDrag, updateDropPosition } from '../plugins/dragHandle'
+import {
+  getDragHandleState,
+  startDrag,
+  updateDropPosition,
+  endDrag,
+  insertBlockAfter,
+  dragHandlePluginKey,
+} from '../plugins/dragHandle'
 
 export interface DragHandleProps {
   className?: string
@@ -11,34 +16,102 @@ export interface DragHandleProps {
 
 export function DragHandle({ className }: DragHandleProps) {
   const view = useEditorView()
-  const editorState = useEditorState()
   const [activeElement, setActiveElement] = useState<HTMLElement | null>(null)
+  const [isVisible, setIsVisible] = useState(false)
   const dragStartPos = useRef<{ x: number; y: number } | null>(null)
   const isDragging = useRef(false)
+  const handleRef = useRef<HTMLDivElement>(null)
 
   const { refs, floatingStyles } = useFloating({
-    open: !!activeElement,
-    placement: 'left',
-    middleware: [offset({ mainAxis: 4, crossAxis: 0 }), shift({ padding: 8 })],
+    open: !!activeElement && isVisible,
+    placement: 'left-start',
+    middleware: [
+      offset({ mainAxis: -8, crossAxis: 0 }),
+      shift({ padding: 8 }),
+      flip({ fallbackPlacements: ['left-end', 'right-start'] }),
+    ],
     whileElementsMounted: autoUpdate,
   })
 
-  // Update position based on active block
+  // Subscribe to plugin state changes
   useEffect(() => {
-    if (!view || !editorState) return
+    if (!view) return
 
-    const state = getDragHandleState(editorState)
-    if (state?.activeBlockDom && !state.isDragging) {
-      setActiveElement(state.activeBlockDom)
-      refs.setReference(state.activeBlockDom)
-    } else if (!state?.activeBlockPos) {
-      setActiveElement(null)
+    let animationFrame: number | null = null
+
+    const updateFromState = () => {
+      const state = dragHandlePluginKey.getState(view.state)
+
+      if (state?.activeBlockDom && !state.isDragging) {
+        setActiveElement(state.activeBlockDom)
+        refs.setReference(state.activeBlockDom)
+        setIsVisible(true)
+      } else if (!state?.activeBlockPos && !state?.isDragging) {
+        setIsVisible(false)
+        // Delay clearing the element to allow for animation
+        setTimeout(() => {
+          const currentState = dragHandlePluginKey.getState(view.state)
+          if (!currentState?.activeBlockPos && !currentState?.isDragging) {
+            setActiveElement(null)
+          }
+        }, 150)
+      }
     }
-  }, [view, editorState, refs])
+
+    // Initial check
+    updateFromState()
+
+    // Subscribe to state changes by patching dispatch
+    const originalDispatch = view.dispatch.bind(view)
+    const patchedDispatch = (tr: any) => {
+      originalDispatch(tr)
+      // Use requestAnimationFrame to batch updates
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame)
+      }
+      animationFrame = requestAnimationFrame(updateFromState)
+    }
+    ;(view as any).dispatch = patchedDispatch
+
+    return () => {
+      ;(view as any).dispatch = originalDispatch
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame)
+      }
+    }
+  }, [view, refs])
+
+  // Keep handle visible when mouse is over it
+  useEffect(() => {
+    const handle = handleRef.current
+    if (!handle) return
+
+    const handleMouseEnter = () => {
+      setIsVisible(true)
+    }
+
+    const handleMouseLeave = () => {
+      if (!isDragging.current && view) {
+        const state = dragHandlePluginKey.getState(view.state)
+        if (!state?.activeBlockPos) {
+          setIsVisible(false)
+        }
+      }
+    }
+
+    handle.addEventListener('mouseenter', handleMouseEnter)
+    handle.addEventListener('mouseleave', handleMouseLeave)
+
+    return () => {
+      handle.removeEventListener('mouseenter', handleMouseEnter)
+      handle.removeEventListener('mouseleave', handleMouseLeave)
+    }
+  }, [view])
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
+      e.stopPropagation()
       if (!view) return
 
       dragStartPos.current = { x: e.clientX, y: e.clientY }
@@ -51,10 +124,10 @@ export function DragHandle({ className }: DragHandleProps) {
         const deltaY = Math.abs(moveEvent.clientY - dragStartPos.current.y)
 
         // Start dragging after a small threshold
-        if (!isDragging.current && (deltaX > 5 || deltaY > 5)) {
+        if (!isDragging.current && (deltaX > 3 || deltaY > 3)) {
           isDragging.current = true
           startDrag(view)
-          document.body.classList.add('dragging-block')
+          document.body.classList.add('is-dragging-block')
         }
 
         if (isDragging.current) {
@@ -62,21 +135,32 @@ export function DragHandle({ className }: DragHandleProps) {
         }
       }
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (upEvent: MouseEvent) => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
-        document.body.classList.remove('dragging-block')
-        dragStartPos.current = null
+        document.body.classList.remove('is-dragging-block')
 
         if (isDragging.current) {
-          // Trigger drop by dispatching a synthetic drop event
-          const dropEvent = new DragEvent('drop', {
-            bubbles: true,
-            cancelable: true,
-          })
-          view.dom.dispatchEvent(dropEvent)
+          // Trigger the drop by dispatching to the view
+          const state = getDragHandleState(view.state)
+          if (state?.dropPos !== null && state?.activeBlockPos !== null) {
+            const from = state.activeBlockPos
+            const to = state.dropPos
+            const node = state.activeBlockNode
+
+            if (node && from !== to) {
+              const { tr } = view.state
+              const nodeSize = node.nodeSize
+              tr.delete(from, from + nodeSize)
+              const adjustedTo = to > from ? to - nodeSize : to
+              tr.insert(adjustedTo, node)
+              view.dispatch(tr)
+            }
+          }
+          endDrag(view)
         }
 
+        dragStartPos.current = null
         isDragging.current = false
       }
 
@@ -86,36 +170,48 @@ export function DragHandle({ className }: DragHandleProps) {
     [view]
   )
 
-  const handleAddClick = useCallback(() => {
-    if (!view) return
+  const handleAddClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!view) return
+      insertBlockAfter(view)
+    },
+    [view]
+  )
 
-    const state = getDragHandleState(view.state)
-    if (state?.activeBlockPos !== null && state?.activeBlockNode) {
-      // Insert a new paragraph after the current block
-      const pos = state.activeBlockPos + state.activeBlockNode.nodeSize
-      const { tr } = view.state
-      const paragraph = view.state.schema.nodes.paragraph.create()
-      tr.insert(pos, paragraph)
-      tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1)))
-      view.dispatch(tr)
-      view.focus()
-    }
-  }, [view])
-
-  if (!activeElement) {
+  if (!view) {
     return null
   }
 
   return (
-    <div ref={refs.setFloating} style={floatingStyles} className={`drag-handle ${className || ''}`}>
-      <button type='button' className='drag-handle-add' onClick={handleAddClick} title='Add block'>
+    <div
+      ref={(node) => {
+        handleRef.current = node
+        refs.setFloating(node)
+      }}
+      style={{
+        ...floatingStyles,
+        opacity: isVisible && activeElement ? 1 : 0,
+        pointerEvents: isVisible && activeElement ? 'auto' : 'none',
+        transition: 'opacity 0.15s ease-in-out',
+        zIndex: 50,
+      }}
+      className={`pm-drag-handle ${className || ''}`}
+    >
+      <button
+        type="button"
+        className="pm-drag-handle-add"
+        onClick={handleAddClick}
+        title="Click to add block below"
+      >
         <PlusIcon />
       </button>
       <button
-        type='button'
-        className='drag-handle-grip'
+        type="button"
+        className="pm-drag-handle-grip"
         onMouseDown={handleMouseDown}
-        title='Drag to move'
+        title="Drag to move block"
       >
         <GripIcon />
       </button>
@@ -125,13 +221,13 @@ export function DragHandle({ className }: DragHandleProps) {
 
 function PlusIcon() {
   return (
-    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
-        d='M7 2V12M2 7H12'
-        stroke='currentColor'
-        strokeWidth='1.5'
-        strokeLinecap='round'
-        strokeLinejoin='round'
+        d="M7 2V12M2 7H12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   )
@@ -139,131 +235,79 @@ function PlusIcon() {
 
 function GripIcon() {
   return (
-    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
-      <circle cx='5' cy='3' r='1' fill='currentColor' />
-      <circle cx='9' cy='3' r='1' fill='currentColor' />
-      <circle cx='5' cy='7' r='1' fill='currentColor' />
-      <circle cx='9' cy='7' r='1' fill='currentColor' />
-      <circle cx='5' cy='11' r='1' fill='currentColor' />
-      <circle cx='9' cy='11' r='1' fill='currentColor' />
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="5" cy="3" r="1.25" fill="currentColor" />
+      <circle cx="9" cy="3" r="1.25" fill="currentColor" />
+      <circle cx="5" cy="7" r="1.25" fill="currentColor" />
+      <circle cx="9" cy="7" r="1.25" fill="currentColor" />
+      <circle cx="5" cy="11" r="1.25" fill="currentColor" />
+      <circle cx="9" cy="11" r="1.25" fill="currentColor" />
     </svg>
   )
 }
 
 // Styles for drag handle component
 export const dragHandleComponentStyles = `
-.drag-handle {
+.pm-drag-handle {
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 2px;
   background-color: white;
-  border: 1px solid #e5e5e5;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  z-index: 50;
-  opacity: 0;
-  transition: opacity 0.15s;
-  pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.ProseMirror:hover .drag-handle,
-.drag-handle:hover {
-  opacity: 1;
+@media (prefers-color-scheme: dark) {
+  .pm-drag-handle {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
 }
 
-.drag-handle-add,
-.drag-handle-grip {
+.pm-drag-handle-add,
+.pm-drag-handle-grip {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   color: #9ca3af;
   background: transparent;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
-.drag-handle-add:hover,
-.drag-handle-grip:hover {
+.pm-drag-handle-add:hover,
+.pm-drag-handle-grip:hover {
   color: #374151;
   background-color: #f3f4f6;
 }
 
-.drag-handle-grip {
+@media (prefers-color-scheme: dark) {
+  .pm-drag-handle-add:hover,
+  .pm-drag-handle-grip:hover {
+    color: #e5e7eb;
+    background-color: #374151;
+  }
+}
+
+.pm-drag-handle-grip {
   cursor: grab;
 }
 
-.drag-handle-grip:active {
+.pm-drag-handle-grip:active {
   cursor: grabbing;
   background-color: #e5e7eb;
 }
 
-/* Styles during drag */
-body.dragging-block {
-  cursor: grabbing !important;
-  user-select: none;
-}
-
-body.dragging-block * {
-  cursor: grabbing !important;
-}
-
-body.dragging-block .ProseMirror {
-  pointer-events: none;
-}
-
-body.dragging-block .drag-handle {
-  pointer-events: auto;
-}
-
-/* Block menu popup (future enhancement) */
-.block-menu-popup {
-  position: absolute;
-  z-index: 100;
-  min-width: 200px;
-  padding: 4px;
-  background-color: white;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.block-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 14px;
-  color: #374151;
-  text-align: left;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.block-menu-item:hover {
-  background-color: #f5f5f5;
-}
-
-.block-menu-item.danger {
-  color: #ef4444;
-}
-
-.block-menu-item.danger:hover {
-  background-color: #fef2f2;
-}
-
-.block-menu-divider {
-  height: 1px;
-  margin: 4px 0;
-  background-color: #e5e5e5;
+@media (prefers-color-scheme: dark) {
+  .pm-drag-handle-grip:active {
+    background-color: #4b5563;
+  }
 }
 `

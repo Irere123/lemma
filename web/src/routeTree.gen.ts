@@ -293,7 +293,9 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppEditorDocIdRoute: AppEditorDocIdRoute,
 }
 
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(AppRouteRouteChildren)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
 
 interface DevelopersRouteRouteChildren {
   DevelopersDevelopersRoute: typeof DevelopersDevelopersRoute
@@ -304,7 +306,7 @@ const DevelopersRouteRouteChildren: DevelopersRouteRouteChildren = {
 }
 
 const DevelopersRouteRouteWithChildren = DevelopersRouteRoute._addFileChildren(
-  DevelopersRouteRouteChildren
+  DevelopersRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {

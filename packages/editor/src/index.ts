@@ -16,6 +16,10 @@ export {
   createDragHandlePlugin,
   dragHandlePluginKey,
   getDragHandleState,
+  startDrag,
+  updateDropPosition,
+  endDrag,
+  insertBlockAfter,
   dragHandleStyles,
   undo,
   redo,
@@ -36,6 +40,7 @@ export {
 // Components
 export {
   Editor,
+  EditorProvider,
   EditorContent,
   BubbleMenu,
   bubbleMenuStyles,
@@ -46,6 +51,7 @@ export {
 } from './components'
 export type {
   EditorProps,
+  EditorProviderProps,
   EditorHandle,
   EditorContentProps,
   EditorContentHandle,

@@ -1,5 +1,5 @@
 import type { Node as ProseMirrorNode, ResolvedPos } from 'prosemirror-model'
-import { EditorState, Plugin, PluginKey } from 'prosemirror-state'
+import { EditorState, Plugin, PluginKey, TextSelection } from 'prosemirror-state'
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
 export const dragHandlePluginKey = new PluginKey<DragHandleState>('dragHandle')
@@ -22,6 +22,8 @@ interface DragHandleOptions {
  * Creates a drag handle plugin for block-level drag and drop
  */
 export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin {
+  let hideTimeout: ReturnType<typeof setTimeout> | null = null
+
   return new Plugin<DragHandleState>({
     key: dragHandlePluginKey,
 
@@ -41,6 +43,30 @@ export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin 
         if (meta) {
           return { ...value, ...meta }
         }
+
+        // If the document changed, try to keep the active block if it's still valid
+        if (tr.docChanged && value.activeBlockPos !== null) {
+          const mapped = tr.mapping.mapResult(value.activeBlockPos)
+          if (!mapped.deleted) {
+            const node = tr.doc.nodeAt(mapped.pos)
+            if (node && isBlockNode(node)) {
+              return {
+                ...value,
+                activeBlockPos: mapped.pos,
+                activeBlockNode: node,
+              }
+            }
+          }
+          // Block was deleted or invalid, clear state
+          return {
+            activeBlockPos: null,
+            activeBlockNode: null,
+            activeBlockDom: null,
+            isDragging: false,
+            dropPos: null,
+          }
+        }
+
         return value
       },
     },
@@ -48,6 +74,23 @@ export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin 
     props: {
       handleDOMEvents: {
         mousemove(view, event) {
+          // Clear any pending hide timeout
+          if (hideTimeout) {
+            clearTimeout(hideTimeout)
+            hideTimeout = null
+          }
+
+          // Don't update during drag
+          const state = dragHandlePluginKey.getState(view.state)
+          if (state?.isDragging) return false
+
+          const target = event.target as HTMLElement
+          const editorRect = view.dom.getBoundingClientRect()
+
+          // Check if mouse is in the left margin area (where drag handle would be)
+          const isInLeftMargin = event.clientX < editorRect.left + 60
+
+          // Get the block at the current mouse position
           const pos = getBlockPosFromCoords(view, event.clientX, event.clientY)
 
           if (pos !== null) {
@@ -56,19 +99,23 @@ export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin 
               const dom = view.nodeDOM(pos) as HTMLElement | null
               updateDragHandleState(view, pos, node, dom)
             } else {
-              clearDragHandleState(view)
+              // If not in left margin, schedule a hide
+              if (!isInLeftMargin) {
+                scheduleHide(view)
+              }
             }
-          } else {
-            clearDragHandleState(view)
+          } else if (!isInLeftMargin) {
+            scheduleHide(view)
           }
 
           return false
         },
 
-        mouseleave(view, _event) {
+        mouseleave(view, event) {
           const state = dragHandlePluginKey.getState(view.state)
           if (state && !state.isDragging) {
-            clearDragHandleState(view)
+            // Delay clearing to allow moving to the drag handle
+            scheduleHide(view)
           }
           return false
         },
@@ -131,23 +178,12 @@ export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin 
 
         const decorations: Decoration[] = []
 
-        // Add active block highlight
-        if (pluginState.activeBlockPos !== null && pluginState.activeBlockNode) {
-          decorations.push(
-            Decoration.node(
-              pluginState.activeBlockPos,
-              pluginState.activeBlockPos + pluginState.activeBlockNode.nodeSize,
-              { class: 'drag-handle-active' }
-            )
-          )
-        }
-
-        // Add drop indicator
+        // Add drop indicator during drag
         if (pluginState.isDragging && pluginState.dropPos !== null) {
           decorations.push(
             Decoration.widget(pluginState.dropPos, () => {
               const indicator = document.createElement('div')
-              indicator.className = 'drag-drop-indicator'
+              indicator.className = 'pm-drag-drop-indicator'
               return indicator
             })
           )
@@ -156,11 +192,38 @@ export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin 
         return DecorationSet.create(state.doc, decorations)
       },
     },
+
+    view() {
+      return {
+        destroy() {
+          if (hideTimeout) {
+            clearTimeout(hideTimeout)
+          }
+        },
+      }
+    },
   })
+
+  function scheduleHide(view: EditorView) {
+    if (hideTimeout) {
+      clearTimeout(hideTimeout)
+    }
+    hideTimeout = setTimeout(() => {
+      const state = dragHandlePluginKey.getState(view.state)
+      if (state && !state.isDragging) {
+        clearDragHandleState(view)
+      }
+      hideTimeout = null
+    }, 150)
+  }
 }
 
 function getBlockPosFromCoords(view: EditorView, x: number, y: number): number | null {
-  const pos = view.posAtCoords({ left: x, top: y })
+  // Use the editor's content area for position calculation
+  const editorRect = view.dom.getBoundingClientRect()
+  const adjustedX = Math.max(editorRect.left + 10, x)
+
+  const pos = view.posAtCoords({ left: adjustedX, top: y })
   if (!pos) return null
 
   const $pos = view.state.doc.resolve(pos.pos)
@@ -168,18 +231,34 @@ function getBlockPosFromCoords(view: EditorView, x: number, y: number): number |
 }
 
 function getBlockPos($pos: ResolvedPos): number | null {
-  // Walk up to find a block-level node
+  // Walk up to find a top-level block node (direct child of doc)
   for (let depth = $pos.depth; depth >= 1; depth--) {
     const node = $pos.node(depth)
-    if (isBlockNode(node)) {
+    // We want the first block-level node that's a direct child of the doc
+    // or any block that isn't a list item (to handle nested lists properly)
+    if (isBlockNode(node) && depth === 1) {
+      return $pos.before(depth)
+    }
+    // For deeper nodes, find the top-level parent
+    if (isBlockNode(node) && $pos.node(depth - 1)?.type.name === 'doc') {
       return $pos.before(depth)
     }
   }
+
+  // If we're at depth 1, return that position
+  if ($pos.depth >= 1) {
+    const node = $pos.node(1)
+    if (isBlockNode(node)) {
+      return $pos.before(1)
+    }
+  }
+
   return null
 }
 
 function isBlockNode(node: ProseMirrorNode): boolean {
-  return node.isBlock && !node.isTextblock === false && node.type.name !== 'doc'
+  // A block node is any block-level node that isn't the doc itself
+  return node.isBlock && node.type.name !== 'doc'
 }
 
 function updateDragHandleState(
@@ -234,32 +313,45 @@ export function updateDropPosition(view: EditorView, y: number): void {
   const state = dragHandlePluginKey.getState(view.state)
   if (!state?.isDragging) return
 
-  const pos = view.posAtCoords({ left: 0, top: y })
+  const editorRect = view.dom.getBoundingClientRect()
+  const pos = view.posAtCoords({ left: editorRect.left + 50, top: y })
   if (!pos) return
 
   const $pos = view.state.doc.resolve(pos.pos)
   let dropPos: number | null = null
 
   // Find the nearest block boundary
-  for (let depth = $pos.depth; depth >= 1; depth--) {
+  for (let depth = Math.min($pos.depth, 1); depth >= 1; depth--) {
     const node = $pos.node(depth)
     if (isBlockNode(node)) {
       const before = $pos.before(depth)
       const after = $pos.after(depth)
-      const nodeTop = view.coordsAtPos(before).top
-      const nodeBottom = view.coordsAtPos(after).bottom
-      const middle = (nodeTop + nodeBottom) / 2
 
-      dropPos = y < middle ? before : after
+      try {
+        const coordsBefore = view.coordsAtPos(before)
+        const coordsAfter = view.coordsAtPos(after)
+        const middle = (coordsBefore.top + coordsAfter.bottom) / 2
+
+        dropPos = y < middle ? before : after
+      } catch {
+        dropPos = before
+      }
       break
     }
   }
 
-  if (dropPos !== state.dropPos) {
+  if (dropPos !== null && dropPos !== state.dropPos) {
     const { tr } = view.state
     tr.setMeta(dragHandlePluginKey, { dropPos })
     view.dispatch(tr)
   }
+}
+
+/**
+ * End the drag operation
+ */
+export function endDrag(view: EditorView): void {
+  clearDragHandleState(view)
 }
 
 /**
@@ -269,40 +361,37 @@ export function getDragHandleState(state: EditorState): DragHandleState | undefi
   return dragHandlePluginKey.getState(state)
 }
 
+/**
+ * Insert a new paragraph after a block
+ */
+export function insertBlockAfter(view: EditorView): void {
+  const state = getDragHandleState(view.state)
+  if (state?.activeBlockPos !== null && state?.activeBlockNode) {
+    const pos = state.activeBlockPos + state.activeBlockNode.nodeSize
+    const { tr } = view.state
+    const paragraph = view.state.schema.nodes.paragraph.create()
+    tr.insert(pos, paragraph)
+    tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1)))
+    view.dispatch(tr)
+    view.focus()
+  }
+}
+
 // Styles for drag handle
 export const dragHandleStyles = `
-.drag-handle-active {
+/* Drop indicator line */
+.pm-drag-drop-indicator {
   position: relative;
-}
-
-.drag-handle-active::before {
-  content: "";
-  position: absolute;
-  left: -24px;
-  top: 0;
-  width: 4px;
-  height: 100%;
-  background-color: #3b82f6;
+  height: 3px;
+  margin: -1.5px 0;
+  background: linear-gradient(90deg, #3b82f6 0%, #3b82f6 100%);
   border-radius: 2px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.drag-handle-active:hover::before {
-  opacity: 1;
-}
-
-.drag-drop-indicator {
-  position: relative;
-  height: 2px;
-  margin: -1px 0;
-  background-color: #3b82f6;
-  border-radius: 1px;
   pointer-events: none;
+  z-index: 100;
 }
 
-.drag-drop-indicator::before,
-.drag-drop-indicator::after {
+.pm-drag-drop-indicator::before,
+.pm-drag-drop-indicator::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -313,59 +402,46 @@ export const dragHandleStyles = `
   transform: translateY(-50%);
 }
 
-.drag-drop-indicator::before {
-  left: 0;
+.pm-drag-drop-indicator::before {
+  left: -4px;
 }
 
-.drag-drop-indicator::after {
-  right: 0;
+.pm-drag-drop-indicator::after {
+  right: -4px;
 }
 
-/* Drag handle button container */
-.drag-handle-container {
-  position: absolute;
-  left: -32px;
-  top: 0;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.15s;
+/* Dragging state */
+body.is-dragging-block {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+body.is-dragging-block * {
+  cursor: grabbing !important;
+}
+
+body.is-dragging-block .ProseMirror {
   pointer-events: none;
 }
 
-*:hover > .drag-handle-container,
-.drag-handle-container:hover {
-  opacity: 1;
+body.is-dragging-block .pm-drag-handle {
   pointer-events: auto;
 }
 
-.drag-handle-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  color: #9ca3af;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: grab;
-  transition: all 0.15s;
+/* Active block highlight - subtle left border */
+.ProseMirror .pm-block-active {
+  position: relative;
 }
 
-.drag-handle-button:hover {
-  color: #374151;
-  background-color: #f3f4f6;
-}
-
-.drag-handle-button:active {
-  cursor: grabbing;
-}
-
-.drag-handle-button svg {
-  width: 14px;
-  height: 14px;
+.ProseMirror .pm-block-active::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #3b82f6;
+  border-radius: 2px;
+  opacity: 0.5;
 }
 `

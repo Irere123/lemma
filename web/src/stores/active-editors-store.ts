@@ -1,20 +1,29 @@
-import { createCustomEditor } from '@lemma/editor'
-import { type Descendant, Editor } from 'slate'
+// Track which documents have active editors
+// Used for managing document editing state
 
-// Map from index of the editor to slate editor
-let activeEditors: Record<string, Editor> = {}
+// Set of active document IDs
+let activeDocumentIds: Set<string> = new Set()
 
 let listeners: Array<() => void> = []
 
 export const activeEditorsStore = {
-  getActiveEditor(documentId: string) {
-    return activeEditors[documentId]
+  isActive(documentId: string): boolean {
+    return activeDocumentIds.has(documentId)
   },
   addActiveEditor(documentId: string) {
-    if (activeEditors[documentId]) {
+    if (activeDocumentIds.has(documentId)) {
       return
     }
-    activeEditors = { ...activeEditors, [documentId]: createCustomEditor() }
+    activeDocumentIds = new Set(activeDocumentIds)
+    activeDocumentIds.add(documentId)
+    emitChange()
+  },
+  removeActiveEditor(documentId: string) {
+    if (!activeDocumentIds.has(documentId)) {
+      return
+    }
+    activeDocumentIds = new Set(activeDocumentIds)
+    activeDocumentIds.delete(documentId)
     emitChange()
   },
   subscribe(listener: () => void) {
@@ -24,11 +33,10 @@ export const activeEditorsStore = {
     }
   },
   getSnapshot() {
-    return activeEditors
+    return activeDocumentIds
   },
-
   getServerSnapshot() {
-    return true // Always show "Online" for server-generated HTML
+    return new Set<string>()
   },
 }
 
@@ -36,16 +44,6 @@ function emitChange() {
   for (const listener of listeners) {
     listener()
   }
-}
-
-// Get editor from active editors if it exists, or create a new one
-export function getActiveOrTempEditor(noteId: string, content: Descendant[]) {
-  let editor = activeEditorsStore.getActiveEditor(noteId)
-  if (!editor) {
-    editor = createCustomEditor()
-    editor.children = content
-  }
-  return editor
 }
 
 export default activeEditorsStore
