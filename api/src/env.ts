@@ -7,7 +7,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   ALLOWED_API_ORIGINS: z.string().default('http://localhost:3000'),
-  BRAIN_ENCRYPTION_KEY: z.string(),
+  LEMMA_ENCRYPTION_KEY: z.string(),
   ADMIN_USER_ID: z.string(),
 
   // cloudflare R2 Storage

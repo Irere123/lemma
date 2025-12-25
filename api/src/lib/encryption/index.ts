@@ -1,17 +1,20 @@
 import crypto from 'node:crypto'
 
+import { env } from '@api/env-runtime'
+
+
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 16
 const AUTH_TAG_LENGTH = 16
 
 function getKey(): Buffer {
-  const key = process.env.BRAIN_ENCRYPTION_KEY
+  const key = env.LEMMA_ENCRYPTION_KEY
   if (!key) {
-    throw new Error('BRAIN_ENCRYPTION_KEY environment variable is not set.')
+    throw new Error('LEMMA_ENCRYPTION_KEY environment variable is not set.')
   }
 
   if (Buffer.from(key, 'hex').length !== 32) {
-    throw new Error('BRAIN_ENCRYPTION_KEY must be a 64-character hex string (32 bytes).')
+    throw new Error('LEMMA_ENCRYPTION_KEY must be a 64-character hex string (32 bytes).')
   }
   return Buffer.from(key, 'hex')
 }

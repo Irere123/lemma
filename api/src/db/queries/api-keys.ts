@@ -2,8 +2,8 @@ import { eq } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
 import { apiKeys } from '@api/db/schema'
-import { encrypt, hash } from '@api/encryption'
 import { generateApiKey } from '@api/db/utils/api-keys'
+import { encrypt, hash } from '@api/lib/encryption'
 import { generateId } from '@api/lib/utils'
 
 export type ApiKey = {

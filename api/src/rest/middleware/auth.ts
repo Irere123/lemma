@@ -6,8 +6,8 @@ import { apiKeyCache } from '@api/cache/api-keys-cache'
 import { userCache } from '@api/cache/user-cache'
 import { getApiKeyByToken, getUserById, updatedApiKeyLastUsedAt } from '@api/db/queries'
 import { isValidApiKeyFormat } from '@api/db/utils/api-keys'
-import { hash } from '@api/encryption'
 import { createAuth } from '@api/lib/auth'
+import { hash } from '@api/lib/encryption'
 import { expandScopes } from '@lemma/common/scopes'
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
