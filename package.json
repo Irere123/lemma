@@ -9,13 +9,14 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"cd api && bun run dev\" \"cd web && bun run dev\""
+    "dev": "turbo dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "bun@1.2.2",
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "turbo": "^2.7.2"
   }
 }

@@ -21,6 +21,7 @@ tests/
 
 **/test.nnb
 **/scripts.nnb
+
 **/.wrangler
 server/test.nnb
 server/src/test.nnb
@@ -77,3 +78,5 @@ bun.lockb
 
 # npm
 package-lock.json
+
+.turbo

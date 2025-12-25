@@ -7,6 +7,7 @@
     "cf-typegen": "wrangler types",
     "deploy": "bun run build && wrangler deploy",
     "dev": "vite dev",
+     "check-types": "tsc --noEmit",
     "postinstall": "npm run cf-typegen",
     "preview": "bun run build && vite preview",
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
