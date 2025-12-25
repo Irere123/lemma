@@ -1,29 +1,29 @@
-import { createRoute, z } from "@hono/zod-openapi";
+import { createRoute, z } from '@hono/zod-openapi'
 
-import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
+import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import {
   getSubscriberByEmail,
   getSubscriberByToken,
   upsertSubscriber,
-} from "@api/db/queries/subscribers";
-import { createRouter, generateId } from "@api/lib/utils";
-import { withAuth } from "@api/rest/middleware/auth";
+} from '@api/db/queries/subscribers'
+import { createRouter, generateId } from '@api/lib/utils'
+import { withAuth } from '@api/rest/middleware/auth'
 
-const newsletterRouter = createRouter();
+const newsletterRouter = createRouter()
 
 // Subscribe
 // Protected
 // Send the api key or auth cookie when calling this endpoint
 newsletterRouter.openapi(
   createRoute({
-    method: "post",
-    path: "/subscribe",
-    tags: ["Newsletter"],
-    summary: "Subscribe to newsletter (protected)",
+    method: 'post',
+    path: '/subscribe',
+    tags: ['Newsletter'],
+    summary: 'Subscribe to newsletter (protected)',
     request: {
       body: {
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               email: z.email(),
             }),
@@ -33,46 +33,43 @@ newsletterRouter.openapi(
     },
     responses: {
       200: {
-        description: "Subscription successful",
+        description: 'Subscription successful',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({ success: z.boolean() }),
           },
         },
       },
-      409: { description: "Already subscribed" },
-      404: { description: "Writer newsletter settings not found" },
-      500: { description: "Internal error" },
+      409: { description: 'Already subscribed' },
+      404: { description: 'Writer newsletter settings not found' },
+      500: { description: 'Internal error' },
     },
     middleware: [withAuth],
   }),
   async (c) => {
-    const db = c.get("db");
-    const session = c.get("session");
-    const input = c.req.valid("json") as { email: string };
+    const db = c.get('db')
+    const session = c.get('session')
+    const input = c.req.valid('json') as { email: string }
 
-    const existing = await getSubscriberByEmail(db, input.email);
+    const existing = await getSubscriberByEmail(db, input.email)
 
     if (existing) {
-      return c.json({ error: "Already joined the newsletter." }, 409);
+      return c.json({ error: 'Already joined the newsletter.' }, 409)
     }
 
     try {
-      const token = generateId("st");
-      const writerSettings = await getWriterNewsletterSettings(
-        db,
-        session.user.id
-      );
+      const token = generateId('st')
+      const writerSettings = await getWriterNewsletterSettings(db, session.user.id)
 
       if (!writerSettings) {
-        return c.json({ error: "Writer newsletter settings not found" }, 404);
+        return c.json({ error: 'Writer newsletter settings not found' }, 404)
       }
 
       await upsertSubscriber(db, {
         email: input.email,
         token,
         writerId: session.user.id,
-      });
+      })
 
       // await enqueueWelcomeNewsletter({
       //   env,
@@ -86,25 +83,25 @@ newsletterRouter.openapi(
       //   },
       // });
 
-      return c.json({ success: true });
+      return c.json({ success: true })
     } catch (error) {
-      console.log(error);
-      return c.json({ error: "Something went wrong" }, 500);
+      console.log(error)
+      return c.json({ error: 'Something went wrong' }, 500)
     }
   }
-);
+)
 
 // Unsubscribe
 newsletterRouter.openapi(
   createRoute({
-    method: "post",
-    path: "/unsubscribe",
-    tags: ["Newsletter"],
-    summary: "Unsubscribe from newsletter",
+    method: 'post',
+    path: '/unsubscribe',
+    tags: ['Newsletter'],
+    summary: 'Unsubscribe from newsletter',
     request: {
       body: {
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({ token: z.string() }),
           },
         },
@@ -112,24 +109,24 @@ newsletterRouter.openapi(
     },
     responses: {
       200: {
-        description: "Unsubscribed",
+        description: 'Unsubscribed',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({ success: z.boolean() }),
           },
         },
       },
-      404: { description: "Subscription not found" },
-      500: { description: "Internal error" },
+      404: { description: 'Subscription not found' },
+      500: { description: 'Internal error' },
     },
   }),
   async (c) => {
-    const db = c.get("db");
-    const input = c.req.valid("json") as { token: string };
+    const db = c.get('db')
+    const input = c.req.valid('json') as { token: string }
 
-    const sub = await getSubscriberByToken(db, input.token);
+    const sub = await getSubscriberByToken(db, input.token)
     if (!sub) {
-      return c.json({ error: "Subscription not found" }, 404);
+      return c.json({ error: 'Subscription not found' }, 404)
     }
 
     try {
@@ -139,27 +136,27 @@ newsletterRouter.openapi(
         email: sub.email,
         token: sub.token,
         writerId: sub.writerId,
-      });
+      })
 
-      return c.json({ success: true });
+      return c.json({ success: true })
     } catch (error) {
-      console.log(error);
-      return c.json({ error: "Something went wrong" }, 500);
+      console.log(error)
+      return c.json({ error: 'Something went wrong' }, 500)
     }
   }
-);
+)
 
 // Confirm subscription
 newsletterRouter.openapi(
   createRoute({
-    method: "post",
-    path: "/confirmation",
-    tags: ["Newsletter"],
-    summary: "Confirm subscription",
+    method: 'post',
+    path: '/confirmation',
+    tags: ['Newsletter'],
+    summary: 'Confirm subscription',
     request: {
       body: {
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({ token: z.string() }),
           },
         },
@@ -167,24 +164,24 @@ newsletterRouter.openapi(
     },
     responses: {
       200: {
-        description: "Confirmed",
+        description: 'Confirmed',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({ success: z.boolean() }),
           },
         },
       },
-      404: { description: "Subscription not found" },
-      500: { description: "Internal error" },
+      404: { description: 'Subscription not found' },
+      500: { description: 'Internal error' },
     },
   }),
   async (c) => {
-    const db = c.get("db");
-    const input = c.req.valid("json") as { token: string };
+    const db = c.get('db')
+    const input = c.req.valid('json') as { token: string }
 
-    const sub = await getSubscriberByToken(db, input.token);
+    const sub = await getSubscriberByToken(db, input.token)
     if (!sub) {
-      return c.json({ error: "Subscription not found" }, 404);
+      return c.json({ error: 'Subscription not found' }, 404)
     }
 
     try {
@@ -195,14 +192,14 @@ newsletterRouter.openapi(
         email: sub.email,
         token: sub.token,
         writerId: sub.writerId,
-      });
+      })
 
-      return c.json({ success: true });
+      return c.json({ success: true })
     } catch (error) {
-      console.log(error);
-      return c.json({ error: "Something went wrong" }, 500);
+      console.log(error)
+      return c.json({ error: 'Something went wrong' }, 500)
     }
   }
-);
+)
 
-export { newsletterRouter };
+export { newsletterRouter }

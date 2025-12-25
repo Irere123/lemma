@@ -1,20 +1,20 @@
-import type { Plugin } from "prosemirror-state";
-import type { Schema } from "prosemirror-model";
-import { schema as defaultSchema } from "../schema";
-import { createHistoryPlugins } from "./history";
-import { createEditorKeymaps } from "./keymap";
-import { createInputRules } from "./inputRules";
-import { createPlaceholderPlugin } from "./placeholder";
-import { createNodeIdPlugin } from "./nodeId";
-import { createCursorPlugins } from "./dropCursor";
-import { createSlashMenuPlugin, type SlashMenuState } from "./slashMenu";
-import { createDragHandlePlugin } from "./dragHandle";
+import type { Plugin } from 'prosemirror-state'
+import type { Schema } from 'prosemirror-model'
+import { schema as defaultSchema } from '../schema'
+import { createHistoryPlugins } from './history'
+import { createEditorKeymaps } from './keymap'
+import { createInputRules } from './inputRules'
+import { createPlaceholderPlugin } from './placeholder'
+import { createNodeIdPlugin } from './nodeId'
+import { createCursorPlugins } from './dropCursor'
+import { createSlashMenuPlugin, type SlashMenuState } from './slashMenu'
+import { createDragHandlePlugin } from './dragHandle'
 
 export interface EditorPluginOptions {
-  placeholder?: string;
-  schema?: Schema;
-  onSlashMenuChange?: (state: SlashMenuState) => void;
-  enableDragHandle?: boolean;
+  placeholder?: string
+  schema?: Schema
+  onSlashMenuChange?: (state: SlashMenuState) => void
+  enableDragHandle?: boolean
 }
 
 /**
@@ -22,11 +22,11 @@ export interface EditorPluginOptions {
  */
 export function createEditorPlugins(options: EditorPluginOptions = {}): Plugin[] {
   const {
-    placeholder = "Start writing...",
+    placeholder = 'Start writing...',
     schema = defaultSchema,
     onSlashMenuChange,
     enableDragHandle = true,
-  } = options;
+  } = options
 
   const plugins: Plugin[] = [
     // Input processing (should come first)
@@ -49,23 +49,23 @@ export function createEditorPlugins(options: EditorPluginOptions = {}): Plugin[]
 
     // Node ID management
     createNodeIdPlugin(),
-  ];
+  ]
 
   // Drag handle (optional, enabled by default)
   if (enableDragHandle) {
-    plugins.push(createDragHandlePlugin());
+    plugins.push(createDragHandlePlugin())
   }
 
-  return plugins;
+  return plugins
 }
 
 // Re-export individual plugins
-export { createHistoryPlugins, undo, redo } from "./history";
-export { createEditorKeymaps, createFormattingKeymap, createListKeymap } from "./keymap";
-export { createInputRules } from "./inputRules";
-export { createPlaceholderPlugin, placeholderPluginKey, placeholderStyles } from "./placeholder";
-export { createNodeIdPlugin, nodeIdPluginKey, getNodeById, getAllNodeIds } from "./nodeId";
-export { createDropCursorPlugin, createGapCursorPlugin, createCursorPlugins } from "./dropCursor";
+export { createHistoryPlugins, undo, redo } from './history'
+export { createEditorKeymaps, createFormattingKeymap, createListKeymap } from './keymap'
+export { createInputRules } from './inputRules'
+export { createPlaceholderPlugin, placeholderPluginKey, placeholderStyles } from './placeholder'
+export { createNodeIdPlugin, nodeIdPluginKey, getNodeById, getAllNodeIds } from './nodeId'
+export { createDropCursorPlugin, createGapCursorPlugin, createCursorPlugins } from './dropCursor'
 export {
   createSlashMenuPlugin,
   slashMenuPluginKey,
@@ -73,7 +73,7 @@ export {
   getSlashMenuState,
   deleteSlashTrigger,
   type SlashMenuState,
-} from "./slashMenu";
+} from './slashMenu'
 export {
   createDragHandlePlugin,
   dragHandlePluginKey,
@@ -82,4 +82,4 @@ export {
   getDragHandleState,
   dragHandleStyles,
   type DragHandleState,
-} from "./dragHandle";
+} from './dragHandle'

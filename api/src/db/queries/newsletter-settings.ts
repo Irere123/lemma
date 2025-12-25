@@ -1,18 +1,18 @@
-import { eq } from "drizzle-orm";
-import type { DB } from "@api/db";
-import { newsletterSettings, type NewsletterSettings } from "@api/db/schema";
-import { generateId } from "@api/lib/utils";
+import { eq } from 'drizzle-orm'
+import type { DB } from '@api/db'
+import { newsletterSettings, type NewsletterSettings } from '@api/db/schema'
+import { generateId } from '@api/lib/utils'
 
 type UpsertWriterNewsletterSettings = {
-  id?: string;
-  writerId: string;
-  newsletterName: string;
-  fromName: string;
-  logoUrl: string | null;
-  brandColor: string | null;
-  confirmationUrl: string | null;
-  isActive: boolean;
-};
+  id?: string
+  writerId: string
+  newsletterName: string
+  fromName: string
+  logoUrl: string | null
+  brandColor: string | null
+  confirmationUrl: string | null
+  isActive: boolean
+}
 
 export const getWriterNewsletterSettings = async (
   db: DB,
@@ -22,10 +22,10 @@ export const getWriterNewsletterSettings = async (
     .select()
     .from(newsletterSettings)
     .where(eq(newsletterSettings.writerId, writerId))
-    .limit(1);
+    .limit(1)
 
-  return settings;
-};
+  return settings
+}
 
 export const upsertWriterNewsletterSettings = async (
   db: DB,
@@ -36,9 +36,9 @@ export const upsertWriterNewsletterSettings = async (
       .update(newsletterSettings)
       .set(settings)
       .where(eq(newsletterSettings.id, settings.id))
-      .returning();
+      .returning()
 
-    return result;
+    return result
   }
 
   const [result] = await db
@@ -47,18 +47,16 @@ export const upsertWriterNewsletterSettings = async (
       ...settings,
       id: generateId(),
     })
-    .returning();
+    .returning()
 
-  return result;
-};
+  return result
+}
 
-export const getActiveWriterNewsletterSettings = async (
-  db: DB
-): Promise<NewsletterSettings[]> => {
+export const getActiveWriterNewsletterSettings = async (db: DB): Promise<NewsletterSettings[]> => {
   const settings = await db
     .select()
     .from(newsletterSettings)
-    .where(eq(newsletterSettings.isActive, true));
+    .where(eq(newsletterSettings.isActive, true))
 
-  return settings;
-};
+  return settings
+}

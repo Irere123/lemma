@@ -1,55 +1,45 @@
-import { useCallback } from "react";
-import type { ReactNodeViewProps } from "./ReactNodeView";
+import { useCallback } from 'react'
+import type { ReactNodeViewProps } from './ReactNodeView'
 
-export function ToggleView({
-  node,
-  view,
-  getPos,
-  selected,
-  updateAttributes,
-}: ReactNodeViewProps) {
-  const isOpen = node.attrs.open ?? false;
+export function ToggleView({ node, view, getPos, selected, updateAttributes }: ReactNodeViewProps) {
+  const isOpen = node.attrs.open ?? false
 
   const handleToggle = useCallback(() => {
-    updateAttributes({ open: !isOpen });
-  }, [isOpen, updateAttributes]);
+    updateAttributes({ open: !isOpen })
+  }, [isOpen, updateAttributes])
 
   const handleDelete = useCallback(() => {
-    const pos = getPos();
-    if (pos === undefined) return;
+    const pos = getPos()
+    if (pos === undefined) return
 
-    const { tr } = view.state;
-    tr.delete(pos, pos + node.nodeSize);
-    view.dispatch(tr);
-  }, [view, getPos, node]);
+    const { tr } = view.state
+    tr.delete(pos, pos + node.nodeSize)
+    view.dispatch(tr)
+  }, [view, getPos, node])
 
   return (
-    <div
-      className={`toggle-view ${isOpen ? "open" : "closed"} ${
-        selected ? "selected" : ""
-      }`}
-    >
-      <div className="toggle-header">
+    <div className={`toggle-view ${isOpen ? 'open' : 'closed'} ${selected ? 'selected' : ''}`}>
+      <div className='toggle-header'>
         <button
-          type="button"
-          className="toggle-button"
+          type='button'
+          className='toggle-button'
           onClick={handleToggle}
           contentEditable={false}
           aria-expanded={isOpen}
-          aria-label={isOpen ? "Collapse" : "Expand"}
+          aria-label={isOpen ? 'Collapse' : 'Expand'}
         >
           <ChevronIcon />
         </button>
-        <div className="toggle-summary" data-node-view-content="">
+        <div className='toggle-summary' data-node-view-content=''>
           {/* First child paragraph will be rendered here */}
         </div>
         {selected && (
-          <div className="toggle-actions" contentEditable={false}>
+          <div className='toggle-actions' contentEditable={false}>
             <button
-              type="button"
-              className="toggle-action-button danger"
+              type='button'
+              className='toggle-action-button danger'
               onClick={handleDelete}
-              title="Delete toggle"
+              title='Delete toggle'
             >
               <TrashIcon />
             </button>
@@ -57,53 +47,47 @@ export function ToggleView({
         )}
       </div>
       {isOpen && (
-        <div className="toggle-content">
+        <div className='toggle-content'>
           {/* Nested content will be rendered here by ProseMirror */}
         </div>
       )}
     </div>
-  );
+  )
 }
 
 function ChevronIcon() {
   return (
     <svg
-      className="chevron-icon"
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+      className='chevron-icon'
+      width='16'
+      height='16'
+      viewBox='0 0 16 16'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
     >
       <path
-        d="M6 4L10 8L6 12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M6 4L10 8L6 12'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
-  );
+  )
 }
 
 function TrashIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
       <path
-        d="M2.5 3.5H11.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M10.5 3.5V11.5C10.5 11.7761 10.2761 12 10 12H4C3.72386 12 3.5 11.7761 3.5 11.5V3.5"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M2.5 3.5H11.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M10.5 3.5V11.5C10.5 11.7761 10.2761 12 10 12H4C3.72386 12 3.5 11.7761 3.5 11.5V3.5'
+        stroke='currentColor'
+        strokeWidth='1.25'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
-  );
+  )
 }
 
 // Styles for toggle view
@@ -236,4 +220,4 @@ export const toggleStyles = `
   color: #9ca3af;
   font-style: italic;
 }
-`;
+`

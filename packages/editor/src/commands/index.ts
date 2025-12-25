@@ -11,7 +11,7 @@ export {
   removeLink,
   setTag,
   setNoteLink,
-} from "./formatting";
+} from './formatting'
 
 // Block commands
 export {
@@ -29,4 +29,4 @@ export {
   insertToggle,
   insertTaskList,
   isNodeActive,
-} from "./blocks";
+} from './blocks'

@@ -1,10 +1,10 @@
-import { Img, Section } from "@react-email/components";
-import { baseUrl } from "../lib/constants";
+import { Img, Section } from '@react-email/components'
+import { baseUrl } from '../lib/constants'
 
 export function Logo() {
   // CSS-blended version for automatic dark mode adaptation
   return (
-    <Section className="mt-[32px]">
+    <Section className='mt-[32px]'>
       <style>{`
           .logo-blend {
             filter: none;
@@ -33,11 +33,11 @@ export function Logo() {
 
       <Img
         src={`${baseUrl}/email/logo.png`}
-        width="40"
-        height="40"
-        alt="BrainOS"
-        className="my-0 mx-auto block logo-blend"
+        width='40'
+        height='40'
+        alt='BrainOS'
+        className='my-0 mx-auto block logo-blend'
       />
     </Section>
-  );
+  )
 }

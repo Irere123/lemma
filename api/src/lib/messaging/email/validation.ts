@@ -1,4 +1,3 @@
-
 export interface EmailValidationResult {
   isValid: boolean
   reason?: string

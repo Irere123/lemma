@@ -1,9 +1,9 @@
-import { defineConfig } from "vite";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import { cloudflare } from "@cloudflare/vite-plugin";
-import tsConfigPaths from "vite-tsconfig-paths";
-import viteReact from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from 'vite'
+import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
+import tsConfigPaths from 'vite-tsconfig-paths'
+import viteReact from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   server: {
@@ -13,12 +13,12 @@ export default defineConfig({
     tailwindcss(),
     tsConfigPaths(),
     tanstackStart({
-      srcDirectory: "src",
-      start: { entry: "./start.tsx" },
-      server: { entry: "./server.ts" },
+      srcDirectory: 'src',
+      start: { entry: './start.tsx' },
+      server: { entry: './server.ts' },
     }),
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({ viteEnvironment: { name: 'ssr' } }),
     // react's vite plugin must come after start's vite plugin
     viteReact(),
   ],
-});
+})

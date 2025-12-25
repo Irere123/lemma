@@ -1,19 +1,19 @@
-import { create } from "zustand";
+import { create } from 'zustand'
 
 type Data = {
-  id?: string;
-  name?: string;
-  scopes?: string[];
-};
+  id?: string
+  name?: string
+  scopes?: string[]
+}
 
-type Type = "create" | "edit" | "delete";
+type Type = 'create' | 'edit' | 'delete'
 
 interface ApiKeysModalState {
-  type?: Type;
-  data?: Data;
-  createdKey?: string;
-  setData: (data?: Data, type?: Type) => void;
-  setCreatedKey: (key?: string) => void;
+  type?: Type
+  data?: Data
+  createdKey?: string
+  setData: (data?: Data, type?: Type) => void
+  setCreatedKey: (key?: string) => void
 }
 
 export const useApiKeysModalStore = create<ApiKeysModalState>()((set) => ({
@@ -22,4 +22,4 @@ export const useApiKeysModalStore = create<ApiKeysModalState>()((set) => ({
   createdKey: undefined,
   setData: (data, type) => set({ data, type }),
   setCreatedKey: (key) => set({ createdKey: key }),
-}));
+}))

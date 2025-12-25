@@ -1,6 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
-import { IconChevronDown, IconCirclePlus } from "@tabler/icons-react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useMutation } from '@tanstack/react-query'
+import { IconChevronDown, IconCirclePlus } from '@tabler/icons-react'
+import { Link, useNavigate } from '@tanstack/react-router'
 
 import {
   Sidebar,
@@ -10,17 +10,17 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { useTRPC } from "@/trpc/client";
-import { getDefaultEditorValue } from "@/components/editor";
-import { documentStore } from "@/stores/document-store";
+} from '@/components/ui/sidebar'
+import { useTRPC } from '@/trpc/client'
+import { getDefaultEditorValue } from '@/components/editor'
+import { documentStore } from '@/stores/document-store'
 
 export function AppSidebar() {
-  const trpc = useTRPC();
+  const trpc = useTRPC()
   const { isPending: upsertLoading, mutateAsync: upsertDocument } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
-  );
-  const navigate = useNavigate();
+  )
+  const navigate = useNavigate()
 
   return (
     <Sidebar>
@@ -28,13 +28,13 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton>
-              <h2 className="text-xl font-bold">Brain</h2>
-              <IconChevronDown className="ml-auto" />
+              <h2 className='text-xl font-bold'>Brain</h2>
+              <IconChevronDown className='ml-auto' />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="justify-center px-3">
+      <SidebarContent className='justify-center px-3'>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -42,25 +42,25 @@ export function AppSidebar() {
               onClick={async () => {
                 const resp = await upsertDocument({
                   content: getDefaultEditorValue(),
-                });
+                })
 
                 if (resp) {
                   // Add the document to the store immediately
-                  documentStore.getState().upsertDocument(resp as any);
+                  documentStore.getState().upsertDocument(resp as any)
 
                   navigate({
-                    to: "/editor/$docId",
+                    to: '/editor/$docId',
                     params: { docId: resp.id },
-                  });
+                  })
                 }
               }}
-              className="group/new-document cursor-pointer"
+              className='group/new-document cursor-pointer'
             >
               New Doc
               <span>
                 <IconCirclePlus
                   size={16}
-                  className="group-hover/new-document:fill-black group-hover/new-document:text-white transition-all transform-gpu duration-200"
+                  className='group-hover/new-document:fill-black group-hover/new-document:text-white transition-all transform-gpu duration-200'
                 />
               </span>
             </SidebarMenuButton>
@@ -84,5 +84,5 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
-  );
+  )
 }

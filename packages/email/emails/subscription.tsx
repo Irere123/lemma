@@ -1,43 +1,23 @@
-import {
-  Body,
-  Container,
-  Heading,
-  Img,
-  Link,
-  Preview,
-  Text,
-} from "@react-email/components";
-import {
-  EmailThemeProvider,
-  getEmailInlineStyles,
-  getEmailThemeClasses,
-} from "../components/theme";
-import type { NewsletterSettings } from "../types";
+import { Body, Container, Heading, Img, Link, Preview, Text } from '@react-email/components'
+import { EmailThemeProvider, getEmailInlineStyles, getEmailThemeClasses } from '../components/theme'
+import type { NewsletterSettings } from '../types'
 
 interface Props {
-  writerSettings: NewsletterSettings;
-  token?: string;
+  writerSettings: NewsletterSettings
+  token?: string
 }
 
-export const NewsletterSubscriptionEmail = ({
-  writerSettings,
-  token,
-}: Props) => {
-  const themeClasses = getEmailThemeClasses();
-  const lightStyles = getEmailInlineStyles("light");
+export const NewsletterSubscriptionEmail = ({ writerSettings, token }: Props) => {
+  const themeClasses = getEmailThemeClasses()
+  const lightStyles = getEmailInlineStyles('light')
 
   return (
-    <EmailThemeProvider
-      preview={<Preview>welcome to {writerSettings.newsletterName}</Preview>}
-    >
-      <Body
-        className={`my-auto mx-auto font-sans ${themeClasses.body}`}
-        style={lightStyles.body}
-      >
+    <EmailThemeProvider preview={<Preview>welcome to {writerSettings.newsletterName}</Preview>}>
+      <Body className={`my-auto mx-auto font-sans ${themeClasses.body}`} style={lightStyles.body}>
         <Container
           className={`my-[40px] mx-auto p-[20px] max-w-[600px] ${themeClasses.container}`}
           style={{
-            borderStyle: "solid",
+            borderStyle: 'solid',
             borderWidth: 1,
             borderColor: lightStyles.container.borderColor,
           }}
@@ -47,10 +27,10 @@ export const NewsletterSubscriptionEmail = ({
             <Img
               src={writerSettings.logoUrl}
               alt={writerSettings.newsletterName}
-              className="w-full h-auto mb-[30px] max-w-[200px] mx-auto"
+              className='w-full h-auto mb-[30px] max-w-[200px] mx-auto'
             />
           ) : (
-            <div className="text-center mb-[30px]">
+            <div className='text-center mb-[30px]'>
               <Heading
                 className={`text-[24px] font-bold ${themeClasses.heading}`}
                 style={{ color: writerSettings.brandColor ?? undefined }}
@@ -76,9 +56,9 @@ export const NewsletterSubscriptionEmail = ({
             <br />
             Welcome to {writerSettings.newsletterName} <br />
             <br />
-            This newsletter is more than just writing, it's a way to operate.
-            You'll get updates, systems I'm testing, and frameworks that might
-            help you move a bit faster and think a bit clearer.
+            This newsletter is more than just writing, it's a way to operate. You'll get updates,
+            systems I'm testing, and frameworks that might help you move a bit faster and think a
+            bit clearer.
             <br />
             <br />
             Before we go further, confirm your email to stay in the loop.
@@ -90,7 +70,7 @@ export const NewsletterSubscriptionEmail = ({
               className={`my-[24px] p-[12px_24px] text-white rounded-md text-sm font-medium ${themeClasses.button}`}
               style={{
                 backgroundColor: writerSettings.brandColor ?? undefined,
-                color: "#fff",
+                color: '#fff',
               }}
             >
               Confirm your email
@@ -118,7 +98,7 @@ export const NewsletterSubscriptionEmail = ({
         </Container>
       </Body>
     </EmailThemeProvider>
-  );
-};
+  )
+}
 
-export default NewsletterSubscriptionEmail;
+export default NewsletterSubscriptionEmail

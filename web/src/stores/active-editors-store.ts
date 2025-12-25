@@ -1,51 +1,51 @@
-import { createCustomEditor } from "@lemma/editor";
-import { type Descendant, Editor } from "slate";
+import { createCustomEditor } from '@lemma/editor'
+import { type Descendant, Editor } from 'slate'
 
 // Map from index of the editor to slate editor
-let activeEditors: Record<string, Editor> = {};
+let activeEditors: Record<string, Editor> = {}
 
-let listeners: Array<() => void> = [];
+let listeners: Array<() => void> = []
 
 export const activeEditorsStore = {
   getActiveEditor(documentId: string) {
-    return activeEditors[documentId];
+    return activeEditors[documentId]
   },
   addActiveEditor(documentId: string) {
     if (activeEditors[documentId]) {
-      return;
+      return
     }
-    activeEditors = { ...activeEditors, [documentId]: createCustomEditor() };
-    emitChange();
+    activeEditors = { ...activeEditors, [documentId]: createCustomEditor() }
+    emitChange()
   },
   subscribe(listener: () => void) {
-    listeners = [...listeners, listener];
+    listeners = [...listeners, listener]
     return () => {
-      listeners = listeners.filter((l) => l !== listener);
-    };
+      listeners = listeners.filter((l) => l !== listener)
+    }
   },
   getSnapshot() {
-    return activeEditors;
+    return activeEditors
   },
 
   getServerSnapshot() {
-    return true; // Always show "Online" for server-generated HTML
+    return true // Always show "Online" for server-generated HTML
   },
-};
+}
 
 function emitChange() {
   for (const listener of listeners) {
-    listener();
+    listener()
   }
 }
 
 // Get editor from active editors if it exists, or create a new one
 export function getActiveOrTempEditor(noteId: string, content: Descendant[]) {
-  let editor = activeEditorsStore.getActiveEditor(noteId);
+  let editor = activeEditorsStore.getActiveEditor(noteId)
   if (!editor) {
-    editor = createCustomEditor();
-    editor.children = content;
+    editor = createCustomEditor()
+    editor.children = content
   }
-  return editor;
+  return editor
 }
 
-export default activeEditorsStore;
+export default activeEditorsStore

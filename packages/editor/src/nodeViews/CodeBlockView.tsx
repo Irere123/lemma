@@ -1,75 +1,70 @@
-import { useCallback, useRef, useState } from "react";
-import type { ReactNodeViewProps } from "./ReactNodeView";
+import { useCallback, useRef, useState } from 'react'
+import type { ReactNodeViewProps } from './ReactNodeView'
 
 const LANGUAGES = [
-  { value: null, label: "Plain text" },
-  { value: "javascript", label: "JavaScript" },
-  { value: "typescript", label: "TypeScript" },
-  { value: "jsx", label: "JSX" },
-  { value: "tsx", label: "TSX" },
-  { value: "python", label: "Python" },
-  { value: "rust", label: "Rust" },
-  { value: "go", label: "Go" },
-  { value: "java", label: "Java" },
-  { value: "c", label: "C" },
-  { value: "cpp", label: "C++" },
-  { value: "csharp", label: "C#" },
-  { value: "ruby", label: "Ruby" },
-  { value: "php", label: "PHP" },
-  { value: "swift", label: "Swift" },
-  { value: "kotlin", label: "Kotlin" },
-  { value: "html", label: "HTML" },
-  { value: "css", label: "CSS" },
-  { value: "scss", label: "SCSS" },
-  { value: "json", label: "JSON" },
-  { value: "yaml", label: "YAML" },
-  { value: "markdown", label: "Markdown" },
-  { value: "bash", label: "Bash" },
-  { value: "shell", label: "Shell" },
-  { value: "sql", label: "SQL" },
-  { value: "graphql", label: "GraphQL" },
-];
+  { value: null, label: 'Plain text' },
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'jsx', label: 'JSX' },
+  { value: 'tsx', label: 'TSX' },
+  { value: 'python', label: 'Python' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'go', label: 'Go' },
+  { value: 'java', label: 'Java' },
+  { value: 'c', label: 'C' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'php', label: 'PHP' },
+  { value: 'swift', label: 'Swift' },
+  { value: 'kotlin', label: 'Kotlin' },
+  { value: 'html', label: 'HTML' },
+  { value: 'css', label: 'CSS' },
+  { value: 'scss', label: 'SCSS' },
+  { value: 'json', label: 'JSON' },
+  { value: 'yaml', label: 'YAML' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'bash', label: 'Bash' },
+  { value: 'shell', label: 'Shell' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'graphql', label: 'GraphQL' },
+]
 
-export function CodeBlockView({
-  node,
-  selected,
-  updateAttributes,
-}: ReactNodeViewProps) {
-  const codeRef = useRef<HTMLPreElement>(null);
-  const [showLanguageSelect, setShowLanguageSelect] = useState(false);
-  const language = node.attrs.language || null;
+export function CodeBlockView({ node, selected, updateAttributes }: ReactNodeViewProps) {
+  const codeRef = useRef<HTMLPreElement>(null)
+  const [showLanguageSelect, setShowLanguageSelect] = useState(false)
+  const language = node.attrs.language || null
 
   const handleLanguageChange = useCallback(
     (newLanguage: string | null) => {
-      updateAttributes({ language: newLanguage });
-      setShowLanguageSelect(false);
+      updateAttributes({ language: newLanguage })
+      setShowLanguageSelect(false)
     },
     [updateAttributes]
-  );
+  )
 
   const handleCopy = useCallback(async () => {
-    const text = node.textContent;
+    const text = node.textContent
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text)
     } catch (err) {
-      console.error("Failed to copy code:", err);
+      console.error('Failed to copy code:', err)
     }
-  }, [node]);
+  }, [node])
 
   // Get display language
-  const displayLanguage =
-    LANGUAGES.find((l) => l.value === language)?.label || "Plain text";
+  const displayLanguage = LANGUAGES.find((l) => l.value === language)?.label || 'Plain text'
 
   return (
     <div
-      className={`code-block-view ${selected ? "selected" : ""}`}
-      data-language={language || "plaintext"}
+      className={`code-block-view ${selected ? 'selected' : ''}`}
+      data-language={language || 'plaintext'}
     >
-      <div className="code-block-header">
-        <div className="language-selector">
+      <div className='code-block-header'>
+        <div className='language-selector'>
           <button
-            type="button"
-            className="language-button"
+            type='button'
+            className='language-button'
             onClick={() => setShowLanguageSelect(!showLanguageSelect)}
             contentEditable={false}
           >
@@ -77,14 +72,12 @@ export function CodeBlockView({
             <ChevronDownIcon />
           </button>
           {showLanguageSelect && (
-            <div className="language-dropdown" contentEditable={false}>
+            <div className='language-dropdown' contentEditable={false}>
               {LANGUAGES.map((lang) => (
                 <button
-                  key={lang.value || "plain"}
-                  type="button"
-                  className={`language-option ${
-                    language === lang.value ? "active" : ""
-                  }`}
+                  key={lang.value || 'plain'}
+                  type='button'
+                  className={`language-option ${language === lang.value ? 'active' : ''}`}
                   onClick={() => handleLanguageChange(lang.value)}
                 >
                   {lang.label}
@@ -94,70 +87,48 @@ export function CodeBlockView({
           )}
         </div>
         <button
-          type="button"
-          className="copy-button"
+          type='button'
+          className='copy-button'
           onClick={handleCopy}
           contentEditable={false}
-          title="Copy code"
+          title='Copy code'
         >
           <CopyIcon />
         </button>
       </div>
-      <pre ref={codeRef} className="code-block-content">
-        <code className={language ? `language-${language}` : ""}>
-          {node.textContent || "\n"}
-        </code>
+      <pre ref={codeRef} className='code-block-content'>
+        <code className={language ? `language-${language}` : ''}>{node.textContent || '\n'}</code>
       </pre>
     </div>
-  );
+  )
 }
 
 function ChevronDownIcon() {
   return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'>
       <path
-        d="M3 4.5L6 7.5L9 4.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M3 4.5L6 7.5L9 4.5'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
-  );
+  )
 }
 
 function CopyIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect
-        x="4.5"
-        y="4.5"
-        width="7"
-        height="7"
-        rx="1"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
+      <rect x='4.5' y='4.5' width='7' height='7' rx='1' stroke='currentColor' strokeWidth='1.5' />
       <path
-        d="M2.5 9.5V3C2.5 2.17157 3.17157 1.5 4 1.5H9.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
+        d='M2.5 9.5V3C2.5 2.17157 3.17157 1.5 4 1.5H9.5'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
       />
     </svg>
-  );
+  )
 }
 
 // Styles for the code block view
@@ -277,4 +248,4 @@ export const codeBlockStyles = `
   font-family: inherit;
   white-space: pre;
 }
-`;
+`

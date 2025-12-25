@@ -1,27 +1,27 @@
-import { Font, Head, Html, Tailwind } from "@react-email/components";
+import { Font, Head, Html, Tailwind } from '@react-email/components'
 
 // Re-export Button component for convenience
-export { Button } from "./button";
+export { Button } from './button'
 
 // Email-optimized theme colors (avoiding pure white/black for better email client compatibility)
 export const emailTheme = {
   light: {
-    background: "#ffffff",
-    foreground: "#0e0e0e", // Slightly off-black to prevent auto-inversion
-    muted: "#6b7280",
-    border: "#e5e7eb",
-    accent: "#0e0e0e",
-    secondary: "#9ca3af",
+    background: '#ffffff',
+    foreground: '#0e0e0e', // Slightly off-black to prevent auto-inversion
+    muted: '#6b7280',
+    border: '#e5e7eb',
+    accent: '#0e0e0e',
+    secondary: '#9ca3af',
   },
   dark: {
-    background: "#0C0C0C",
-    foreground: "#fefefe", // Slightly off-white to prevent auto-inversion
-    muted: "#a1a1aa",
-    border: "#1D1D1D",
-    accent: "#fefefe",
-    secondary: "#6b7280",
+    background: '#0C0C0C',
+    foreground: '#fefefe', // Slightly off-white to prevent auto-inversion
+    muted: '#a1a1aa',
+    border: '#1D1D1D',
+    accent: '#fefefe',
+    secondary: '#6b7280',
   },
-} as const;
+} as const
 
 // Industry-standard dark mode CSS for email clients
 export const getEmailDarkModeCSS = () => {
@@ -151,15 +151,15 @@ export const getEmailDarkModeCSS = () => {
     [data-ogsb] .email-container {
       border-color: ${emailTheme.dark.border} !important;
     }
-  `;
-};
+  `
+}
 
 // Comprehensive email theme provider that wraps everything
 interface EmailThemeProviderProps {
-  children: React.ReactNode;
-  preview?: React.ReactNode;
-  additionalHeadContent?: React.ReactNode;
-  disableDarkMode?: boolean;
+  children: React.ReactNode
+  preview?: React.ReactNode
+  additionalHeadContent?: React.ReactNode
+  disableDarkMode?: boolean
 }
 
 export function EmailThemeProvider({
@@ -169,27 +169,19 @@ export function EmailThemeProvider({
   disableDarkMode = false,
 }: EmailThemeProviderProps) {
   return (
-    <Html className={disableDarkMode ? "disable-dark-mode" : ""}>
+    <Html className={disableDarkMode ? 'disable-dark-mode' : ''}>
       <Tailwind>
         <Head>
           {/* Essential meta tags for email dark mode support */}
           {!disableDarkMode && (
             <>
-              <meta name="color-scheme" content="light dark" />
-              <meta name="supported-color-schemes" content="light dark" />
+              <meta name='color-scheme' content='light dark' />
+              <meta name='supported-color-schemes' content='light dark' />
 
               {/* Additional Gmail dark mode hints */}
-              <meta
-                name="theme-color"
-                content="#0C0C0C"
-                media="(prefers-color-scheme: dark)"
-              />
-              <meta
-                name="theme-color"
-                content="#ffffff"
-                media="(prefers-color-scheme: light)"
-              />
-              <meta name="msapplication-navbutton-color" content="#0C0C0C" />
+              <meta name='theme-color' content='#0C0C0C' media='(prefers-color-scheme: dark)' />
+              <meta name='theme-color' content='#ffffff' media='(prefers-color-scheme: light)' />
+              <meta name='msapplication-navbutton-color' content='#0C0C0C' />
 
               {/* Dark mode styles */}
               <style>{getEmailDarkModeCSS()}</style>
@@ -199,9 +191,9 @@ export function EmailThemeProvider({
           {/* Force light mode when dark mode is disabled */}
           {disableDarkMode && (
             <>
-              <meta name="color-scheme" content="light only" />
-              <meta name="supported-color-schemes" content="light" />
-              <meta name="theme-color" content="#ffffff" />
+              <meta name='color-scheme' content='light only' />
+              <meta name='supported-color-schemes' content='light' />
+              <meta name='theme-color' content='#ffffff' />
               <style>{`
                 /* Force light mode styles */
                 :root {
@@ -219,25 +211,25 @@ export function EmailThemeProvider({
 
           {/* Default fonts for all emails */}
           <Font
-            fontFamily="Geist"
-            fallbackFontFamily="Helvetica"
+            fontFamily='Geist'
+            fallbackFontFamily='Helvetica'
             webFont={{
-              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2",
-              format: "woff2",
+              url: 'https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2',
+              format: 'woff2',
             }}
             fontWeight={400}
-            fontStyle="normal"
+            fontStyle='normal'
           />
 
           <Font
-            fontFamily="Geist"
-            fallbackFontFamily="Helvetica"
+            fontFamily='Geist'
+            fallbackFontFamily='Helvetica'
             webFont={{
-              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-500-normal.woff2",
-              format: "woff2",
+              url: 'https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-500-normal.woff2',
+              format: 'woff2',
             }}
             fontWeight={500}
-            fontStyle="normal"
+            fontStyle='normal'
           />
 
           {/* Additional head content */}
@@ -247,33 +239,33 @@ export function EmailThemeProvider({
         {children}
       </Tailwind>
     </Html>
-  );
+  )
 }
 
 // Email-optimized theme classes (no Tailwind dependencies)
 export function getEmailThemeClasses() {
   return {
     // Base classes that work across email clients
-    body: "email-body",
-    container: "email-container",
-    heading: "email-text",
-    text: "email-text",
-    mutedText: "email-muted",
-    secondaryText: "email-secondary",
-    button: "email-accent",
-    border: "email-border",
-    link: "email-text",
-    mutedLink: "email-muted",
+    body: 'email-body',
+    container: 'email-container',
+    heading: 'email-text',
+    text: 'email-text',
+    mutedText: 'email-muted',
+    secondaryText: 'email-secondary',
+    button: 'email-accent',
+    border: 'email-border',
+    link: 'email-text',
+    mutedLink: 'email-muted',
 
     // Dark mode image control
-    hideInDark: "dark-mode-hide",
-    showInDark: "dark-mode-show",
-  };
+    hideInDark: 'dark-mode-hide',
+    showInDark: 'dark-mode-show',
+  }
 }
 
 // Utility to get inline styles (fallback for older email clients)
-export function getEmailInlineStyles(mode: "light" | "dark" = "light") {
-  const theme = emailTheme[mode];
+export function getEmailInlineStyles(mode: 'light' | 'dark' = 'light') {
+  const theme = emailTheme[mode]
   return {
     body: {
       backgroundColor: theme.background,
@@ -295,14 +287,14 @@ export function getEmailInlineStyles(mode: "light" | "dark" = "light") {
       color: theme.accent,
       borderColor: theme.accent,
     },
-  };
+  }
 }
 
 // Simplified theme hook
 export function useEmailTheme() {
   return {
     classes: getEmailThemeClasses(),
-    lightStyles: getEmailInlineStyles("light"),
-    darkStyles: getEmailInlineStyles("dark"),
-  };
+    lightStyles: getEmailInlineStyles('light'),
+    darkStyles: getEmailInlineStyles('dark'),
+  }
 }

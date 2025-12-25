@@ -1,123 +1,116 @@
-import type { Draft } from "immer";
-import localforage from "localforage";
-import { createStore, useStore } from "zustand";
-import {
-  createJSONStorage,
-  persist,
-  type StateStorage,
-} from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
+import type { Draft } from 'immer'
+import localforage from 'localforage'
+import { createStore, useStore } from 'zustand'
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
+import { immer } from 'zustand/middleware/immer'
 
 import {
   deleteTreeItem,
   insertTreeItem,
   toggleDocumentTreeItemCollapsed,
-} from "./document-store-utils";
-import { caseInsensitiveStringEqual } from "@/lib/utils";
-import type { Descendant } from "slate";
+} from './document-store-utils'
+import { caseInsensitiveStringEqual } from '@/lib/utils'
+import type { Descendant } from 'slate'
 
-type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
 localforage.config({
-  name: "irere.dev",
+  name: 'irere.dev',
   version: 1.0,
-  storeName: "user_data",
-});
+  storeName: 'user_data',
+})
 
 const storage: StateStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    return await localforage.getItem(name);
+    return await localforage.getItem(name)
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    await localforage.setItem(name, value);
+    await localforage.setItem(name, value)
   },
   removeItem: async (name: string): Promise<void> => {
-    await localforage.removeItem(name);
+    await localforage.removeItem(name)
   },
-};
+}
 
 type FunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? K : never;
-}[keyof T];
-type StoreWithoutFunctions = Omit<Store, FunctionPropertyNames<Store>>;
+  [K in keyof T]: T[K] extends Function ? K : never
+}[keyof T]
+type StoreWithoutFunctions = Omit<Store, FunctionPropertyNames<Store>>
 
-export type Setter<T> = (value: T | ((value: T) => T)) => void;
+export type Setter<T> = (value: T | ((value: T) => T)) => void
 export type CreateSetter = <K extends keyof StoreWithoutFunctions>(
   set: (fn: (draft: Draft<Store>) => void) => void,
   key: K
-) => (value: Store[K] | ((value: Store[K]) => Store[K])) => void;
+) => (value: Store[K] | ((value: Store[K]) => Store[K])) => void
 
 /**
  * Helper function that constructs a setter function.
  */
 export const createSetter: CreateSetter = (set, key) => (value) => {
-  if (typeof value === "function") {
+  if (typeof value === 'function') {
     set((state) => {
-      state[key] = value(state[key]);
-    });
+      state[key] = value(state[key])
+    })
   } else {
     set((state) => {
-      state[key] = value;
-    });
+      state[key] = value
+    })
   }
-};
+}
 
 export type Document = {
-  status: "DRAFT" | "PUBLISHED" | null;
-  id: string;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  userId: string | null;
-  title: string | null;
-  content?: Descendant[];
-  subtitle: string | null;
-  markdown?: string | null;
-  bannerImage?: string | null;
-  publishedDate?: Date | null;
-  scheduledDate?: Date | null;
-  sendAsNewsletter?: boolean | null;
-};
+  status: 'DRAFT' | 'PUBLISHED' | null
+  id: string
+  createdAt: Date | null
+  updatedAt: Date | null
+  userId: string | null
+  title: string | null
+  content?: Descendant[]
+  subtitle: string | null
+  markdown?: string | null
+  bannerImage?: string | null
+  publishedDate?: Date | null
+  scheduledDate?: Date | null
+  sendAsNewsletter?: boolean | null
+}
 
-export type Documents = Record<Document["id"], Document>;
+export type Documents = Record<Document['id'], Document>
 
 export type DocumentTreeItem = {
-  id: Document["id"];
-  children: DocumentTreeItem[];
-  collapsed: boolean;
-};
+  id: Document['id']
+  children: DocumentTreeItem[]
+  collapsed: boolean
+}
 
 export type DocumentUpdate = PickPartial<
   Document,
-  | "userId"
-  | "content"
-  | "title"
-  | "createdAt"
-  | "updatedAt"
-  | "subtitle"
-  | "status"
-  | "scheduledDate"
-  | "publishedDate"
-  | "bannerImage"
->;
+  | 'userId'
+  | 'content'
+  | 'title'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'subtitle'
+  | 'status'
+  | 'scheduledDate'
+  | 'publishedDate'
+  | 'bannerImage'
+>
 
 export type Store = {
   // Documents
-  documents: Documents;
-  setDocuments: Setter<Documents>;
-  upsertDocument: (docuemnt: Document) => void;
-  deleteDocument: (documentId: string) => void;
-  updateDocument: (note: DocumentUpdate) => void;
+  documents: Documents
+  setDocuments: Setter<Documents>
+  upsertDocument: (docuemnt: Document) => void
+  deleteDocument: (documentId: string) => void
+  updateDocument: (note: DocumentUpdate) => void
 
   // DocumentTree
-  documentTree: DocumentTreeItem[];
-  openDocumentIds: string[];
-  setDocumentTree: Setter<DocumentTreeItem[]>;
-  moveDocumentTreeItem: (
-    documentId: string,
-    newParentDocumentId: string | null
-  ) => void;
-  toggleDocumentTreeItemCollapsed: (documentId: string) => void;
-};
+  documentTree: DocumentTreeItem[]
+  openDocumentIds: string[]
+  setDocumentTree: Setter<DocumentTreeItem[]>
+  moveDocumentTreeItem: (documentId: string, newParentDocumentId: string | null) => void
+  toggleDocumentTreeItemCollapsed: (documentId: string) => void
+}
 
 export const documentStore = createStore<Store>()(
   persist(
@@ -129,7 +122,7 @@ export const documentStore = createStore<Store>()(
       /**
        * Sets the documents
        */
-      setDocuments: createSetter(set, "documents"),
+      setDocuments: createSetter(set, 'documents'),
       /**
        * Update the given note
        */
@@ -140,9 +133,9 @@ export const documentStore = createStore<Store>()(
               ...state.documents[document.id],
               ...document,
               updatedAt: new Date(),
-            };
+            }
           }
-        });
+        })
       },
       /**
        * If the document id exists, then update the document. Otherwise, insert it
@@ -153,42 +146,42 @@ export const documentStore = createStore<Store>()(
             state.documents[document.id] = {
               ...state.documents[document.id],
               ...document,
-            };
+            }
           } else {
             const existingdocument = Object.values(state.documents).find((n) =>
               caseInsensitiveStringEqual(n.title!, document.title!)
-            );
+            )
             if (existingdocument) {
               // Update existing document
               state.documents[existingdocument.id] = {
                 ...state.documents[existingdocument.id],
                 ...document,
-              };
+              }
             } else {
               // Insert new document
-              state.documents[document.id] = document;
+              state.documents[document.id] = document
               insertTreeItem(
                 state.documentTree,
                 { id: document.id, children: [], collapsed: true },
                 null
-              );
+              )
             }
           }
-        });
+        })
       },
       /**
        * Delete the document with the given documentId
        */
       deleteDocument: (documentId: string) => {
         set((state) => {
-          delete state.documents[documentId];
-          const item = deleteTreeItem(state.documentTree, documentId);
+          delete state.documents[documentId]
+          const item = deleteTreeItem(state.documentTree, documentId)
           if (item && item.children.length > 0) {
             for (const child of item.children) {
-              insertTreeItem(state.documentTree, child, null);
+              insertTreeItem(state.documentTree, child, null)
             }
           }
-        });
+        })
       },
       /**
        * The documents that have their content visible, including the main document and the stacked documents
@@ -198,36 +191,33 @@ export const documentStore = createStore<Store>()(
        * The tree of documents visible in the sidebar
        */
       documentTree: [],
-      setDocumentTree: createSetter(set, "documentTree"),
+      setDocumentTree: createSetter(set, 'documentTree'),
       /**
        * Moves the tree item with the given documentId to the given newParentDocumentId's children
        */
-      moveDocumentTreeItem: (
-        documentId: string,
-        newParentDocumentId: string | null
-      ) => {
+      moveDocumentTreeItem: (documentId: string, newParentDocumentId: string | null) => {
         // Don't do anything if the document ids are the same
         if (documentId === newParentDocumentId) {
-          return;
+          return
         }
         set((state) => {
-          const item = deleteTreeItem(state.documentTree, documentId);
+          const item = deleteTreeItem(state.documentTree, documentId)
           if (item) {
-            insertTreeItem(state.documentTree, item, newParentDocumentId);
+            insertTreeItem(state.documentTree, item, newParentDocumentId)
           }
-        });
+        })
       },
       /**
        * Expands or collapses the tree item with the given documentId
        */
       toggleDocumentTreeItemCollapsed: (documentId: string) => {
         set((state) => {
-          toggleDocumentTreeItemCollapsed(state.documentTree, documentId);
-        });
+          toggleDocumentTreeItemCollapsed(state.documentTree, documentId)
+        })
       },
     })),
     {
-      name: "document-storage",
+      name: 'document-storage',
       version: 1,
       storage: createJSONStorage(() => storage),
       partialize: (state) => ({
@@ -235,9 +225,8 @@ export const documentStore = createStore<Store>()(
       }),
     }
   )
-);
+)
 
-const useBoundStore = <T>(selector: (state: Store) => T) =>
-  useStore(documentStore, selector);
+const useBoundStore = <T>(selector: (state: Store) => T) => useStore(documentStore, selector)
 
-export { useBoundStore as useDocumentStore };
+export { useBoundStore as useDocumentStore }

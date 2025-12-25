@@ -1,14 +1,14 @@
-import React, { useCallback, useState } from "react";
-import type { ReactNodeViewProps } from "./ReactNodeView";
+import React, { useCallback, useState } from 'react'
+import type { ReactNodeViewProps } from './ReactNodeView'
 
 const CALLOUT_VARIANTS = [
-  { value: "info", label: "Info", icon: "ℹ️", color: "#3b82f6" },
-  { value: "success", label: "Success", icon: "✅", color: "#22c55e" },
-  { value: "warning", label: "Warning", icon: "⚠️", color: "#f59e0b" },
-  { value: "error", label: "Error", icon: "❌", color: "#ef4444" },
-  { value: "tip", label: "Tip", icon: "💡", color: "#8b5cf6" },
-  { value: "note", label: "Note", icon: "📝", color: "#6b7280" },
-];
+  { value: 'info', label: 'Info', icon: 'ℹ️', color: '#3b82f6' },
+  { value: 'success', label: 'Success', icon: '✅', color: '#22c55e' },
+  { value: 'warning', label: 'Warning', icon: '⚠️', color: '#f59e0b' },
+  { value: 'error', label: 'Error', icon: '❌', color: '#ef4444' },
+  { value: 'tip', label: 'Tip', icon: '💡', color: '#8b5cf6' },
+  { value: 'note', label: 'Note', icon: '📝', color: '#6b7280' },
+]
 
 export function CalloutView({
   node,
@@ -17,98 +17,92 @@ export function CalloutView({
   selected,
   updateAttributes,
 }: ReactNodeViewProps) {
-  const [showVariantPicker, setShowVariantPicker] = useState(false);
-  const variant = node.attrs.variant || "info";
-  const currentVariant = CALLOUT_VARIANTS.find((v) => v.value === variant) || CALLOUT_VARIANTS[0];
+  const [showVariantPicker, setShowVariantPicker] = useState(false)
+  const variant = node.attrs.variant || 'info'
+  const currentVariant = CALLOUT_VARIANTS.find((v) => v.value === variant) || CALLOUT_VARIANTS[0]
 
   const handleVariantChange = useCallback(
     (newVariant: string) => {
-      updateAttributes({ variant: newVariant });
-      setShowVariantPicker(false);
+      updateAttributes({ variant: newVariant })
+      setShowVariantPicker(false)
     },
     [updateAttributes]
-  );
+  )
 
   const handleDelete = useCallback(() => {
-    const pos = getPos();
-    if (pos === undefined) return;
+    const pos = getPos()
+    if (pos === undefined) return
 
-    const { tr } = view.state;
-    tr.delete(pos, pos + node.nodeSize);
-    view.dispatch(tr);
-  }, [view, getPos, node]);
+    const { tr } = view.state
+    tr.delete(pos, pos + node.nodeSize)
+    view.dispatch(tr)
+  }, [view, getPos, node])
 
   return (
     <div
-      className={`callout-view ${selected ? "selected" : ""}`}
+      className={`callout-view ${selected ? 'selected' : ''}`}
       data-variant={variant}
-      style={{
-        "--callout-color": currentVariant.color,
-      } as React.CSSProperties}
+      style={
+        {
+          '--callout-color': currentVariant.color,
+        } as React.CSSProperties
+      }
     >
-      <div className="callout-icon-container">
+      <div className='callout-icon-container'>
         <button
-          type="button"
-          className="callout-icon-button"
+          type='button'
+          className='callout-icon-button'
           onClick={() => setShowVariantPicker(!showVariantPicker)}
           contentEditable={false}
-          title="Change callout type"
+          title='Change callout type'
         >
-          <span className="callout-icon">{currentVariant.icon}</span>
+          <span className='callout-icon'>{currentVariant.icon}</span>
         </button>
         {showVariantPicker && (
-          <div className="variant-picker" contentEditable={false}>
+          <div className='variant-picker' contentEditable={false}>
             {CALLOUT_VARIANTS.map((v) => (
               <button
                 key={v.value}
-                type="button"
-                className={`variant-option ${
-                  variant === v.value ? "active" : ""
-                }`}
+                type='button'
+                className={`variant-option ${variant === v.value ? 'active' : ''}`}
                 onClick={() => handleVariantChange(v.value)}
               >
-                <span className="variant-icon">{v.icon}</span>
-                <span className="variant-label">{v.label}</span>
+                <span className='variant-icon'>{v.icon}</span>
+                <span className='variant-label'>{v.label}</span>
               </button>
             ))}
           </div>
         )}
       </div>
-      <div className="callout-content" data-node-view-content="" />
+      <div className='callout-content' data-node-view-content='' />
       {selected && (
-        <div className="callout-actions" contentEditable={false}>
+        <div className='callout-actions' contentEditable={false}>
           <button
-            type="button"
-            className="callout-action-button danger"
+            type='button'
+            className='callout-action-button danger'
             onClick={handleDelete}
-            title="Delete callout"
+            title='Delete callout'
           >
             <TrashIcon />
           </button>
         </div>
       )}
     </div>
-  );
+  )
 }
 
 function TrashIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
       <path
-        d="M2.5 3.5H11.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M10.5 3.5V11.5C10.5 11.7761 10.2761 12 10 12H4C3.72386 12 3.5 11.7761 3.5 11.5V3.5"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M2.5 3.5H11.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M10.5 3.5V11.5C10.5 11.7761 10.2761 12 10 12H4C3.72386 12 3.5 11.7761 3.5 11.5V3.5'
+        stroke='currentColor'
+        strokeWidth='1.25'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
-  );
+  )
 }
 
 // Styles for callout view
@@ -275,4 +269,4 @@ export const calloutStyles = `
 .callout-view[data-variant="note"] {
   --callout-color: #6b7280;
 }
-`;
+`

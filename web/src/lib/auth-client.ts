@@ -1,11 +1,11 @@
-import { createAuthClient } from "better-auth/react";
+import { createAuthClient } from 'better-auth/react'
 
 export const authClient = createAuthClient({
-  basePath: "/auth",
+  basePath: '/auth',
   baseURL: import.meta.env.VITE_PUBLIC_BACKEND_URL,
   fetchOptions: {
-    credentials: "include",
+    credentials: 'include',
   },
-});
+})
 
-export const { useSession, signIn, signOut } = authClient;
+export const { useSession, signIn, signOut } = authClient

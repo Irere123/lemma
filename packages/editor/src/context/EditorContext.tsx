@@ -1,37 +1,37 @@
-import { createContext, useContext } from "react";
-import type { EditorState } from "prosemirror-state";
-import type { EditorView } from "prosemirror-view";
+import { createContext, useContext } from 'react'
+import type { EditorState } from 'prosemirror-state'
+import type { EditorView } from 'prosemirror-view'
 
 export interface EditorContextValue {
   /** The ProseMirror view instance */
-  view: EditorView | null;
+  view: EditorView | null
   /** Current editor state */
-  state: EditorState | null;
+  state: EditorState | null
   /** Whether the editor is focused */
-  isFocused: boolean;
+  isFocused: boolean
   /** Whether the editor is empty */
-  isEmpty: boolean;
+  isEmpty: boolean
 }
 
-export const EditorContext = createContext<EditorContextValue | null>(null);
+export const EditorContext = createContext<EditorContextValue | null>(null)
 
 /**
  * Hook to access the editor context
  */
 export function useEditorContext(): EditorContextValue {
-  const context = useContext(EditorContext);
+  const context = useContext(EditorContext)
 
   if (!context) {
-    throw new Error("useEditorContext must be used within an Editor component");
+    throw new Error('useEditorContext must be used within an Editor component')
   }
 
-  return context;
+  return context
 }
 
 /**
  * Hook to access the editor view (with null check)
  */
 export function useEditorView(): EditorView | null {
-  const context = useContext(EditorContext);
-  return context?.view || null;
+  const context = useContext(EditorContext)
+  return context?.view || null
 }

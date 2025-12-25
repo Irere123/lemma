@@ -1,11 +1,11 @@
-import { dropCursor } from "prosemirror-dropcursor";
-import { gapCursor } from "prosemirror-gapcursor";
-import type { Plugin } from "prosemirror-state";
+import { dropCursor } from 'prosemirror-dropcursor'
+import { gapCursor } from 'prosemirror-gapcursor'
+import type { Plugin } from 'prosemirror-state'
 
 interface DropCursorOptions {
-  color?: string;
-  width?: number;
-  class?: string;
+  color?: string
+  width?: number
+  class?: string
 }
 
 /**
@@ -13,25 +13,22 @@ interface DropCursorOptions {
  */
 export function createDropCursorPlugin(options: DropCursorOptions = {}): Plugin {
   return dropCursor({
-    color: options.color || "#3b82f6",
+    color: options.color || '#3b82f6',
     width: options.width || 2,
-    class: options.class || "pm-drop-cursor",
-  });
+    class: options.class || 'pm-drop-cursor',
+  })
 }
 
 /**
  * Creates the gap cursor plugin for navigating between blocks
  */
 export function createGapCursorPlugin(): Plugin {
-  return gapCursor();
+  return gapCursor()
 }
 
 /**
  * Creates both cursor plugins
  */
 export function createCursorPlugins(options: DropCursorOptions = {}): Plugin[] {
-  return [
-    createDropCursorPlugin(options),
-    createGapCursorPlugin(),
-  ];
+  return [createDropCursorPlugin(options), createGapCursorPlugin()]
 }

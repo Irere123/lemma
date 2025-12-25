@@ -1,174 +1,153 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useFloating, offset, shift, autoUpdate } from "@floating-ui/react";
-import { TextSelection } from "prosemirror-state";
-import { useEditorView } from "../context/EditorContext";
-import { useEditorState } from "../hooks";
-import { getDragHandleState, startDrag, updateDropPosition } from "../plugins/dragHandle";
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useFloating, offset, shift, autoUpdate } from '@floating-ui/react'
+import { TextSelection } from 'prosemirror-state'
+import { useEditorView } from '../context/EditorContext'
+import { useEditorState } from '../hooks'
+import { getDragHandleState, startDrag, updateDropPosition } from '../plugins/dragHandle'
 
 export interface DragHandleProps {
-  className?: string;
+  className?: string
 }
 
 export function DragHandle({ className }: DragHandleProps) {
-  const view = useEditorView();
-  const editorState = useEditorState();
-  const [activeElement, setActiveElement] = useState<HTMLElement | null>(null);
-  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
-  const isDragging = useRef(false);
+  const view = useEditorView()
+  const editorState = useEditorState()
+  const [activeElement, setActiveElement] = useState<HTMLElement | null>(null)
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null)
+  const isDragging = useRef(false)
 
   const { refs, floatingStyles } = useFloating({
     open: !!activeElement,
-    placement: "left",
+    placement: 'left',
     middleware: [offset({ mainAxis: 4, crossAxis: 0 }), shift({ padding: 8 })],
     whileElementsMounted: autoUpdate,
-  });
+  })
 
   // Update position based on active block
   useEffect(() => {
-    if (!view || !editorState) return;
+    if (!view || !editorState) return
 
-    const state = getDragHandleState(editorState);
+    const state = getDragHandleState(editorState)
     if (state?.activeBlockDom && !state.isDragging) {
-      setActiveElement(state.activeBlockDom);
-      refs.setReference(state.activeBlockDom);
+      setActiveElement(state.activeBlockDom)
+      refs.setReference(state.activeBlockDom)
     } else if (!state?.activeBlockPos) {
-      setActiveElement(null);
+      setActiveElement(null)
     }
-  }, [view, editorState, refs]);
+  }, [view, editorState, refs])
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault();
-      if (!view) return;
+      e.preventDefault()
+      if (!view) return
 
-      dragStartPos.current = { x: e.clientX, y: e.clientY };
-      isDragging.current = false;
+      dragStartPos.current = { x: e.clientX, y: e.clientY }
+      isDragging.current = false
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
-        if (!dragStartPos.current) return;
+        if (!dragStartPos.current) return
 
-        const deltaX = Math.abs(moveEvent.clientX - dragStartPos.current.x);
-        const deltaY = Math.abs(moveEvent.clientY - dragStartPos.current.y);
+        const deltaX = Math.abs(moveEvent.clientX - dragStartPos.current.x)
+        const deltaY = Math.abs(moveEvent.clientY - dragStartPos.current.y)
 
         // Start dragging after a small threshold
         if (!isDragging.current && (deltaX > 5 || deltaY > 5)) {
-          isDragging.current = true;
-          startDrag(view);
-          document.body.classList.add("dragging-block");
+          isDragging.current = true
+          startDrag(view)
+          document.body.classList.add('dragging-block')
         }
 
         if (isDragging.current) {
-          updateDropPosition(view, moveEvent.clientY);
+          updateDropPosition(view, moveEvent.clientY)
         }
-      };
+      }
 
       const handleMouseUp = () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.body.classList.remove("dragging-block");
-        dragStartPos.current = null;
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+        document.body.classList.remove('dragging-block')
+        dragStartPos.current = null
 
         if (isDragging.current) {
           // Trigger drop by dispatching a synthetic drop event
-          const dropEvent = new DragEvent("drop", {
+          const dropEvent = new DragEvent('drop', {
             bubbles: true,
             cancelable: true,
-          });
-          view.dom.dispatchEvent(dropEvent);
+          })
+          view.dom.dispatchEvent(dropEvent)
         }
 
-        isDragging.current = false;
-      };
+        isDragging.current = false
+      }
 
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
     },
     [view]
-  );
+  )
 
   const handleAddClick = useCallback(() => {
-    if (!view) return;
+    if (!view) return
 
-    const state = getDragHandleState(view.state);
+    const state = getDragHandleState(view.state)
     if (state?.activeBlockPos !== null && state?.activeBlockNode) {
       // Insert a new paragraph after the current block
-      const pos = state.activeBlockPos + state.activeBlockNode.nodeSize;
-      const { tr } = view.state;
-      const paragraph = view.state.schema.nodes.paragraph.create();
-      tr.insert(pos, paragraph);
-      tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1)));
-      view.dispatch(tr);
-      view.focus();
+      const pos = state.activeBlockPos + state.activeBlockNode.nodeSize
+      const { tr } = view.state
+      const paragraph = view.state.schema.nodes.paragraph.create()
+      tr.insert(pos, paragraph)
+      tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1)))
+      view.dispatch(tr)
+      view.focus()
     }
-  }, [view]);
+  }, [view])
 
   if (!activeElement) {
-    return null;
+    return null
   }
 
   return (
-    <div
-      ref={refs.setFloating}
-      style={floatingStyles}
-      className={`drag-handle ${className || ""}`}
-    >
-      <button
-        type="button"
-        className="drag-handle-add"
-        onClick={handleAddClick}
-        title="Add block"
-      >
+    <div ref={refs.setFloating} style={floatingStyles} className={`drag-handle ${className || ''}`}>
+      <button type='button' className='drag-handle-add' onClick={handleAddClick} title='Add block'>
         <PlusIcon />
       </button>
       <button
-        type="button"
-        className="drag-handle-grip"
+        type='button'
+        className='drag-handle-grip'
         onMouseDown={handleMouseDown}
-        title="Drag to move"
+        title='Drag to move'
       >
         <GripIcon />
       </button>
     </div>
-  );
+  )
 }
 
 function PlusIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
       <path
-        d="M7 2V12M2 7H12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M7 2V12M2 7H12'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
-  );
+  )
 }
 
 function GripIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="5" cy="3" r="1" fill="currentColor" />
-      <circle cx="9" cy="3" r="1" fill="currentColor" />
-      <circle cx="5" cy="7" r="1" fill="currentColor" />
-      <circle cx="9" cy="7" r="1" fill="currentColor" />
-      <circle cx="5" cy="11" r="1" fill="currentColor" />
-      <circle cx="9" cy="11" r="1" fill="currentColor" />
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
+      <circle cx='5' cy='3' r='1' fill='currentColor' />
+      <circle cx='9' cy='3' r='1' fill='currentColor' />
+      <circle cx='5' cy='7' r='1' fill='currentColor' />
+      <circle cx='9' cy='7' r='1' fill='currentColor' />
+      <circle cx='5' cy='11' r='1' fill='currentColor' />
+      <circle cx='9' cy='11' r='1' fill='currentColor' />
     </svg>
-  );
+  )
 }
 
 // Styles for drag handle component
@@ -287,4 +266,4 @@ body.dragging-block .drag-handle {
   margin: 4px 0;
   background-color: #e5e5e5;
 }
-`;
+`

@@ -1,59 +1,51 @@
-import { useCallback } from "react";
-import type { ReactNodeViewProps } from "./ReactNodeView";
+import { useCallback } from 'react'
+import type { ReactNodeViewProps } from './ReactNodeView'
 
-export function TaskItemView({
-  node,
-  selected,
-  updateAttributes,
-}: ReactNodeViewProps) {
-  const checked = node.attrs.checked ?? false;
+export function TaskItemView({ node, selected, updateAttributes }: ReactNodeViewProps) {
+  const checked = node.attrs.checked ?? false
 
   const handleToggle = useCallback(() => {
-    updateAttributes({ checked: !checked });
-  }, [checked, updateAttributes]);
+    updateAttributes({ checked: !checked })
+  }, [checked, updateAttributes])
 
   return (
     <div
-      className={`task-item-view ${checked ? "completed" : ""} ${
-        selected ? "selected" : ""
-      }`}
+      className={`task-item-view ${checked ? 'completed' : ''} ${selected ? 'selected' : ''}`}
       data-checked={checked}
     >
-      <label className="task-checkbox-container" contentEditable={false}>
+      <label className='task-checkbox-container' contentEditable={false}>
         <input
-          type="checkbox"
-          className="task-checkbox-input"
+          type='checkbox'
+          className='task-checkbox-input'
           checked={checked}
           onChange={handleToggle}
         />
-        <span className="task-checkbox">
-          {checked && <CheckIcon />}
-        </span>
+        <span className='task-checkbox'>{checked && <CheckIcon />}</span>
       </label>
-      <div className="task-content" data-node-view-content="" />
+      <div className='task-content' data-node-view-content='' />
     </div>
-  );
+  )
 }
 
 function CheckIcon() {
   return (
     <svg
-      className="check-icon"
-      width="10"
-      height="10"
-      viewBox="0 0 10 10"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+      className='check-icon'
+      width='10'
+      height='10'
+      viewBox='0 0 10 10'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
     >
       <path
-        d="M2 5L4 7L8 3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M2 5L4 7L8 3'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
-  );
+  )
 }
 
 // Styles for task item view
@@ -168,4 +160,4 @@ export const taskItemStyles = `
   bottom: 0;
   width: 20px;
 }
-`;
+`

@@ -1,21 +1,21 @@
-import type { Node as ProseMirrorNode, ResolvedPos } from "prosemirror-model";
-import { EditorState, Plugin, PluginKey } from "prosemirror-state";
-import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
+import type { Node as ProseMirrorNode, ResolvedPos } from 'prosemirror-model'
+import { EditorState, Plugin, PluginKey } from 'prosemirror-state'
+import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
-export const dragHandlePluginKey = new PluginKey<DragHandleState>("dragHandle");
+export const dragHandlePluginKey = new PluginKey<DragHandleState>('dragHandle')
 
 export interface DragHandleState {
-  activeBlockPos: number | null;
-  activeBlockNode: ProseMirrorNode | null;
-  activeBlockDom: HTMLElement | null;
-  isDragging: boolean;
-  dropPos: number | null;
+  activeBlockPos: number | null
+  activeBlockNode: ProseMirrorNode | null
+  activeBlockDom: HTMLElement | null
+  isDragging: boolean
+  dropPos: number | null
 }
 
 interface DragHandleOptions {
-  onDragStart?: (view: EditorView, pos: number, node: ProseMirrorNode) => void;
-  onDragEnd?: (view: EditorView) => void;
-  onDrop?: (view: EditorView, from: number, to: number, node: ProseMirrorNode) => void;
+  onDragStart?: (view: EditorView, pos: number, node: ProseMirrorNode) => void
+  onDragEnd?: (view: EditorView) => void
+  onDrop?: (view: EditorView, from: number, to: number, node: ProseMirrorNode) => void
 }
 
 /**
@@ -33,103 +33,103 @@ export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin 
           activeBlockDom: null,
           isDragging: false,
           dropPos: null,
-        };
+        }
       },
 
       apply(tr, value): DragHandleState {
-        const meta = tr.getMeta(dragHandlePluginKey);
+        const meta = tr.getMeta(dragHandlePluginKey)
         if (meta) {
-          return { ...value, ...meta };
+          return { ...value, ...meta }
         }
-        return value;
+        return value
       },
     },
 
     props: {
       handleDOMEvents: {
         mousemove(view, event) {
-          const pos = getBlockPosFromCoords(view, event.clientX, event.clientY);
+          const pos = getBlockPosFromCoords(view, event.clientX, event.clientY)
 
           if (pos !== null) {
-            const node = view.state.doc.nodeAt(pos);
+            const node = view.state.doc.nodeAt(pos)
             if (node && isBlockNode(node)) {
-              const dom = view.nodeDOM(pos) as HTMLElement | null;
-              updateDragHandleState(view, pos, node, dom);
+              const dom = view.nodeDOM(pos) as HTMLElement | null
+              updateDragHandleState(view, pos, node, dom)
             } else {
-              clearDragHandleState(view);
+              clearDragHandleState(view)
             }
           } else {
-            clearDragHandleState(view);
+            clearDragHandleState(view)
           }
 
-          return false;
+          return false
         },
 
         mouseleave(view, _event) {
-          const state = dragHandlePluginKey.getState(view.state);
+          const state = dragHandlePluginKey.getState(view.state)
           if (state && !state.isDragging) {
-            clearDragHandleState(view);
+            clearDragHandleState(view)
           }
-          return false;
+          return false
         },
 
         drop(view, event) {
-          const state = dragHandlePluginKey.getState(view.state);
+          const state = dragHandlePluginKey.getState(view.state)
           if (state?.isDragging && state.activeBlockPos !== null && state.dropPos !== null) {
-            event.preventDefault();
+            event.preventDefault()
 
-            const from = state.activeBlockPos;
-            const to = state.dropPos;
-            const node = state.activeBlockNode;
+            const from = state.activeBlockPos
+            const to = state.dropPos
+            const node = state.activeBlockNode
 
             if (node && from !== to) {
               // Move the block
-              const { tr } = view.state;
-              const nodeSize = node.nodeSize;
+              const { tr } = view.state
+              const nodeSize = node.nodeSize
 
               // Delete from original position
-              tr.delete(from, from + nodeSize);
+              tr.delete(from, from + nodeSize)
 
               // Calculate new position after deletion
-              const adjustedTo = to > from ? to - nodeSize : to;
+              const adjustedTo = to > from ? to - nodeSize : to
 
               // Insert at new position
-              tr.insert(adjustedTo, node);
+              tr.insert(adjustedTo, node)
 
-              view.dispatch(tr);
+              view.dispatch(tr)
 
               if (options.onDrop) {
-                options.onDrop(view, from, adjustedTo, node);
+                options.onDrop(view, from, adjustedTo, node)
               }
             }
 
-            clearDragHandleState(view);
+            clearDragHandleState(view)
             if (options.onDragEnd) {
-              options.onDragEnd(view);
+              options.onDragEnd(view)
             }
 
-            return true;
+            return true
           }
-          return false;
+          return false
         },
 
         dragend(view, _event) {
-          const state = dragHandlePluginKey.getState(view.state);
+          const state = dragHandlePluginKey.getState(view.state)
           if (state?.isDragging) {
-            clearDragHandleState(view);
+            clearDragHandleState(view)
             if (options.onDragEnd) {
-              options.onDragEnd(view);
+              options.onDragEnd(view)
             }
           }
-          return false;
+          return false
         },
       },
 
       decorations(state) {
-        const pluginState = dragHandlePluginKey.getState(state);
-        if (!pluginState) return DecorationSet.empty;
+        const pluginState = dragHandlePluginKey.getState(state)
+        if (!pluginState) return DecorationSet.empty
 
-        const decorations: Decoration[] = [];
+        const decorations: Decoration[] = []
 
         // Add active block highlight
         if (pluginState.activeBlockPos !== null && pluginState.activeBlockNode) {
@@ -137,49 +137,49 @@ export function createDragHandlePlugin(options: DragHandleOptions = {}): Plugin 
             Decoration.node(
               pluginState.activeBlockPos,
               pluginState.activeBlockPos + pluginState.activeBlockNode.nodeSize,
-              { class: "drag-handle-active" }
+              { class: 'drag-handle-active' }
             )
-          );
+          )
         }
 
         // Add drop indicator
         if (pluginState.isDragging && pluginState.dropPos !== null) {
           decorations.push(
             Decoration.widget(pluginState.dropPos, () => {
-              const indicator = document.createElement("div");
-              indicator.className = "drag-drop-indicator";
-              return indicator;
+              const indicator = document.createElement('div')
+              indicator.className = 'drag-drop-indicator'
+              return indicator
             })
-          );
+          )
         }
 
-        return DecorationSet.create(state.doc, decorations);
+        return DecorationSet.create(state.doc, decorations)
       },
     },
-  });
+  })
 }
 
 function getBlockPosFromCoords(view: EditorView, x: number, y: number): number | null {
-  const pos = view.posAtCoords({ left: x, top: y });
-  if (!pos) return null;
+  const pos = view.posAtCoords({ left: x, top: y })
+  if (!pos) return null
 
-  const $pos = view.state.doc.resolve(pos.pos);
-  return getBlockPos($pos);
+  const $pos = view.state.doc.resolve(pos.pos)
+  return getBlockPos($pos)
 }
 
 function getBlockPos($pos: ResolvedPos): number | null {
   // Walk up to find a block-level node
   for (let depth = $pos.depth; depth >= 1; depth--) {
-    const node = $pos.node(depth);
+    const node = $pos.node(depth)
     if (isBlockNode(node)) {
-      return $pos.before(depth);
+      return $pos.before(depth)
     }
   }
-  return null;
+  return null
 }
 
 function isBlockNode(node: ProseMirrorNode): boolean {
-  return node.isBlock && !node.isTextblock === false && node.type.name !== "doc";
+  return node.isBlock && !node.isTextblock === false && node.type.name !== 'doc'
 }
 
 function updateDragHandleState(
@@ -188,42 +188,42 @@ function updateDragHandleState(
   node: ProseMirrorNode,
   dom: HTMLElement | null
 ): void {
-  const currentState = dragHandlePluginKey.getState(view.state);
-  if (currentState?.activeBlockPos === pos) return;
+  const currentState = dragHandlePluginKey.getState(view.state)
+  if (currentState?.activeBlockPos === pos) return
 
-  const { tr } = view.state;
+  const { tr } = view.state
   tr.setMeta(dragHandlePluginKey, {
     activeBlockPos: pos,
     activeBlockNode: node,
     activeBlockDom: dom,
-  });
-  view.dispatch(tr);
+  })
+  view.dispatch(tr)
 }
 
 function clearDragHandleState(view: EditorView): void {
-  const currentState = dragHandlePluginKey.getState(view.state);
-  if (!currentState?.activeBlockPos && !currentState?.isDragging) return;
+  const currentState = dragHandlePluginKey.getState(view.state)
+  if (!currentState?.activeBlockPos && !currentState?.isDragging) return
 
-  const { tr } = view.state;
+  const { tr } = view.state
   tr.setMeta(dragHandlePluginKey, {
     activeBlockPos: null,
     activeBlockNode: null,
     activeBlockDom: null,
     isDragging: false,
     dropPos: null,
-  });
-  view.dispatch(tr);
+  })
+  view.dispatch(tr)
 }
 
 /**
  * Start dragging a block
  */
 export function startDrag(view: EditorView): void {
-  const state = dragHandlePluginKey.getState(view.state);
+  const state = dragHandlePluginKey.getState(view.state)
   if (state?.activeBlockPos !== null) {
-    const { tr } = view.state;
-    tr.setMeta(dragHandlePluginKey, { isDragging: true });
-    view.dispatch(tr);
+    const { tr } = view.state
+    tr.setMeta(dragHandlePluginKey, { isDragging: true })
+    view.dispatch(tr)
   }
 }
 
@@ -231,34 +231,34 @@ export function startDrag(view: EditorView): void {
  * Update drop position during drag
  */
 export function updateDropPosition(view: EditorView, y: number): void {
-  const state = dragHandlePluginKey.getState(view.state);
-  if (!state?.isDragging) return;
+  const state = dragHandlePluginKey.getState(view.state)
+  if (!state?.isDragging) return
 
-  const pos = view.posAtCoords({ left: 0, top: y });
-  if (!pos) return;
+  const pos = view.posAtCoords({ left: 0, top: y })
+  if (!pos) return
 
-  const $pos = view.state.doc.resolve(pos.pos);
-  let dropPos: number | null = null;
+  const $pos = view.state.doc.resolve(pos.pos)
+  let dropPos: number | null = null
 
   // Find the nearest block boundary
   for (let depth = $pos.depth; depth >= 1; depth--) {
-    const node = $pos.node(depth);
+    const node = $pos.node(depth)
     if (isBlockNode(node)) {
-      const before = $pos.before(depth);
-      const after = $pos.after(depth);
-      const nodeTop = view.coordsAtPos(before).top;
-      const nodeBottom = view.coordsAtPos(after).bottom;
-      const middle = (nodeTop + nodeBottom) / 2;
+      const before = $pos.before(depth)
+      const after = $pos.after(depth)
+      const nodeTop = view.coordsAtPos(before).top
+      const nodeBottom = view.coordsAtPos(after).bottom
+      const middle = (nodeTop + nodeBottom) / 2
 
-      dropPos = y < middle ? before : after;
-      break;
+      dropPos = y < middle ? before : after
+      break
     }
   }
 
   if (dropPos !== state.dropPos) {
-    const { tr } = view.state;
-    tr.setMeta(dragHandlePluginKey, { dropPos });
-    view.dispatch(tr);
+    const { tr } = view.state
+    tr.setMeta(dragHandlePluginKey, { dropPos })
+    view.dispatch(tr)
   }
 }
 
@@ -266,7 +266,7 @@ export function updateDropPosition(view: EditorView, y: number): void {
  * Get current drag handle state
  */
 export function getDragHandleState(state: EditorState): DragHandleState | undefined {
-  return dragHandlePluginKey.getState(state);
+  return dragHandlePluginKey.getState(state)
 }
 
 // Styles for drag handle
@@ -368,4 +368,4 @@ export const dragHandleStyles = `
   width: 14px;
   height: 14px;
 }
-`;
+`

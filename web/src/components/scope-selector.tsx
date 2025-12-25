@@ -1,79 +1,66 @@
-import { RESOURCES } from "@/utils/scopes";
-import type { Scope } from "@lemma/common/scopes";
-import { FormDescription } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { RESOURCES } from '@/utils/scopes'
+import type { Scope } from '@lemma/common/scopes'
+import { FormDescription } from '@/components/ui/form'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 type Props = {
-  selectedScopes: Scope[];
-  onResourceScopeChange: (resourceKey: string, scope: string) => void;
-  description?: string;
-  height?: string;
-  errorMessage?: string;
-};
+  selectedScopes: Scope[]
+  onResourceScopeChange: (resourceKey: string, scope: string) => void
+  description?: string
+  height?: string
+  errorMessage?: string
+}
 
 export function ScopeSelector({
   selectedScopes,
   onResourceScopeChange,
-  description = "Select which scopes this application can request access to.",
-  height = "max-h-[300px]",
+  description = 'Select which scopes this application can request access to.',
+  height = 'max-h-[300px]',
   errorMessage,
 }: Props) {
   // Helper function to get the selected scope for a resource
   const getResourceScope = (resourceKey: string): string => {
-    const resource = RESOURCES.find((r) => r.key === resourceKey);
-    if (!resource) return "";
+    const resource = RESOURCES.find((r) => r.key === resourceKey)
+    if (!resource) return ''
 
     // Find which scope from this resource is currently selected
     for (const scope of resource.scopes) {
       if (selectedScopes.includes(scope.scope as Scope)) {
-        return scope.scope;
+        return scope.scope
       }
     }
-    return "";
-  };
+    return ''
+  }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       <FormDescription>{description}</FormDescription>
 
       <ScrollArea className={`flex flex-col text-sm ${height}`}>
         {RESOURCES.map((resource) => (
-          <div
-            className="flex items-center justify-between py-4 border-b"
-            key={resource.key}
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium text-[#878787]">
-                {resource.name}
-              </span>
+          <div className='flex items-center justify-between py-4 border-b' key={resource.key}>
+            <div className='flex items-center gap-1.5'>
+              <span className='text-sm font-medium text-[#878787]'>{resource.name}</span>
             </div>
             <div>
               <RadioGroup
                 value={getResourceScope(resource.key)}
-                className="flex gap-4"
-                onValueChange={(value) =>
-                  onResourceScopeChange(resource.key, value)
-                }
+                className='flex gap-4'
+                onValueChange={(value) => onResourceScopeChange(resource.key, value)}
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="" id={`${resource.key}-none`} />
-                  <label htmlFor={`${resource.key}-none`} className="text-sm">
+                <div className='flex items-center space-x-2'>
+                  <RadioGroupItem value='' id={`${resource.key}-none`} />
+                  <label htmlFor={`${resource.key}-none`} className='text-sm'>
                     None
                   </label>
                 </div>
                 {resource.scopes.map((scope) => (
-                  <div
-                    className="flex items-center space-x-2"
-                    key={scope.scope}
-                  >
-                    <RadioGroupItem
-                      value={scope.scope}
-                      id={`${resource.key}-${scope.type}`}
-                    />
+                  <div className='flex items-center space-x-2' key={scope.scope}>
+                    <RadioGroupItem value={scope.scope} id={`${resource.key}-${scope.type}`} />
                     <label
                       htmlFor={`${resource.key}-${scope.type}`}
-                      className="text-sm font-normal capitalize text-[#878787]"
+                      className='text-sm font-normal capitalize text-[#878787]'
                     >
                       {scope.label}
                     </label>
@@ -85,11 +72,7 @@ export function ScopeSelector({
         ))}
       </ScrollArea>
 
-      {errorMessage && (
-        <p className="text-sm font-medium text-destructive mt-2">
-          {errorMessage}
-        </p>
-      )}
+      {errorMessage && <p className='text-sm font-medium text-destructive mt-2'>{errorMessage}</p>}
     </div>
-  );
+  )
 }

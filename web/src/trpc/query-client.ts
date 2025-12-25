@@ -1,8 +1,5 @@
-import {
-  defaultShouldDehydrateQuery,
-  QueryClient,
-} from "@tanstack/react-query";
-import superjson from "superjson";
+import { defaultShouldDehydrateQuery, QueryClient } from '@tanstack/react-query'
+import superjson from 'superjson'
 
 export function makeQueryClient() {
   return new QueryClient({
@@ -20,19 +17,18 @@ export function makeQueryClient() {
       mutations: {
         // Global error handling for mutations
         onError: (error) => {
-          console.error("Mutation error:", error);
+          console.error('Mutation error:', error)
         },
       },
       dehydrate: {
         serializeData: superjson.serialize,
         // Include pending queries in dehydration for streaming support
         shouldDehydrateQuery: (query) =>
-          defaultShouldDehydrateQuery(query) ||
-          query.state.status === "pending",
+          defaultShouldDehydrateQuery(query) || query.state.status === 'pending',
       },
       hydrate: {
         deserializeData: superjson.deserialize,
       },
     },
-  });
+  })
 }

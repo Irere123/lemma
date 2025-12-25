@@ -1,17 +1,16 @@
-import type { MiddlewareHandler } from "hono";
+import type { MiddlewareHandler } from 'hono'
 
-import { createDb } from "@api/db";
-import { env } from "@api/env-runtime";
-
+import { createDb } from '@api/db'
+import { env } from '@api/env-runtime'
 
 /**
  * Database middleware that connects to the database and sets it on context
  */
 export const withDatabase: MiddlewareHandler = async (c, next) => {
-  const { db } = createDb(env.DATABASE_URL);
+  const { db } = createDb(env.DATABASE_URL)
 
   // Set database on context
-  c.set("db", db);
+  c.set('db', db)
 
-  await next();
-};
+  await next()
+}

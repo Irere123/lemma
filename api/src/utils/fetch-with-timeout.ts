@@ -1,22 +1,22 @@
 export function fetchWithTimeout(
-  input:  URL,
+  input: URL,
   init?: RequestInit | undefined,
   timeout: number = 5000
 ) {
   return new Promise<Response>((resolve, reject) => {
-    const controller = new AbortController();
+    const controller = new AbortController()
     const timeoutId = setTimeout(() => {
-      controller.abort();
-      reject(new Error("Request timed out"));
-    }, timeout);
+      controller.abort()
+      reject(new Error('Request timed out'))
+    }, timeout)
     fetch(input, { ...init, signal: controller.signal })
       .then((response) => {
-        clearTimeout(timeoutId);
-        resolve(response);
+        clearTimeout(timeoutId)
+        resolve(response)
       })
       .catch((error) => {
-        clearTimeout(timeoutId);
-        reject(error);
-      });
-  });
+        clearTimeout(timeoutId)
+        reject(error)
+      })
+  })
 }

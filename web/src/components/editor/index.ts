@@ -9,7 +9,7 @@ export {
   Mark,
   type EditorProps,
   type TitleProps,
-} from "./BrainEditor";
+} from './BrainEditor'
 
 // Re-export all types from the editor package for convenience
 export type {
@@ -36,4 +36,4 @@ export type {
   Callout,
   Toggle,
   Divider,
-} from "@lemma/editor";
+} from '@lemma/editor'

@@ -1,37 +1,33 @@
-import { and, desc, eq, lt, ne } from "drizzle-orm";
+import { and, desc, eq, lt, ne } from 'drizzle-orm'
 
-import type { DB } from "@api/db";
-import { documents, type Document, type DocumentStatus } from "@api/db/schema";
-import { slugifyString } from "@api/db/utils/slugify";
-import { env } from "@api/env-runtime";
-import { generateId } from "@api/lib/utils";
-import type { UpsertDocumentData } from "@api/schemas";
+import type { DB } from '@api/db'
+import { documents, type Document, type DocumentStatus } from '@api/db/schema'
+import { slugifyString } from '@api/db/utils/slugify'
+import { env } from '@api/env-runtime'
+import { generateId } from '@api/lib/utils'
+import type { UpsertDocumentData } from '@api/schemas'
 
 // Default page size for pagination
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 20
+const MAX_PAGE_SIZE = 100
 
-async function ensureUniqueSlug(
-  db: DB,
-  base: string,
-  excludeId?: string
-): Promise<string> {
-  let candidate = base || "post";
-  let suffix = 0;
+async function ensureUniqueSlug(db: DB, base: string, excludeId?: string): Promise<string> {
+  let candidate = base || 'post'
+  let suffix = 0
   // Check if exists; if so, append incremental suffix
   // Keep attempts bounded reasonably, though realistically collisions are rare
   while (true) {
     const whereClause = excludeId
       ? and(eq(documents.slug, candidate), ne(documents.id, excludeId))
-      : eq(documents.slug, candidate);
+      : eq(documents.slug, candidate)
     const existing = await db
       .select({ id: documents.id })
       .from(documents)
       .where(whereClause)
-      .limit(1);
-    if (existing.length === 0) return candidate;
-    suffix += 1;
-    candidate = `${base}-${suffix}`;
+      .limit(1)
+    if (existing.length === 0) return candidate
+    suffix += 1
+    candidate = `${base}-${suffix}`
   }
 }
 
@@ -41,24 +37,24 @@ export const upsertDocument = async (
   userId: string
 ): Promise<Document | undefined> => {
   if (data.id) {
-    const updateValues: any = { ...data, updatedAt: new Date() };
-    if (Object.prototype.hasOwnProperty.call(data, "title")) {
-      const base = slugifyString(data.title ?? generateId());
-      const safeBase = base || generateId();
-      updateValues.slug = await ensureUniqueSlug(db, safeBase, data.id);
+    const updateValues: any = { ...data, updatedAt: new Date() }
+    if (Object.prototype.hasOwnProperty.call(data, 'title')) {
+      const base = slugifyString(data.title ?? generateId())
+      const safeBase = base || generateId()
+      updateValues.slug = await ensureUniqueSlug(db, safeBase, data.id)
     }
     const [document] = await db
       .update(documents)
       .set(updateValues)
       .where(eq(documents.id, data.id))
-      .returning();
-    return document;
+      .returning()
+    return document
   }
 
   try {
-    const base = slugifyString(data.title ?? generateId());
-    const safeBase = base || generateId();
-    const slug = await ensureUniqueSlug(db, safeBase);
+    const base = slugifyString(data.title ?? generateId())
+    const safeBase = base || generateId()
+    const slug = await ensureUniqueSlug(db, safeBase)
 
     const [document] = await db
       .insert(documents)
@@ -70,40 +66,37 @@ export const upsertDocument = async (
         createdAt: new Date(),
         updatedAt: new Date(),
       })
-      .returning();
-    return document;
+      .returning()
+    return document
   } catch (error) {
-    console.log(error);
+    console.log(error)
   }
-};
+}
 
-export const deleteDocument = async (
-  db: DB,
-  documentId: string
-): Promise<void> => {
-  await db.delete(documents).where(eq(documents.id, documentId));
-};
+export const deleteDocument = async (db: DB, documentId: string): Promise<void> => {
+  await db.delete(documents).where(eq(documents.id, documentId))
+}
 
 type UserDocumentsData = {
-  userId: string;
-  status?: DocumentStatus;
-  limit?: number;
-  cursor?: string;
-};
+  userId: string
+  status?: DocumentStatus
+  limit?: number
+  cursor?: string
+}
 
 export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
-  const limit = Math.min(data.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+  const limit = Math.min(data.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
 
   // Build filter conditions dynamically
-  const filters = [eq(documents.userId, data.userId)];
+  const filters = [eq(documents.userId, data.userId)]
 
   if (data.status) {
-    filters.push(eq(documents.status, data.status));
+    filters.push(eq(documents.status, data.status))
   }
 
   // Add cursor-based pagination
   if (data.cursor) {
-    filters.push(lt(documents.createdAt, new Date(data.cursor)));
+    filters.push(lt(documents.createdAt, new Date(data.cursor)))
   }
 
   const userDocuments = await db
@@ -124,16 +117,13 @@ export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
     .from(documents)
     .where(and(...filters))
     .orderBy(desc(documents.createdAt))
-    .limit(limit + 1); // Fetch one extra to determine if there's a next page
+    .limit(limit + 1) // Fetch one extra to determine if there's a next page
 
-  return userDocuments;
-};
+  return userDocuments
+}
 
-export const getAdminPublishedArticles = async (
-  db: DB,
-  limit: number = DEFAULT_PAGE_SIZE
-) => {
-  const safeLimit = Math.min(limit, MAX_PAGE_SIZE);
+export const getAdminPublishedArticles = async (db: DB, limit: number = DEFAULT_PAGE_SIZE) => {
+  const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
 
   const results = await db
     .select({
@@ -150,29 +140,24 @@ export const getAdminPublishedArticles = async (
       updatedAt: documents.updatedAt,
     })
     .from(documents)
-    .where(
-      and(
-        eq(documents.status, "PUBLISHED"),
-        eq(documents.userId, env.ADMIN_USER_ID)
-      )
-    )
+    .where(and(eq(documents.status, 'PUBLISHED'), eq(documents.userId, env.ADMIN_USER_ID)))
     .orderBy(desc(documents.publishedDate))
-    .limit(safeLimit);
+    .limit(safeLimit)
 
-  return results;
-};
+  return results
+}
 
 export const getDocumentById = async (db: DB, id: string) => {
   return db.query.documents.findFirst({
     where: (table, { eq }) => eq(table.id, id),
-  });
-};
+  })
+}
 
 export const getDocumentBySlug = async (db: DB, slug: string) => {
   return db.query.documents.findFirst({
     where: (table, { eq }) => eq(table.slug, slug),
-  });
-};
+  })
+}
 
 export const updateDocumentBannerImage = async (
   db: DB,
@@ -184,16 +169,16 @@ export const updateDocumentBannerImage = async (
     .update(documents)
     .set({ bannerImage, updatedAt: new Date() })
     .where(and(eq(documents.id, id), eq(documents.userId, userId)))
-    .returning();
+    .returning()
 
-  return document;
-};
+  return document
+}
 
 export const getPublishedArticles = async (
   db: DB,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Omit<Document, "content" | "markdown">[]> => {
-  const safeLimit = Math.min(limit, MAX_PAGE_SIZE);
+): Promise<Omit<Document, 'content' | 'markdown'>[]> => {
+  const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
 
   const publishedArticles = await db
     .select({
@@ -210,12 +195,12 @@ export const getPublishedArticles = async (
       updatedAt: documents.updatedAt,
     })
     .from(documents)
-    .where(and(eq(documents.status, "PUBLISHED")))
+    .where(and(eq(documents.status, 'PUBLISHED')))
     .orderBy(desc(documents.publishedDate))
-    .limit(safeLimit);
+    .limit(safeLimit)
 
-  return publishedArticles;
-};
+  return publishedArticles
+}
 
 export const getPublishedArticleBySlug = async (
   db: DB,
@@ -224,26 +209,23 @@ export const getPublishedArticleBySlug = async (
   // Prefer matching by slug; fallback to ID for legacy posts without slugs
   const article = await db.query.documents.findFirst({
     where: (table, { and, eq, or }) =>
-      and(
-        or(eq(table.slug, slug), eq(table.id, slug)),
-        eq(table.status, "PUBLISHED")
-      ),
-  });
-  return article;
-};
+      and(or(eq(table.slug, slug), eq(table.id, slug)), eq(table.status, 'PUBLISHED')),
+  })
+  return article
+}
 
 // Filter by type and status
 
 type GetDocumentsByTypeAndStatusData = {
-  status: DocumentStatus;
-};
+  status: DocumentStatus
+}
 
 export const getDocumentsByTypeAndStatus = async (
   db: DB,
   data: GetDocumentsByTypeAndStatusData,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Omit<Document, "content" | "markdown">[]> => {
-  const safeLimit = Math.min(limit, MAX_PAGE_SIZE);
+): Promise<Omit<Document, 'content' | 'markdown'>[]> => {
+  const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
 
   const results = await db
     .select({
@@ -262,7 +244,7 @@ export const getDocumentsByTypeAndStatus = async (
     .from(documents)
     .where(and(eq(documents.status, data.status)))
     .orderBy(desc(documents.createdAt))
-    .limit(safeLimit);
+    .limit(safeLimit)
 
-  return results;
-};
+  return results
+}

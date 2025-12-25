@@ -1,5 +1,5 @@
-import { Img, Link, Section } from "@react-email/components";
-import { baseUrl } from "../lib/constants";
+import { Img, Link, Section } from '@react-email/components'
+import { baseUrl } from '../lib/constants'
 
 export function LogoFooter() {
   return (
@@ -30,14 +30,14 @@ export function LogoFooter() {
           }
         `}</style>
 
-      <Link href="https://irere.dev">
+      <Link href='https://irere.dev'>
         <Img
           src={`${baseUrl}/email/logo-footer.png`}
-          width="80"
-          alt="BrainOS"
-          className="block logo-blend"
+          width='80'
+          alt='BrainOS'
+          className='block logo-blend'
         />
       </Link>
     </Section>
-  );
+  )
 }

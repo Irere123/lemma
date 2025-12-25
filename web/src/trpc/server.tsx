@@ -1,23 +1,19 @@
 // Server-side tRPC utilities for TanStack Start
 // Only import this file in server-side contexts (loaders, server components)
 
-import type { AppRouter } from "@lemma/api";
-import {
-  HydrationBoundary,
-  QueryClient,
-  dehydrate,
-} from "@tanstack/react-query";
-import { createTRPCClient, loggerLink } from "@trpc/client";
-import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
-import { cache } from "react";
-import superjson from "superjson";
+import type { AppRouter } from '@lemma/api'
+import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query'
+import { createTRPCClient, loggerLink } from '@trpc/client'
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink'
+import { cache } from 'react'
+import superjson from 'superjson'
 
-import { makeQueryClient } from "./query-client";
+import { makeQueryClient } from './query-client'
 
 // IMPORTANT: Create a stable getter for the query client that
 //            will return the same client during the same request.
 // This ensures no data leakage between requests.
-export const getQueryClient = cache(makeQueryClient);
+export const getQueryClient = cache(makeQueryClient)
 
 /**
  * Create a tRPC client with request cookies for authentication
@@ -32,24 +28,22 @@ export function createAuthenticatedTRPCClient(request?: Request) {
         fetch(url, options) {
           return fetch(url, {
             ...options,
-            credentials: "include",
+            credentials: 'include',
             headers: {
               ...options?.headers,
               // Forward cookies from the incoming request
-              ...(request?.headers.get("cookie")
-                ? { cookie: request.headers.get("cookie")! }
-                : {}),
+              ...(request?.headers.get('cookie') ? { cookie: request.headers.get('cookie')! } : {}),
             },
-          });
+          })
         },
       }),
       loggerLink({
         enabled: (opts) =>
-          process.env.NODE_ENV === "development" ||
-          (opts.direction === "down" && opts.result instanceof Error),
+          process.env.NODE_ENV === 'development' ||
+          (opts.direction === 'down' && opts.result instanceof Error),
       }),
     ],
-  });
+  })
 }
 
 /**
@@ -57,13 +51,9 @@ export function createAuthenticatedTRPCClient(request?: Request) {
  * to be used on the client. Wrap your app with this component.
  */
 export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
+  const queryClient = getQueryClient()
 
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      {props.children}
-    </HydrationBoundary>
-  );
+  return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>
 }
 
 /**
@@ -86,30 +76,28 @@ export async function serverPrefetch<TData>({
   queryKey,
   fetchFn,
 }: {
-  request?: Request;
-  queryKey: unknown[];
-  fetchFn: (
-    client: ReturnType<typeof createAuthenticatedTRPCClient>
-  ) => Promise<TData>;
+  request?: Request
+  queryKey: unknown[]
+  fetchFn: (client: ReturnType<typeof createAuthenticatedTRPCClient>) => Promise<TData>
 }) {
-  const queryClient = getQueryClient();
-  const trpcClient = createAuthenticatedTRPCClient(request);
+  const queryClient = getQueryClient()
+  const trpcClient = createAuthenticatedTRPCClient(request)
 
   try {
     // If this route likely requires auth and no cookies are present, skip silently
-    const cookie = request?.headers.get("cookie");
+    const cookie = request?.headers.get('cookie')
     if (!cookie) {
-      return null;
+      return null
     }
     // Fetch data using the authenticated tRPC client
-    const data = await fetchFn(trpcClient);
+    const data = await fetchFn(trpcClient)
 
     // Manually populate the query cache
-    queryClient.setQueryData(queryKey, data);
+    queryClient.setQueryData(queryKey, data)
 
-    return data;
+    return data
   } catch (_error) {
     // Don't throw - let the client handle the error
-    return null;
+    return null
   }
 }

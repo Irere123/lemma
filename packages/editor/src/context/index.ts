@@ -16,4 +16,4 @@ export {
   type EditorStoreApi,
   type DocumentStoreApi,
   type EditorCallbacks,
-} from "./EditorProvider";
+} from './EditorProvider'

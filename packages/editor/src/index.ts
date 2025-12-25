@@ -1,8 +1,8 @@
 // Schema
-export { schema, getDefaultDoc, createNodeId, nodeTypes, markTypes } from "./schema";
+export { schema, getDefaultDoc, createNodeId, nodeTypes, markTypes } from './schema'
 
 // Types
-export * from "./types";
+export * from './types'
 
 // Plugins
 export {
@@ -20,8 +20,8 @@ export {
   undo,
   redo,
   placeholderStyles,
-} from "./plugins";
-export type { DragHandleState } from "./plugins";
+} from './plugins'
+export type { DragHandleState } from './plugins'
 
 // Hooks
 export {
@@ -31,18 +31,34 @@ export {
   useNodeActive,
   useSelectionPosition,
   useSelectionRect,
-} from "./hooks";
+} from './hooks'
 
 // Components
-export { Editor, EditorContent, BubbleMenu, bubbleMenuStyles, DragHandle, dragHandleComponentStyles, SlashMenu, useSlashMenuState } from "./components";
-export type { EditorProps, EditorHandle, EditorContentProps, EditorContentHandle, BubbleMenuProps, DragHandleProps } from "./components";
+export {
+  Editor,
+  EditorContent,
+  BubbleMenu,
+  bubbleMenuStyles,
+  DragHandle,
+  dragHandleComponentStyles,
+  SlashMenu,
+  useSlashMenuState,
+} from './components'
+export type {
+  EditorProps,
+  EditorHandle,
+  EditorContentProps,
+  EditorContentHandle,
+  BubbleMenuProps,
+  DragHandleProps,
+} from './components'
 
 // Context
-export { EditorContext, useEditorContext, useEditorView } from "./context/EditorContext";
-export type { EditorContextValue } from "./context/EditorContext";
+export { EditorContext, useEditorContext, useEditorView } from './context/EditorContext'
+export type { EditorContextValue } from './context/EditorContext'
 
 // Commands
-export * from "./commands";
+export * from './commands'
 
 // Node Views
 export {
@@ -60,8 +76,8 @@ export {
   calloutStyles,
   toggleStyles,
   taskItemStyles,
-} from "./nodeViews";
-export type { ReactNodeViewProps, ReactNodeViewOptions, NodeViewFactory } from "./nodeViews";
+} from './nodeViews'
+export type { ReactNodeViewProps, ReactNodeViewOptions, NodeViewFactory } from './nodeViews'
 
 // Serialization
 export {
@@ -71,7 +87,7 @@ export {
   markdownToProsemirror,
   migrateFromSlate,
   slateToProsemir,
-} from "./serialization";
+} from './serialization'
 
 // SlashMenu
 export {
@@ -80,10 +96,10 @@ export {
   closeSlashMenu,
   getSlashMenuState,
   deleteSlashTrigger,
-} from "./plugins/slashMenu";
-export type { SlashMenuState } from "./plugins/slashMenu";
+} from './plugins/slashMenu'
+export type { SlashMenuState } from './plugins/slashMenu'
 
 // Re-export useful ProseMirror types
-export type { EditorState, Transaction, Plugin, PluginKey } from "prosemirror-state";
-export type { EditorView } from "prosemirror-view";
-export type { Node as ProseMirrorNode, Schema, Mark, MarkType, NodeType } from "prosemirror-model";
+export type { EditorState, Transaction, Plugin, PluginKey } from 'prosemirror-state'
+export type { EditorView } from 'prosemirror-view'
+export type { Node as ProseMirrorNode, Schema, Mark, MarkType, NodeType } from 'prosemirror-model'

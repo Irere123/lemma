@@ -1,12 +1,12 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 const EnvSchema = z.object({
   // generic stuff
- ENV: z.string().default("development"),
-  PORT: z.string().optional().default("4000"),
+  ENV: z.string().default('development'),
+  PORT: z.string().optional().default('4000'),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
-  ALLOWED_API_ORIGINS: z.string().default("http://localhost:3000"),
+  ALLOWED_API_ORIGINS: z.string().default('http://localhost:3000'),
   BRAIN_ENCRYPTION_KEY: z.string(),
   ADMIN_USER_ID: z.string(),
 
@@ -27,20 +27,20 @@ const EnvSchema = z.object({
 
   // better-auth
   BETTER_AUTH_SECRET: z.string(),
-  BETTER_AUTH_URL: z.url().default("http://localhost:4000"),
-  BASE_URL: z.url().default("http://localhost:4000"),
-  FRONTEND_URL: z.url().default("http://localhost:3000"),
-});
+  BETTER_AUTH_URL: z.url().default('http://localhost:4000'),
+  BASE_URL: z.url().default('http://localhost:4000'),
+  FRONTEND_URL: z.url().default('http://localhost:3000'),
+})
 
-export type Environment = z.infer<typeof EnvSchema>;
+export type Environment = z.infer<typeof EnvSchema>
 
 export function parseEnv(data: any) {
-  const { data: env,  error, success } = EnvSchema.safeParse(data);
+  const { data: env, error, success } = EnvSchema.safeParse(data)
 
   if (!success) {
-    console.error("Invalid environment variables:", error.format());
-    process.exit(1);
+    console.error('Invalid environment variables:', error.format())
+    process.exit(1)
   }
 
-  return env;
+  return env
 }

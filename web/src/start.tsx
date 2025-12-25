@@ -1,21 +1,21 @@
-import { createStart } from "@tanstack/react-start";
+import { createStart } from '@tanstack/react-start'
 
-declare module "@tanstack/react-start" {
+declare module '@tanstack/react-start' {
   interface Register {
     server: {
       requestContext: {
-        fromFetch: boolean;
-        request?: Request;
-      };
-    };
+        fromFetch: boolean
+        request?: Request
+      }
+    }
   }
 }
 
 export const startInstance = createStart(() => {
   return {
     defaultSsr: true,
-  };
-});
+  }
+})
 
 startInstance.createMiddleware().server(({ next, request }) => {
   return next({
@@ -23,5 +23,5 @@ startInstance.createMiddleware().server(({ next, request }) => {
       fromStartInstanceMw: true,
       request, // Pass the request to context for cookie forwarding
     },
-  });
-});
+  })
+})

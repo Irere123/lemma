@@ -1,28 +1,25 @@
-import { Plugin, PluginKey } from "prosemirror-state";
-import { Decoration, DecorationSet } from "prosemirror-view";
+import { Plugin, PluginKey } from 'prosemirror-state'
+import { Decoration, DecorationSet } from 'prosemirror-view'
 
-export const placeholderPluginKey = new PluginKey("placeholder");
+export const placeholderPluginKey = new PluginKey('placeholder')
 
 interface PlaceholderOptions {
-  placeholder?: string;
-  emptyNodeClass?: string;
+  placeholder?: string
+  emptyNodeClass?: string
 }
 
 /**
  * Creates a placeholder plugin that shows text when the editor is empty
  */
 export function createPlaceholderPlugin(options: PlaceholderOptions = {}): Plugin {
-  const {
-    placeholder = "Start writing...",
-    emptyNodeClass = "is-empty",
-  } = options;
+  const { placeholder = 'Start writing...', emptyNodeClass = 'is-empty' } = options
 
   return new Plugin({
     key: placeholderPluginKey,
 
     props: {
       decorations(state) {
-        const doc = state.doc;
+        const doc = state.doc
 
         // Check if document is empty (only has one empty paragraph)
         if (
@@ -32,16 +29,16 @@ export function createPlaceholderPlugin(options: PlaceholderOptions = {}): Plugi
         ) {
           const decoration = Decoration.node(0, doc.firstChild.nodeSize, {
             class: emptyNodeClass,
-            "data-placeholder": placeholder,
-          });
+            'data-placeholder': placeholder,
+          })
 
-          return DecorationSet.create(doc, [decoration]);
+          return DecorationSet.create(doc, [decoration])
         }
 
-        return DecorationSet.empty;
+        return DecorationSet.empty
       },
     },
-  });
+  })
 }
 
 /**
@@ -55,4 +52,4 @@ export const placeholderStyles = `
     pointer-events: none;
     height: 0;
   }
-`;
+`

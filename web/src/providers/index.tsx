@@ -1,6 +1,6 @@
-import { TRPCReactProvider } from "@/trpc/client";
-import { HydrateClient } from "@/trpc/server";
-import { Toaster } from "sonner";
+import { TRPCReactProvider } from '@/trpc/client'
+import { HydrateClient } from '@/trpc/server'
+import { Toaster } from 'sonner'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -10,5 +10,5 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <Toaster />
       </HydrateClient>
     </TRPCReactProvider>
-  );
+  )
 }

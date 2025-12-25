@@ -1,12 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useQuery } from '@tanstack/react-query'
+import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 
-import { useApiKeysModalStore } from "@/stores/api-keys-modal";
-import { useTRPC } from "@/trpc/client";
+import { useApiKeysModalStore } from '@/stores/api-keys-modal'
+import { useTRPC } from '@/trpc/client'
 import {
   Table,
   TableBody,
@@ -14,70 +10,65 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { ApiKeysSkeleton } from "@/components/skeletons";
-import { columns } from "./columns";
-import { EmptyState } from "./empty-state";
+} from '@/components/ui/table'
+import { cn } from '@/lib/utils'
+import { ApiKeysSkeleton } from '@/components/skeletons'
+import { columns } from './columns'
+import { EmptyState } from './empty-state'
 
 export function DataTable() {
-  const trpc = useTRPC();
-  const { setData } = useApiKeysModalStore();
+  const trpc = useTRPC()
+  const { setData } = useApiKeysModalStore()
   const { data, isLoading } = useQuery({
     ...trpc.apiKeys.get.queryOptions(),
-  });
+  })
 
   const table = useReactTable({
     getRowId: (row) => row.id,
     data: data ?? [],
     columns,
     getCoreRowModel: getCoreRowModel(),
-  });
+  })
 
   if (isLoading) {
-    return <ApiKeysSkeleton />;
+    return <ApiKeysSkeleton />
   }
 
   if (!data) {
-    return null;
+    return null
   }
 
   return (
     <>
       {data.length > 0 ? (
-        <Table className="border border-border">
-          <TableHeader className="bg-muted">
+        <Table className='border border-border'>
+          <TableHeader className='bg-muted'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className={"text-right"}>
+                    <TableHead key={header.id} className={'text-right'}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
-                  );
+                  )
                 })}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} className="hover:bg-transparent">
+              <TableRow key={row.id} className='hover:bg-transparent'>
                 {row.getAllCells().map((cell) => (
                   <TableCell
                     key={cell.id}
                     onClick={() => {
-                      if (cell.column.id !== "actions") {
-                        setData(row.original, "edit");
+                      if (cell.column.id !== 'actions') {
+                        setData(row.original, 'edit')
                       }
                     }}
-                    className={cn(
-                      "border-r-[0px] py-4 cursor-pointer text-right"
-                    )}
+                    className={cn('border-r-[0px] py-4 cursor-pointer text-right')}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
@@ -90,5 +81,5 @@ export function DataTable() {
         <EmptyState />
       )}
     </>
-  );
+  )
 }
