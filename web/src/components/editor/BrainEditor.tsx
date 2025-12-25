@@ -1,21 +1,28 @@
-import { useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import axios from "axios";
-import type { Descendant, Editor } from "slate";
 
 import {
-  EditorProvider,
-  Editor as BaseEditor,
-  ReadOnlyEditor as BaseReadOnlyEditor,
-  Title as BaseTitle,
-  createCustomEditor,
-  setImageUploadConfig,
-  type EditorProps,
-  type TitleProps,
-  type UIComponents,
-  type ImageUploadFn,
-  type EditorStoreApi,
-  type DocumentStoreApi,
+  Editor,
+  EditorContent,
+  BubbleMenu,
+  DragHandle,
+  SlashMenu,
+  useSlashMenuState,
+  useEditor,
+  schema,
+  createEditorPlugins,
+  createNodeViews,
+  injectNodeViewStyles,
+  bubbleMenuStyles,
+  dragHandleComponentStyles,
+  placeholderStyles,
+  nodeViewStyles,
+  toMarkdown,
+  fromMarkdown,
+  migrateFromSlate,
+  closeSlashMenu,
+  type ProseMirrorNode,
 } from "@lemma/editor";
 
 import {
@@ -24,32 +31,113 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import activeEditorsStore from "@/stores/active-editors-store";
 import { documentStore } from "@/stores/document-store";
 import { getPreSignedUrl } from "@/lib/api/uploads";
 
-// UI Components adapter for Shadcn UI
-const uiComponents: Partial<UIComponents> = {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-};
+// Inject editor styles once
+if (typeof document !== "undefined") {
+  injectNodeViewStyles();
+
+  const styleId = "prosemirror-editor-styles";
+  if (!document.getElementById(styleId)) {
+    const styleElement = document.createElement("style");
+    styleElement.id = styleId;
+    styleElement.textContent = `
+      ${bubbleMenuStyles}
+      ${dragHandleComponentStyles}
+      ${placeholderStyles}
+      ${nodeViewStyles}
+
+      .ProseMirror {
+        outline: none;
+        min-height: 200px;
+        padding: 1rem;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      .ProseMirror p {
+        margin: 0.5em 0;
+      }
+
+      .ProseMirror h1 {
+        font-size: 2em;
+        font-weight: 700;
+        margin: 1em 0 0.5em;
+      }
+
+      .ProseMirror h2 {
+        font-size: 1.5em;
+        font-weight: 600;
+        margin: 0.75em 0 0.5em;
+      }
+
+      .ProseMirror h3 {
+        font-size: 1.25em;
+        font-weight: 600;
+        margin: 0.5em 0;
+      }
+
+      .ProseMirror h4 {
+        font-size: 1.1em;
+        font-weight: 600;
+        margin: 0.5em 0;
+      }
+
+      .ProseMirror ul,
+      .ProseMirror ol {
+        padding-left: 1.5em;
+        margin: 0.5em 0;
+      }
+
+      .ProseMirror li {
+        margin: 0.25em 0;
+      }
+
+      .ProseMirror blockquote {
+        border-left: 3px solid #e5e5e5;
+        padding-left: 1em;
+        margin: 0.5em 0;
+        color: #666;
+      }
+
+      .ProseMirror code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9em;
+        background-color: #f5f5f5;
+        padding: 0.15em 0.3em;
+        border-radius: 3px;
+      }
+
+      .ProseMirror a {
+        color: #3b82f6;
+        text-decoration: underline;
+      }
+
+      .ProseMirror hr {
+        border: none;
+        border-top: 1px solid #e5e5e5;
+        margin: 1.5em 0;
+      }
+
+      .ProseMirror img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .ProseMirror .placeholder {
+        color: #9ca3af;
+        pointer-events: none;
+        position: absolute;
+      }
+    `;
+    document.head.appendChild(styleElement);
+  }
+}
 
 // Image upload function using the API
-const uploadImage: ImageUploadFn = async (file) => {
+const uploadImage = async (file: File): Promise<{ url: string; filename: string }> => {
   const { preSignedUrl, filename } = await getPreSignedUrl({
     fileSize: file.size,
     contentType: file.type,
@@ -82,121 +170,245 @@ const showToast = (message: string, type?: "success" | "error" | "info") => {
   }
 };
 
-// Editor store adapter
-const editorStoreAdapter: EditorStoreApi = {
-  getActiveEditor: (documentId: string) =>
-    activeEditorsStore.getActiveEditor(documentId),
-  addActiveEditor: (documentId: string) =>
-    activeEditorsStore.addActiveEditor(documentId),
-  subscribe: (listener: () => void) => activeEditorsStore.subscribe(listener),
-};
+export interface BrainEditorProps {
+  documentId: string;
+  placeholder?: string;
+  className?: string;
+  autoFocus?: boolean;
+  onReady?: () => void;
+}
 
-// Cache for document objects to ensure stable references
-// Maps documentId to the last returned document object
-const documentCache = new Map<string, { id: string; title: string | null; subtitle: string | null; content?: Descendant[] }>();
+export function BrainEditor({
+  documentId,
+  placeholder = "Start writing...",
+  className,
+  autoFocus = false,
+  onReady,
+}: BrainEditorProps) {
+  const contentRef = useRef<ProseMirrorNode | null>(null);
 
-// Document store adapter with caching to prevent infinite loops
-const documentStoreAdapter: DocumentStoreApi = {
-  getDocument: (documentId: string) => {
+  // Get initial content from document store
+  const getInitialContent = useCallback(() => {
     const state = documentStore.getState();
     const doc = state.documents[documentId];
-    if (!doc) {
-      documentCache.delete(documentId);
-      return undefined;
+
+    if (!doc?.content) {
+      return schema.nodes.doc.create(null, [
+        schema.nodes.paragraph.create(),
+      ]);
     }
-    
-    const cached = documentCache.get(documentId);
-    const currentDoc = {
-      id: doc.id,
-      title: doc.title,
-      subtitle: doc.subtitle,
-      content: doc.content,
+
+    // Check if content is Slate format (array of descendants) or ProseMirror format
+    if (Array.isArray(doc.content)) {
+      // Migrate from Slate to ProseMirror
+      try {
+        return migrateFromSlate(doc.content, schema);
+      } catch (e) {
+        console.error("Failed to migrate Slate content:", e);
+        return schema.nodes.doc.create(null, [
+          schema.nodes.paragraph.create(),
+        ]);
+      }
+    }
+
+    // Already ProseMirror format (JSON)
+    try {
+      return schema.nodeFromJSON(doc.content);
+    } catch (e) {
+      console.error("Failed to parse ProseMirror content:", e);
+      return schema.nodes.doc.create(null, [
+        schema.nodes.paragraph.create(),
+      ]);
+    }
+  }, [documentId]);
+
+  // Create plugins with slash menu callback
+  const plugins = useMemo(
+    () =>
+      createEditorPlugins({
+        placeholder,
+        schema,
+        enableDragHandle: true,
+      }),
+    [placeholder]
+  );
+
+  // Create node views
+  const nodeViews = useMemo(() => createNodeViews(), []);
+
+  // Initialize editor
+  const { view, state } = useEditor({
+    schema,
+    plugins,
+    nodeViews,
+    doc: getInitialContent(),
+    autoFocus,
+  });
+
+  // Track editor in active editors store
+  useEffect(() => {
+    if (view) {
+      activeEditorsStore.addActiveEditor(documentId);
+      onReady?.();
+    }
+    return () => {
+      // Cleanup handled by store
     };
-    
-    // If cached and the primitive values match, return cached for stable reference
-    // For content, we compare by reference - if the store maintains the same reference,
-    // the content hasn't changed
-    if (cached && 
-        cached.id === currentDoc.id &&
-        cached.title === currentDoc.title &&
-        cached.subtitle === currentDoc.subtitle &&
-        cached.content === currentDoc.content) {
-      return cached;
+  }, [view, documentId, onReady]);
+
+  // Save content to document store on changes
+  useEffect(() => {
+    if (!view || !state) return;
+
+    const currentDoc = state.doc;
+    if (contentRef.current !== currentDoc) {
+      contentRef.current = currentDoc;
+
+      // Save as ProseMirror JSON
+      documentStore.getState().updateDocument({
+        id: documentId,
+        content: currentDoc.toJSON(),
+      });
     }
-    
-    // Update cache and return new object
-    documentCache.set(documentId, currentDoc);
-    return currentDoc;
-  },
-  updateDocument: (update) => {
-    // Invalidate cache for this document when it's updated
-    if (update.id) {
-      documentCache.delete(update.id);
-    }
-    documentStore.getState().updateDocument(update);
-  },
-  subscribe: (listener: () => void) => {
-    // Subscribe to store changes
-    // Note: We don't clear the cache here because the cache comparison
-    // in getDocument will handle detecting changes
-    return documentStore.subscribe(listener);
-  },
-};
+  }, [view, state, documentId]);
 
-// Configure image upload for the editor
-setImageUploadConfig({
-  uploadImage,
-  showToast,
-});
+  // Get slash menu state and handlers using the hook
+  const { state: slashMenuState, closeMenu } = useSlashMenuState();
 
-type BrainEditorProviderProps = {
-  children: ReactNode;
-};
-
-export function BrainEditorProvider({ children }: BrainEditorProviderProps) {
-  const createEditorFn = useMemo(() => createCustomEditor, []);
+  if (!view) {
+    return <div className={className}>Loading editor...</div>;
+  }
 
   return (
     <TooltipProvider delayDuration={300}>
-      <EditorProvider
-        ui={uiComponents}
-        uploadImage={uploadImage}
-        showToast={showToast}
-        editorStore={editorStoreAdapter}
-        documentStore={documentStoreAdapter}
-        createEditor={createEditorFn}
-      >
-        {children}
-      </EditorProvider>
+      <div className={`brain-editor ${className || ""}`}>
+        <Editor view={view}>
+          <EditorContent />
+          <BubbleMenu />
+          <DragHandle />
+          <SlashMenu state={slashMenuState} onClose={closeMenu} />
+        </Editor>
+      </div>
     </TooltipProvider>
   );
 }
 
-// Re-export wrapped components
-export function BrainEditor(props: EditorProps) {
+export interface BrainReadOnlyEditorProps {
+  content: unknown; // Can be Slate Descendant[] or ProseMirror JSON
+  className?: string;
+}
+
+export function BrainReadOnlyEditor({ content, className }: BrainReadOnlyEditorProps) {
+  // Parse content
+  const doc = useMemo(() => {
+    if (!content) {
+      return schema.nodes.doc.create(null, [schema.nodes.paragraph.create()]);
+    }
+
+    if (Array.isArray(content)) {
+      // Slate format
+      try {
+        return migrateFromSlate(content, schema);
+      } catch (e) {
+        console.error("Failed to migrate Slate content:", e);
+        return schema.nodes.doc.create(null, [schema.nodes.paragraph.create()]);
+      }
+    }
+
+    // ProseMirror JSON format
+    try {
+      return schema.nodeFromJSON(content as any);
+    } catch (e) {
+      console.error("Failed to parse ProseMirror content:", e);
+      return schema.nodes.doc.create(null, [schema.nodes.paragraph.create()]);
+    }
+  }, [content]);
+
+  const plugins = useMemo(
+    () =>
+      createEditorPlugins({
+        placeholder: "",
+        schema,
+        enableDragHandle: false,
+      }),
+    []
+  );
+
+  const nodeViews = useMemo(() => createNodeViews(), []);
+
+  const { view } = useEditor({
+    schema,
+    plugins,
+    nodeViews,
+    doc,
+    editable: false,
+  });
+
+  if (!view) {
+    return <div className={className}>Loading...</div>;
+  }
+
   return (
-    <BrainEditorProvider>
-      <BaseEditor {...props} />
-    </BrainEditorProvider>
+    <div className={`brain-editor read-only ${className || ""}`}>
+      <Editor view={view}>
+        <EditorContent />
+      </Editor>
+    </div>
   );
 }
 
-export function BrainReadOnlyEditor(props: { content: Descendant[]; className?: string }) {
+export interface BrainTitleProps {
+  documentId: string;
+  placeholder?: string;
+  className?: string;
+}
+
+export function BrainTitle({ documentId, placeholder = "Untitled", className }: BrainTitleProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Get title from document store
+  const title = useMemo(() => {
+    const state = documentStore.getState();
+    return state.documents[documentId]?.title || "";
+  }, [documentId]);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      documentStore.getState().updateDocument({
+        id: documentId,
+        title: e.target.value,
+      });
+    },
+    [documentId]
+  );
+
   return (
-    <BrainEditorProvider>
-      <BaseReadOnlyEditor {...props} />
-    </BrainEditorProvider>
+    <input
+      ref={inputRef}
+      type="text"
+      className={`brain-title ${className || ""}`}
+      value={title}
+      onChange={handleChange}
+      placeholder={placeholder}
+      style={{
+        width: "100%",
+        border: "none",
+        outline: "none",
+        fontSize: "2.5em",
+        fontWeight: "700",
+        background: "transparent",
+      }}
+    />
   );
 }
 
-export function BrainTitle(props: TitleProps) {
-  return (
-    <BrainEditorProvider>
-      <BaseTitle {...props} />
-    </BrainEditorProvider>
-  );
+// Utility exports
+export { toMarkdown as prosemirrorToMarkdown, fromMarkdown as markdownToProsemirror };
+
+// Get default editor value (empty ProseMirror document)
+export function getDefaultEditorValue() {
+  return schema.nodes.doc.create(null, [schema.nodes.paragraph.create()]).toJSON();
 }
 
-// Re-export types and utilities from the editor package
-export type { EditorProps, TitleProps } from "@lemma/editor";
-export { slateToMarkdown, getDefaultEditorValue, ElementType, Mark } from "@lemma/editor";
+// Re-export types
+export type { BrainEditorProps as EditorProps, BrainTitleProps as TitleProps };

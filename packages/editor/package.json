@@ -1,6 +1,6 @@
 {
   "name": "@lemma/editor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -11,24 +11,31 @@
       "import": "./src/index.ts"
     },
     "./types": {
-      "types": "./src/types/index.ts",
-      "import": "./src/types/index.ts"
+      "types": "./src/types.ts",
+      "import": "./src/types.ts"
     }
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.26.0",
     "@popperjs/core": "^2.11.8",
     "@tabler/icons-react": "^3.35.0",
     "clsx": "^2.1.1",
     "is-hotkey": "^0.2.0",
     "prism-react-renderer": "^2.4.1",
-    "react-popper": "^2.3.0",
-    "slate": "^0.118.0",
-    "slate-history": "^0.113.1",
-    "slate-hyperscript": "^0.100.0",
-    "slate-react": "^0.117.4",
+    "prosemirror-commands": "^1.5.0",
+    "prosemirror-dropcursor": "^1.8.0",
+    "prosemirror-gapcursor": "^1.3.0",
+    "prosemirror-history": "^1.3.0",
+    "prosemirror-inputrules": "^1.3.0",
+    "prosemirror-keymap": "^1.2.0",
+    "prosemirror-model": "^1.19.0",
+    "prosemirror-schema-list": "^1.3.0",
+    "prosemirror-state": "^1.4.0",
+    "prosemirror-transform": "^1.8.0",
+    "prosemirror-view": "^1.32.0",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0"
   },

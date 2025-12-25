@@ -1,59 +1,89 @@
-// Main editor components
-export { default as Editor, type EditorProps, type AddLinkPopoverState } from "./Editor";
-export { default as ReadOnlyEditor } from "./ReadOnlyEditor";
-export { default as Title, type TitleProps } from "./Title";
-
-// Slash menu
-export { SlashMenu, useSlashMenu, type SlashMenuState } from "./slashmenu";
-
-// Context and providers
-export {
-  EditorProvider,
-  useEditorContext,
-  useUI,
-  useImageUpload,
-  useEditorStore,
-  useDocumentStoreApi,
-  useShowToast,
-  useCallbacks,
-  type EditorContextValue,
-  type EditorProviderProps,
-  type UIComponents,
-  type ImageUploadFn,
-  type ImageUploadResult,
-  type EditorDocument,
-  type EditorStoreApi,
-  type DocumentStoreApi,
-  type EditorCallbacks,
-} from "./context";
-
-// Serialization utilities
-export { slateToMarkdown } from "./utils/serialization/slateToMarkdown";
+// Schema
+export { schema, getDefaultDoc, createNodeId, nodeTypes, markTypes } from "./schema";
 
 // Types
 export * from "./types";
 
-// Editor creation utility
-export { default as createCustomEditor } from "./utils/createEditor";
-export { setImageUploadConfig } from "./utils/plugins/withImages";
-
-// Formatting utilities
+// Plugins
 export {
-  toggleMark,
-  toggleElement,
-  isMarkActive,
-  isElementActive,
-  handleEnter,
-  handleIndent,
-  handleUnindent,
-  insertImage,
-  unwrapLink,
-  insertExternalLink,
-  insertNoteLink,
-} from "./utils/formatting";
+  createEditorPlugins,
+  createHistoryPlugins,
+  createEditorKeymaps,
+  createInputRules,
+  createPlaceholderPlugin,
+  createNodeIdPlugin,
+  createCursorPlugins,
+  createDragHandlePlugin,
+  dragHandlePluginKey,
+  getDragHandleState,
+  dragHandleStyles,
+  undo,
+  redo,
+  placeholderStyles,
+} from "./plugins";
+export type { DragHandleState } from "./plugins";
 
-// Constants
-export { getDefaultEditorValue } from "./utils/constants";
+// Hooks
+export {
+  useEditor,
+  useEditorState,
+  useMarkActive,
+  useNodeActive,
+  useSelectionPosition,
+  useSelectionRect,
+} from "./hooks";
 
-// Code block utilities
-export { parseHighlightLines } from "./elements/CodeBlockElement";
+// Components
+export { Editor, EditorContent, BubbleMenu, bubbleMenuStyles, DragHandle, dragHandleComponentStyles, SlashMenu, useSlashMenuState } from "./components";
+export type { EditorProps, EditorHandle, EditorContentProps, EditorContentHandle, BubbleMenuProps, DragHandleProps } from "./components";
+
+// Context
+export { EditorContext, useEditorContext, useEditorView } from "./context/EditorContext";
+export type { EditorContextValue } from "./context/EditorContext";
+
+// Commands
+export * from "./commands";
+
+// Node Views
+export {
+  createNodeViews,
+  createReactNodeView,
+  nodeViewStyles,
+  injectNodeViewStyles,
+  CodeBlockView,
+  ImageView,
+  CalloutView,
+  ToggleView,
+  TaskItemView,
+  codeBlockStyles,
+  imageStyles,
+  calloutStyles,
+  toggleStyles,
+  taskItemStyles,
+} from "./nodeViews";
+export type { ReactNodeViewProps, ReactNodeViewOptions, NodeViewFactory } from "./nodeViews";
+
+// Serialization
+export {
+  toMarkdown,
+  prosemirrorToMarkdown,
+  fromMarkdown,
+  markdownToProsemirror,
+  migrateFromSlate,
+  slateToProsemir,
+} from "./serialization";
+
+// SlashMenu
+export {
+  createSlashMenuPlugin,
+  slashMenuPluginKey,
+  closeSlashMenu,
+  getSlashMenuState,
+  deleteSlashTrigger,
+} from "./plugins/slashMenu";
+export type { SlashMenuState } from "./plugins/slashMenu";
+
+// Re-export useful ProseMirror types
+export type { EditorState, Transaction, Plugin, PluginKey } from "prosemirror-state";
+export type { EditorView } from "prosemirror-view";
+export type { Node as ProseMirrorNode, Schema, Mark, MarkType, NodeType } from "prosemirror-model";
