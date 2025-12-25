@@ -2,7 +2,6 @@ import crypto from 'node:crypto'
 
 import { env } from '@api/env-runtime'
 
-
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 16
 const AUTH_TAG_LENGTH = 16

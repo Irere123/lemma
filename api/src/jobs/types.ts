@@ -1,4 +1,3 @@
-
 // Email Job Types
 export type EmailJobType =
   | 'send-single-email'

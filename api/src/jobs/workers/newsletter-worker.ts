@@ -2,7 +2,6 @@ import { render } from '@react-email/render'
 import { Job, Worker } from 'bullmq'
 import { inArray } from 'drizzle-orm'
 
-
 import { createDb } from '@api/db'
 import { getDocumentById } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'

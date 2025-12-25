@@ -1,7 +1,8 @@
 import { Column, Hr, Img, Link, Row, Section, Text } from '@react-email/components'
+
+import { baseUrl } from '../lib/constants'
 import { LogoFooter } from './logo-footer'
 import { getEmailInlineStyles, getEmailThemeClasses } from './theme'
-import { baseUrl } from '../lib/constants'
 
 interface FooterProps {
   unsubscribeUrl?: string

@@ -14,7 +14,6 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-
 export const createTable = pgTableCreator((name) => `brainos_${name}`)
 
 // ============================================================================
@@ -398,10 +397,7 @@ export const clickEvents = createTable(
     userAgent: text('user_agent'),
     ipAddress: inet('ip_address'),
   },
-  (table) => [
-    index('sub_id_idx').on(table.subscriberId),
-    index('camp_ev_id_idx').on(table.linkId),
-  ]
+  (table) => [index('sub_id_idx').on(table.subscriberId), index('camp_ev_id_idx').on(table.linkId)]
 )
 
 export type ClickEvent = typeof clickEvents.$inferSelect
