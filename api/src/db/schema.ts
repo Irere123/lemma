@@ -1,20 +1,25 @@
 import { sql } from 'drizzle-orm'
 import {
-  pgTableCreator,
-  timestamp,
-  index,
-  pgTable,
-  text,
-  inet,
-  varchar,
   boolean,
-  unique,
+  foreignKey,
+  index,
+  inet,
   jsonb,
   pgEnum,
-  foreignKey,
+  pgTable,
+  pgTableCreator,
+  text,
+  timestamp,
+  unique,
+  varchar,
 } from 'drizzle-orm/pg-core'
 
+
 export const createTable = pgTableCreator((name) => `brainos_${name}`)
+
+// ============================================================================
+// AUTHENTICATION & USER MANAGEMENT
+// ============================================================================
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -72,6 +77,151 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()),
 })
 
+// ============================================================================
+// DOCUMENTS & CONTENT MANAGEMENT
+// ============================================================================
+
+// Note: Enum name has a typo in the database ('document_staus'), keeping it for compatibility
+export const documentStatusEnum = pgEnum('document_staus', ['DRAFT', 'PUBLISHED'])
+
+export const documents = createTable(
+  'documents',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug'),
+    title: text('title'),
+    subtitle: text('subtitle'),
+    status: documentStatusEnum(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+    content: jsonb('content').$type<any>(),
+    markdown: text('markdown'),
+    bannerImage: text('banner_image'),
+    scheduledDate: timestamp('scheduled_date'),
+    publishedDate: timestamp('published_date'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+    // SEO metadata
+    metaTitle: text('meta_title'),
+    metaDescription: text('meta_description'),
+    metaKeywords: text('meta_keywords'),
+    canonicalUrl: text('canonical_url'),
+    ogImage: text('og_image'),
+    // Reading time and word count
+    readingTime: varchar('reading_time'),
+    wordCount: varchar('word_count'),
+    // Featured flag
+    isFeatured: boolean('is_featured').default(false),
+  },
+  (table) => [
+    index('documents_user_id_idx').on(table.userId),
+    index('documents_status_idx').on(table.status),
+    index('documents_created_at_idx').on(table.createdAt),
+    index('documents_scheduled_date_idx').on(table.scheduledDate),
+    index('documents_user_status_idx').on(table.userId, table.status),
+    index('documents_featured_idx').on(table.isFeatured),
+    unique('documents_slug_unique').on(table.slug),
+  ]
+)
+
+export type Document = typeof documents.$inferSelect
+export type DocumentInsert = typeof documents.$inferInsert
+export type DocumentStatus = (typeof documentStatusEnum.enumValues)[number]
+
+// Categories
+export const categories = createTable(
+  'categories',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description'),
+    color: text('color').default('#6366f1'),
+    writerId: text('writer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    parentId: text('parent_id'), // For hierarchical categories
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('categories_writer_id_idx').on(table.writerId),
+    index('categories_slug_idx').on(table.slug),
+    unique('categories_writer_slug_unique').on(table.writerId, table.slug),
+  ]
+)
+
+export type Category = typeof categories.$inferSelect
+export type CategoryInsert = typeof categories.$inferInsert
+
+export const documentCategories = createTable(
+  'document_categories',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    categoryId: text('category_id')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('doc_categories_doc_id_idx').on(table.documentId),
+    index('doc_categories_cat_id_idx').on(table.categoryId),
+    unique('doc_categories_unique').on(table.documentId, table.categoryId),
+  ]
+)
+
+export type DocumentCategory = typeof documentCategories.$inferSelect
+export type DocumentCategoryInsert = typeof documentCategories.$inferInsert
+
+// Tags
+export const tags = createTable(
+  'tags',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    writerId: text('writer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    usageCount: varchar('usage_count').default('0'),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => [
+    index('tags_writer_id_idx').on(table.writerId),
+    index('tags_slug_idx').on(table.slug),
+    unique('tags_writer_slug_unique').on(table.writerId, table.slug),
+  ]
+)
+
+export type Tag = typeof tags.$inferSelect
+export type TagInsert = typeof tags.$inferInsert
+
+export const documentTags = createTable(
+  'document_tags',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id')
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('doc_tags_doc_id_idx').on(table.documentId),
+    index('doc_tags_tag_id_idx').on(table.tagId),
+    unique('doc_tags_unique').on(table.documentId, table.tagId),
+  ]
+)
+
+export type DocumentTag = typeof documentTags.$inferSelect
+export type DocumentTagInsert = typeof documentTags.$inferInsert
+
+// ============================================================================
+// NEWSLETTER & EMAIL
+// ============================================================================
+
 export const subscribers = createTable(
   'subscribers',
   {
@@ -101,7 +251,6 @@ export const subscribers = createTable(
 export type Subscriber = typeof subscribers.$inferSelect
 export type SubscriberInsert = typeof subscribers.$inferInsert
 
-//   Newsletter Settings
 export const newsletterSettings = createTable(
   'newsletter_settings',
   {
@@ -127,6 +276,51 @@ export const newsletterSettings = createTable(
 
 export type NewsletterSettings = typeof newsletterSettings.$inferSelect
 export type NewsletterSettingsInsert = typeof newsletterSettings.$inferInsert
+
+export const templateTypeEnum = pgEnum('template_type', [
+  'NEWSLETTER',
+  'WELCOME',
+  'CONFIRMATION',
+  'TRANSACTIONAL',
+  'CUSTOM',
+])
+
+export const emailTemplates = createTable(
+  'email_templates',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description'),
+    type: templateTypeEnum().default('CUSTOM'),
+    subject: text('subject'),
+    htmlContent: text('html_content'),
+    jsonContent: jsonb('json_content').$type<any>(),
+    previewText: text('preview_text'),
+    writerId: text('writer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    isDefault: boolean('is_default').default(false),
+    isActive: boolean('is_active').default(true),
+    variables: jsonb('variables').$type<string[]>().default([]),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('templates_writer_id_idx').on(table.writerId),
+    index('templates_type_idx').on(table.type),
+    index('templates_slug_idx').on(table.slug),
+    unique('templates_writer_slug_unique').on(table.writerId, table.slug),
+  ]
+)
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect
+export type EmailTemplateInsert = typeof emailTemplates.$inferInsert
+export type TemplateType = (typeof templateTypeEnum.enumValues)[number]
+
+// ============================================================================
+// CAMPAIGNS & ANALYTICS
+// ============================================================================
 
 export const campaignStatusEnum = pgEnum('campaign_status', [
   'DRAFT',
@@ -187,8 +381,9 @@ export const campaignLinks = createTable(
 )
 
 export type CampaignLink = typeof campaignLinks.$inferSelect
-export type CampignLinkInsert = typeof campaignLinks.$inferInsert
+export type CampaignLinkInsert = typeof campaignLinks.$inferInsert
 
+// Campaign Events
 export const clickEvents = createTable(
   'click_events',
   {
@@ -203,29 +398,14 @@ export const clickEvents = createTable(
     userAgent: text('user_agent'),
     ipAddress: inet('ip_address'),
   },
-  (table) => [index('sub_id_idx').on(table.subscriberId), index('camp_ev_id_idx').on(table.linkId)]
-)
-
-export const unsubscribeEvents = createTable(
-  'unsubscribe_events',
-  {
-    id: text('id').primaryKey(),
-    subscriberId: text('subscriber_id').references(() => subscribers.id, {
-      onDelete: 'cascade',
-    }),
-    campaignId: text('campaign_id').references(() => campaigns.id, {
-      onDelete: 'cascade',
-    }),
-    unsubscribedAt: timestamp('unsubscribed_at', {
-      withTimezone: true,
-    }).defaultNow(),
-    reason: text(),
-  },
   (table) => [
-    index('sub_rel_id_idx').on(table.subscriberId),
-    index('camp_rel_id_idx').on(table.campaignId),
+    index('sub_id_idx').on(table.subscriberId),
+    index('camp_ev_id_idx').on(table.linkId),
   ]
 )
+
+export type ClickEvent = typeof clickEvents.$inferSelect
+export type ClickEventInsert = typeof clickEvents.$inferInsert
 
 export const openEvents = createTable(
   'open_events',
@@ -250,49 +430,34 @@ export const openEvents = createTable(
 export type OpenEvent = typeof openEvents.$inferSelect
 export type OpenEventInsert = typeof openEvents.$inferInsert
 
-// Email Templates
-export const templateTypeEnum = pgEnum('template_type', [
-  'NEWSLETTER',
-  'WELCOME',
-  'CONFIRMATION',
-  'TRANSACTIONAL',
-  'CUSTOM',
-])
-
-export const emailTemplates = createTable(
-  'email_templates',
+export const unsubscribeEvents = createTable(
+  'unsubscribe_events',
   {
     id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    slug: text('slug').notNull(),
-    description: text('description'),
-    type: templateTypeEnum().default('CUSTOM'),
-    subject: text('subject'),
-    htmlContent: text('html_content'),
-    jsonContent: jsonb('json_content').$type<any>(),
-    previewText: text('preview_text'),
-    writerId: text('writer_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    isDefault: boolean('is_default').default(false),
-    isActive: boolean('is_active').default(true),
-    variables: jsonb('variables').$type<string[]>().default([]),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    subscriberId: text('subscriber_id').references(() => subscribers.id, {
+      onDelete: 'cascade',
+    }),
+    campaignId: text('campaign_id').references(() => campaigns.id, {
+      onDelete: 'cascade',
+    }),
+    unsubscribedAt: timestamp('unsubscribed_at', {
+      withTimezone: true,
+    }).defaultNow(),
+    reason: text(),
   },
   (table) => [
-    index('templates_writer_id_idx').on(table.writerId),
-    index('templates_type_idx').on(table.type),
-    index('templates_slug_idx').on(table.slug),
-    unique('templates_writer_slug_unique').on(table.writerId, table.slug),
+    index('sub_rel_id_idx').on(table.subscriberId),
+    index('camp_rel_id_idx').on(table.campaignId),
   ]
 )
 
-export type EmailTemplate = typeof emailTemplates.$inferSelect
-export type EmailTemplateInsert = typeof emailTemplates.$inferInsert
-export type TemplateType = (typeof templateTypeEnum.enumValues)[number]
+export type UnSubscribeEvent = typeof unsubscribeEvents.$inferSelect
+export type UnSubscribeEventInsert = typeof unsubscribeEvents.$inferInsert
 
-// Workspaces (Multi-tenancy)
+// ============================================================================
+// WORKSPACES & MULTI-TENANCY
+// ============================================================================
+
 export const workspaceRoleEnum = pgEnum('workspace_role', ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER'])
 
 export const workspaces = createTable(
@@ -381,155 +546,10 @@ export const workspaceInvites = createTable(
 export type WorkspaceInvite = typeof workspaceInvites.$inferSelect
 export type WorkspaceInviteInsert = typeof workspaceInvites.$inferInsert
 
-// Categories/Tags for Blog
-export const categories = createTable(
-  'categories',
-  {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    slug: text('slug').notNull(),
-    description: text('description'),
-    color: text('color').default('#6366f1'),
-    writerId: text('writer_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    parentId: text('parent_id'), // For hierarchical categories
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
-  },
-  (table) => [
-    index('categories_writer_id_idx').on(table.writerId),
-    index('categories_slug_idx').on(table.slug),
-    unique('categories_writer_slug_unique').on(table.writerId, table.slug),
-  ]
-)
+// ============================================================================
+// API KEYS
+// ============================================================================
 
-export type Category = typeof categories.$inferSelect
-export type CategoryInsert = typeof categories.$inferInsert
-
-export const documentCategories = createTable(
-  'document_categories',
-  {
-    id: text('id').primaryKey(),
-    documentId: text('document_id')
-      .notNull()
-      .references(() => documents.id, { onDelete: 'cascade' }),
-    categoryId: text('category_id')
-      .notNull()
-      .references(() => categories.id, { onDelete: 'cascade' }),
-  },
-  (table) => [
-    index('doc_categories_doc_id_idx').on(table.documentId),
-    index('doc_categories_cat_id_idx').on(table.categoryId),
-    unique('doc_categories_unique').on(table.documentId, table.categoryId),
-  ]
-)
-
-export type DocumentCategory = typeof documentCategories.$inferSelect
-export type DocumentCategoryInsert = typeof documentCategories.$inferInsert
-
-// Tags (flat, more flexible than categories)
-export const tags = createTable(
-  'tags',
-  {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    slug: text('slug').notNull(),
-    writerId: text('writer_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    usageCount: varchar('usage_count').default('0'),
-    createdAt: timestamp('created_at').defaultNow(),
-  },
-  (table) => [
-    index('tags_writer_id_idx').on(table.writerId),
-    index('tags_slug_idx').on(table.slug),
-    unique('tags_writer_slug_unique').on(table.writerId, table.slug),
-  ]
-)
-
-export type Tag = typeof tags.$inferSelect
-export type TagInsert = typeof tags.$inferInsert
-
-export const documentTags = createTable(
-  'document_tags',
-  {
-    id: text('id').primaryKey(),
-    documentId: text('document_id')
-      .notNull()
-      .references(() => documents.id, { onDelete: 'cascade' }),
-    tagId: text('tag_id')
-      .notNull()
-      .references(() => tags.id, { onDelete: 'cascade' }),
-  },
-  (table) => [
-    index('doc_tags_doc_id_idx').on(table.documentId),
-    index('doc_tags_tag_id_idx').on(table.tagId),
-    unique('doc_tags_unique').on(table.documentId, table.tagId),
-  ]
-)
-
-export type DocumentTag = typeof documentTags.$inferSelect
-export type DocumentTagInsert = typeof documentTags.$inferInsert
-
-// Types
-export type UnSubscribeEvent = typeof unsubscribeEvents.$inferSelect
-export type ClickEvent = typeof clickEvents.$inferSelect
-export type UnSubscribeEventInsert = typeof unsubscribeEvents.$inferInsert
-export type ClickEventInsert = typeof clickEvents.$inferInsert
-
-/**
- * Documents (Written content)
- */
-
-export const documentStatusEnum = pgEnum('document_staus', ['DRAFT', 'PUBLISHED'])
-
-export const documents = createTable(
-  'documents',
-  {
-    id: text('id').primaryKey(),
-    slug: text('slug'),
-    title: text('title'),
-    subtitle: text('subtitle'),
-    status: documentStatusEnum(),
-    userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
-    content: jsonb('content').$type<any>(),
-    markdown: text('markdown'),
-    bannerImage: text('banner_image'),
-    scheduledDate: timestamp('scheduled_date'),
-    publishedDate: timestamp('published_date'),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
-    // SEO metadata
-    metaTitle: text('meta_title'),
-    metaDescription: text('meta_description'),
-    metaKeywords: text('meta_keywords'),
-    canonicalUrl: text('canonical_url'),
-    ogImage: text('og_image'),
-    // Reading time and word count
-    readingTime: varchar('reading_time'),
-    wordCount: varchar('word_count'),
-    // Featured flag
-    isFeatured: boolean('is_featured').default(false),
-  },
-  (table) => [
-    // Add indexes for scalability
-    index('documents_user_id_idx').on(table.userId),
-    index('documents_status_idx').on(table.status),
-    index('documents_created_at_idx').on(table.createdAt),
-    index('documents_scheduled_date_idx').on(table.scheduledDate),
-    index('documents_user_status_idx').on(table.userId, table.status),
-    index('documents_featured_idx').on(table.isFeatured),
-    unique('documents_slug_unique').on(table.slug),
-  ]
-)
-
-// Types
-export type Document = typeof documents.$inferSelect
-export type DocumentInsert = typeof documents.$inferInsert
-export type DocumentStatus = (typeof documentStatusEnum.enumValues)[number]
-
-// API Keys
 export const apiKeys = pgTable(
   'api_keys',
   {

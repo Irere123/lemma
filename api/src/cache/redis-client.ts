@@ -1,10 +1,11 @@
+import Redis from 'ioredis'
+
 import { env } from '@api/env-runtime'
-import { redis, RedisClient } from 'bun'
 
 export class RedisCache {
   private prefix: string
   private defaultTTL: number
-  private redis: RedisClient | null = null
+  private redis: Redis | null = null
 
   constructor(prefix: string, defaultTTL: number = 30 * 60) {
     this.prefix = prefix
@@ -12,14 +13,12 @@ export class RedisCache {
     this.redis = null
   }
 
-  private getRedisClient(): RedisClient {
-    if (!this.redis) {
-      this.redis = redis
-
+  private getRedisClient(): Redis {
+    if (this.redis) {
       return this.redis
     }
 
-    const client = new RedisClient(env.REDIS_URL)
+    const client = new Redis(env.REDIS_URL)
 
     this.redis = client
 
