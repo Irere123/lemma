@@ -12,6 +12,12 @@ export interface EmailAttachment {
   disposition?: 'attachment' | 'inline'
 }
 
+export interface UnsubscribeInfo {
+  token: string
+  writerId: string
+  baseUrl?: string
+}
+
 export interface EmailOptions {
   to: string | string[]
   subject: string
@@ -20,6 +26,7 @@ export interface EmailOptions {
   from?: string
   emailType?: EmailType
   includeUnsubscribe?: boolean
+  unsubscribeInfo?: UnsubscribeInfo
   attachments?: EmailAttachment[]
   replyTo?: string
 }
@@ -124,6 +131,7 @@ async function processEmailData(options: EmailOptions): Promise<ProcessedEmailDa
     from,
     emailType = 'transactional',
     includeUnsubscribe = true,
+    unsubscribeInfo,
     attachments,
     replyTo,
   } = options
@@ -134,13 +142,16 @@ async function processEmailData(options: EmailOptions): Promise<ProcessedEmailDa
   let finalText = text
   let headers: Record<string, string> = {}
 
-  // if (includeUnsubscribe && emailType !== 'transactional') {
-  //   const primaryEmail = Array.isArray(to) ? to[0] : to
-  //   const unsubData = addUnsubscribeData(primaryEmail, emailType, html, text)
-  //   headers = unsubData.headers
-  //   finalHtml = unsubData.html
-  //   finalText = unsubData.text
-  // }
+  // Add unsubscribe headers for marketing emails
+  if (includeUnsubscribe && emailType !== 'transactional' && unsubscribeInfo) {
+    const baseUrl = unsubscribeInfo.baseUrl || env.FRONTEND_URL
+    const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${unsubscribeInfo.token}&writer=${unsubscribeInfo.writerId}`
+
+    headers = {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    }
+  }
 
   return {
     to,

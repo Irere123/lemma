@@ -85,6 +85,13 @@
       "when": 1762522594563,
       "tag": "0011_groovy_human_torch",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1766692539879,
+      "tag": "0012_zippy_gamma_corps",
+      "breakpoints": true
     }
   ]
 }

@@ -473,7 +473,10 @@ export function BrainEditor({
       // Migrate from Slate to ProseMirror
       // Cast to unknown first since doc.content may be typed as Descendant[] from Slate
       try {
-        return migrateFromSlate(doc.content as unknown as Parameters<typeof migrateFromSlate>[0], schema)
+        return migrateFromSlate(
+          doc.content as unknown as Parameters<typeof migrateFromSlate>[0],
+          schema
+        )
       } catch (e) {
         console.error('Failed to migrate Slate content:', e)
         return schema.nodes.doc.create(null, [schema.nodes.paragraph.create()])
@@ -608,7 +611,10 @@ export function BrainReadOnlyEditor({ content, className }: BrainReadOnlyEditorP
     if (Array.isArray(content)) {
       // Slate format
       try {
-        return migrateFromSlate(content as unknown as Parameters<typeof migrateFromSlate>[0], schema)
+        return migrateFromSlate(
+          content as unknown as Parameters<typeof migrateFromSlate>[0],
+          schema
+        )
       } catch (e) {
         console.error('Failed to migrate Slate content:', e)
         return schema.nodes.doc.create(null, [schema.nodes.paragraph.create()])
@@ -818,4 +824,3 @@ export function slateToMarkdown(content: unknown): string {
 export function getDefaultEditorValue() {
   return schema.nodes.doc.create(null, [schema.nodes.paragraph.create()]).toJSON()
 }
-

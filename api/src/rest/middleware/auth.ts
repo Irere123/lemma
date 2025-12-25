@@ -1,13 +1,13 @@
-import type { MiddlewareHandler } from 'hono'
 import { getSessionCookie } from 'better-auth/cookies'
+import type { MiddlewareHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 
-import { createAuth } from '@api/lib/auth'
-import { isValidApiKeyFormat } from '@api/db/utils/api-keys'
-import { hash } from '@api/encryption'
-import { getUserById, getApiKeyByToken, updatedApiKeyLastUsedAt } from '@api/db/queries'
 import { apiKeyCache } from '@api/cache/api-keys-cache'
 import { userCache } from '@api/cache/user-cache'
+import { getApiKeyByToken, getUserById, updatedApiKeyLastUsedAt } from '@api/db/queries'
+import { isValidApiKeyFormat } from '@api/db/utils/api-keys'
+import { hash } from '@api/encryption'
+import { createAuth } from '@api/lib/auth'
 import { expandScopes } from '@lemma/common/scopes'
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
@@ -60,7 +60,7 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
   const keyHash = hash(token)
 
   // Check cache first for API key
-  let apiKey = JSON.parse((await apiKeyCache.get(keyHash)) as string)
+  let apiKey = await apiKeyCache.get(keyHash)
 
   if (!apiKey) {
     // If not cache, query database
@@ -76,7 +76,7 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
   }
 
   // Check cache first for user
-  let user = JSON.parse((await userCache.get(apiKey.userId)) as string)
+  let user = await userCache.get(apiKey.userId)
 
   if (!user) {
     // If not cache, query database

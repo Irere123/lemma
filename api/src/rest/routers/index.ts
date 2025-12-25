@@ -5,6 +5,8 @@ import { documentsRouter } from './documents'
 import { postsRouter } from './posts'
 import { newsletterRouter } from './newsletter'
 import { uploadsRouter } from './uploads'
+import { campaignsRouter } from './campaigns'
+import { feedsRouter } from './feeds'
 
 const routers = createRouter()
 
@@ -14,6 +16,7 @@ routers.use(...publicMiddleware)
 
 routers.route('/posts', postsRouter)
 routers.route('/newsletter', newsletterRouter)
+routers.route('/feeds', feedsRouter)
 
 // Authenticated routes
 
@@ -21,5 +24,6 @@ routers.use(...protectedMiddleware)
 
 routers.route('/documents', documentsRouter)
 routers.route('/uploads', uploadsRouter)
+routers.route('/campaigns', campaignsRouter)
 
 export { routers }

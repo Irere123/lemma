@@ -128,14 +128,47 @@ export const newsletterSettings = createTable(
 export type NewsletterSettings = typeof newsletterSettings.$inferSelect
 export type NewsletterSettingsInsert = typeof newsletterSettings.$inferInsert
 
-export const campaigns = createTable('campaigns', {
-  id: text('id').primaryKey(),
-  title: text().notNull(),
-  slug: text().notNull(),
-  userId: text().notNull(),
-  content: text(),
-  sentAt: timestamp('sent_at', { withTimezone: true }),
-})
+export const campaignStatusEnum = pgEnum('campaign_status', [
+  'DRAFT',
+  'SCHEDULED',
+  'SENDING',
+  'SENT',
+  'FAILED',
+  'CANCELLED',
+])
+
+export const campaigns = createTable(
+  'campaigns',
+  {
+    id: text('id').primaryKey(),
+    title: text().notNull(),
+    slug: text().notNull(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    documentId: text('document_id').references(() => documents.id, { onDelete: 'set null' }),
+    content: text(),
+    status: campaignStatusEnum().default('DRAFT'),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    totalSent: varchar('total_sent').default('0'),
+    totalOpens: varchar('total_opens').default('0'),
+    totalClicks: varchar('total_clicks').default('0'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+    // A/B Testing fields
+    isAbTest: boolean('is_ab_test').default(false),
+    parentCampaignId: text('parent_campaign_id'),
+    variantName: text('variant_name'),
+    variantPercentage: varchar('variant_percentage'),
+  },
+  (table) => [
+    index('campaigns_user_id_idx').on(table.userId),
+    index('campaigns_status_idx').on(table.status),
+    index('campaigns_scheduled_at_idx').on(table.scheduledAt),
+    index('campaigns_parent_id_idx').on(table.parentCampaignId),
+  ]
+)
 
 export type Campaign = typeof campaigns.$inferSelect
 export type CampaignInsert = typeof campaigns.$inferInsert
@@ -194,6 +227,251 @@ export const unsubscribeEvents = createTable(
   ]
 )
 
+export const openEvents = createTable(
+  'open_events',
+  {
+    id: text('id').primaryKey(),
+    subscriberId: text('subscriber_id').references(() => subscribers.id, {
+      onDelete: 'cascade',
+    }),
+    campaignId: text('campaign_id').references(() => campaigns.id, {
+      onDelete: 'cascade',
+    }),
+    openedAt: timestamp('opened_at', { withTimezone: true }).defaultNow(),
+    userAgent: text('user_agent'),
+    ipAddress: inet('ip_address'),
+  },
+  (table) => [
+    index('open_sub_id_idx').on(table.subscriberId),
+    index('open_camp_id_idx').on(table.campaignId),
+  ]
+)
+
+export type OpenEvent = typeof openEvents.$inferSelect
+export type OpenEventInsert = typeof openEvents.$inferInsert
+
+// Email Templates
+export const templateTypeEnum = pgEnum('template_type', [
+  'NEWSLETTER',
+  'WELCOME',
+  'CONFIRMATION',
+  'TRANSACTIONAL',
+  'CUSTOM',
+])
+
+export const emailTemplates = createTable(
+  'email_templates',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description'),
+    type: templateTypeEnum().default('CUSTOM'),
+    subject: text('subject'),
+    htmlContent: text('html_content'),
+    jsonContent: jsonb('json_content').$type<any>(),
+    previewText: text('preview_text'),
+    writerId: text('writer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    isDefault: boolean('is_default').default(false),
+    isActive: boolean('is_active').default(true),
+    variables: jsonb('variables').$type<string[]>().default([]),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('templates_writer_id_idx').on(table.writerId),
+    index('templates_type_idx').on(table.type),
+    index('templates_slug_idx').on(table.slug),
+    unique('templates_writer_slug_unique').on(table.writerId, table.slug),
+  ]
+)
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect
+export type EmailTemplateInsert = typeof emailTemplates.$inferInsert
+export type TemplateType = (typeof templateTypeEnum.enumValues)[number]
+
+// Workspaces (Multi-tenancy)
+export const workspaceRoleEnum = pgEnum('workspace_role', ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER'])
+
+export const workspaces = createTable(
+  'workspaces',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull().unique(),
+    description: text('description'),
+    logoUrl: text('logo_url'),
+    domain: text('domain'), // Custom domain for the workspace
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    settings: jsonb('settings').$type<{
+      allowPublicSignup?: boolean
+      defaultRole?: 'EDITOR' | 'VIEWER'
+      brandColor?: string
+      customCss?: string
+    }>(),
+    isActive: boolean('is_active').default(true),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('workspaces_owner_id_idx').on(table.ownerId),
+    index('workspaces_slug_idx').on(table.slug),
+    index('workspaces_domain_idx').on(table.domain),
+  ]
+)
+
+export type Workspace = typeof workspaces.$inferSelect
+export type WorkspaceInsert = typeof workspaces.$inferInsert
+
+export const workspaceMembers = createTable(
+  'workspace_members',
+  {
+    id: text('id').primaryKey(),
+    workspaceId: text('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    role: workspaceRoleEnum().default('VIEWER'),
+    invitedBy: text('invited_by').references(() => user.id),
+    invitedAt: timestamp('invited_at').defaultNow(),
+    joinedAt: timestamp('joined_at'),
+    isActive: boolean('is_active').default(true),
+  },
+  (table) => [
+    index('workspace_members_workspace_id_idx').on(table.workspaceId),
+    index('workspace_members_user_id_idx').on(table.userId),
+    unique('workspace_members_unique').on(table.workspaceId, table.userId),
+  ]
+)
+
+export type WorkspaceMember = typeof workspaceMembers.$inferSelect
+export type WorkspaceMemberInsert = typeof workspaceMembers.$inferInsert
+export type WorkspaceRole = (typeof workspaceRoleEnum.enumValues)[number]
+
+export const workspaceInvites = createTable(
+  'workspace_invites',
+  {
+    id: text('id').primaryKey(),
+    workspaceId: text('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    role: workspaceRoleEnum().default('VIEWER'),
+    token: text('token').notNull().unique(),
+    invitedBy: text('invited_by')
+      .notNull()
+      .references(() => user.id),
+    expiresAt: timestamp('expires_at').notNull(),
+    acceptedAt: timestamp('accepted_at'),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => [
+    index('workspace_invites_workspace_id_idx').on(table.workspaceId),
+    index('workspace_invites_email_idx').on(table.email),
+    index('workspace_invites_token_idx').on(table.token),
+  ]
+)
+
+export type WorkspaceInvite = typeof workspaceInvites.$inferSelect
+export type WorkspaceInviteInsert = typeof workspaceInvites.$inferInsert
+
+// Categories/Tags for Blog
+export const categories = createTable(
+  'categories',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description'),
+    color: text('color').default('#6366f1'),
+    writerId: text('writer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    parentId: text('parent_id'), // For hierarchical categories
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('categories_writer_id_idx').on(table.writerId),
+    index('categories_slug_idx').on(table.slug),
+    unique('categories_writer_slug_unique').on(table.writerId, table.slug),
+  ]
+)
+
+export type Category = typeof categories.$inferSelect
+export type CategoryInsert = typeof categories.$inferInsert
+
+export const documentCategories = createTable(
+  'document_categories',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    categoryId: text('category_id')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('doc_categories_doc_id_idx').on(table.documentId),
+    index('doc_categories_cat_id_idx').on(table.categoryId),
+    unique('doc_categories_unique').on(table.documentId, table.categoryId),
+  ]
+)
+
+export type DocumentCategory = typeof documentCategories.$inferSelect
+export type DocumentCategoryInsert = typeof documentCategories.$inferInsert
+
+// Tags (flat, more flexible than categories)
+export const tags = createTable(
+  'tags',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    writerId: text('writer_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    usageCount: varchar('usage_count').default('0'),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => [
+    index('tags_writer_id_idx').on(table.writerId),
+    index('tags_slug_idx').on(table.slug),
+    unique('tags_writer_slug_unique').on(table.writerId, table.slug),
+  ]
+)
+
+export type Tag = typeof tags.$inferSelect
+export type TagInsert = typeof tags.$inferInsert
+
+export const documentTags = createTable(
+  'document_tags',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id')
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('doc_tags_doc_id_idx').on(table.documentId),
+    index('doc_tags_tag_id_idx').on(table.tagId),
+    unique('doc_tags_unique').on(table.documentId, table.tagId),
+  ]
+)
+
+export type DocumentTag = typeof documentTags.$inferSelect
+export type DocumentTagInsert = typeof documentTags.$inferInsert
+
 // Types
 export type UnSubscribeEvent = typeof unsubscribeEvents.$inferSelect
 export type ClickEvent = typeof clickEvents.$inferSelect
@@ -222,6 +500,17 @@ export const documents = createTable(
     publishedDate: timestamp('published_date'),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
+    // SEO metadata
+    metaTitle: text('meta_title'),
+    metaDescription: text('meta_description'),
+    metaKeywords: text('meta_keywords'),
+    canonicalUrl: text('canonical_url'),
+    ogImage: text('og_image'),
+    // Reading time and word count
+    readingTime: varchar('reading_time'),
+    wordCount: varchar('word_count'),
+    // Featured flag
+    isFeatured: boolean('is_featured').default(false),
   },
   (table) => [
     // Add indexes for scalability
@@ -230,6 +519,7 @@ export const documents = createTable(
     index('documents_created_at_idx').on(table.createdAt),
     index('documents_scheduled_date_idx').on(table.scheduledDate),
     index('documents_user_status_idx').on(table.userId, table.status),
+    index('documents_featured_idx').on(table.isFeatured),
     unique('documents_slug_unique').on(table.slug),
   ]
 )

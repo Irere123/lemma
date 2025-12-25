@@ -200,18 +200,18 @@ export function DragHandle({ className }: DragHandleProps) {
       className={`pm-drag-handle ${className || ''}`}
     >
       <button
-        type="button"
-        className="pm-drag-handle-add"
+        type='button'
+        className='pm-drag-handle-add'
         onClick={handleAddClick}
-        title="Click to add block below"
+        title='Click to add block below'
       >
         <PlusIcon />
       </button>
       <button
-        type="button"
-        className="pm-drag-handle-grip"
+        type='button'
+        className='pm-drag-handle-grip'
         onMouseDown={handleMouseDown}
-        title="Drag to move block"
+        title='Drag to move block'
       >
         <GripIcon />
       </button>
@@ -221,13 +221,13 @@ export function DragHandle({ className }: DragHandleProps) {
 
 function PlusIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
       <path
-        d="M7 2V12M2 7H12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M7 2V12M2 7H12'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
   )
@@ -235,13 +235,13 @@ function PlusIcon() {
 
 function GripIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="5" cy="3" r="1.25" fill="currentColor" />
-      <circle cx="9" cy="3" r="1.25" fill="currentColor" />
-      <circle cx="5" cy="7" r="1.25" fill="currentColor" />
-      <circle cx="9" cy="7" r="1.25" fill="currentColor" />
-      <circle cx="5" cy="11" r="1.25" fill="currentColor" />
-      <circle cx="9" cy="11" r="1.25" fill="currentColor" />
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
+      <circle cx='5' cy='3' r='1.25' fill='currentColor' />
+      <circle cx='9' cy='3' r='1.25' fill='currentColor' />
+      <circle cx='5' cy='7' r='1.25' fill='currentColor' />
+      <circle cx='9' cy='7' r='1.25' fill='currentColor' />
+      <circle cx='5' cy='11' r='1.25' fill='currentColor' />
+      <circle cx='9' cy='11' r='1.25' fill='currentColor' />
     </svg>
   )
 }

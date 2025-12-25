@@ -193,6 +193,14 @@ export const getPublishedArticles = async (
       publishedDate: documents.publishedDate,
       createdAt: documents.createdAt,
       updatedAt: documents.updatedAt,
+      metaTitle: documents.metaTitle,
+      metaDescription: documents.metaDescription,
+      metaKeywords: documents.metaKeywords,
+      canonicalUrl: documents.canonicalUrl,
+      ogImage: documents.ogImage,
+      readingTime: documents.readingTime,
+      wordCount: documents.wordCount,
+      isFeatured: documents.isFeatured,
     })
     .from(documents)
     .where(and(eq(documents.status, 'PUBLISHED')))
@@ -240,6 +248,14 @@ export const getDocumentsByTypeAndStatus = async (
       publishedDate: documents.publishedDate,
       createdAt: documents.createdAt,
       updatedAt: documents.updatedAt,
+      metaTitle: documents.metaTitle,
+      metaDescription: documents.metaDescription,
+      metaKeywords: documents.metaKeywords,
+      canonicalUrl: documents.canonicalUrl,
+      ogImage: documents.ogImage,
+      readingTime: documents.readingTime,
+      wordCount: documents.wordCount,
+      isFeatured: documents.isFeatured,
     })
     .from(documents)
     .where(and(eq(documents.status, data.status)))
