@@ -1,27 +1,25 @@
-import { TRPCError } from "@trpc/server";
 import {
-  documentByIdSchema,
-  documentsFilters,
-  upsertDocumentSchema,
-  sendNewsletterSchema,
-  deleteDocumentSchema,
-  updateBannerImageSchema,
-} from "@api/schemas/documents";
-import {
+  deleteDocument,
   getAdminPublishedArticles,
   getDocumentById,
   getUserDocuments,
-  upsertDocument,
-  deleteDocument,
   updateDocumentBannerImage,
+  upsertDocument,
 } from "@api/db/queries";
-import { getConfirmedSubscribers } from "@api/db/queries/subscribers";
 import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
-import { enqueueDocumentNewsletter } from "@api/services/email-queue";
+import { getConfirmedSubscribers } from "@api/db/queries/subscribers";
 import {
-  computeNewsletterSchedule,
-  type NewsletterScheduleResult,
+  computeNewsletterSchedule
 } from "@api/lib/scheduling";
+import {
+  deleteDocumentSchema,
+  documentByIdSchema,
+  documentsFilters,
+  sendNewsletterSchema,
+  updateBannerImageSchema,
+  upsertDocumentSchema,
+} from "@api/schemas/documents";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 export const documentRouter = createTRPCRouter({
@@ -146,32 +144,32 @@ export const documentRouter = createTRPCRouter({
       const priority =
         sendImmediately ?? false ? 9 : schedule.mode === "scheduled" ? 6 : 8;
 
-      const emailResults = await enqueueDocumentNewsletter({
-        env: ctx.env,
-        document,
-        writerSettings,
-        recipients,
-        options: {
-          delayMs: schedule.delayMs,
-          priority,
-        },
-      });
+      // const emailResults = await enqueueDocumentNewsletter({
+      //   env: ctx.env,
+      //   document,
+      //   writerSettings,
+      //   recipients,
+      //   options: {
+      //     delayMs: schedule.delayMs,
+      //     priority,
+      //   },
+      // });
 
-      const buildMessage = (result: NewsletterScheduleResult) => {
-        if (result.mode === "scheduled" && result.scheduledFor) {
-          return `Scheduled ${emailResults.length} emails for ${result.scheduledFor}`;
-        }
+      // const buildMessage = (result: NewsletterScheduleResult) => {
+      //   if (result.mode === "scheduled" && result.scheduledFor) {
+      //     return `Scheduled ${emailResults.length} emails for ${result.scheduledFor}`;
+      //   }
 
-        return `Enqueued ${emailResults.length} emails for immediate delivery`;
-      };
+      //   return `Enqueued ${emailResults.length} emails for immediate delivery`;
+      // };
 
-      return {
-        success: true,
-        message: buildMessage(schedule),
-        count: emailResults.length,
-        scheduledFor: schedule.scheduledFor,
-        scheduleMode: schedule.mode,
-        jobIds: emailResults.map((r) => r.jobId),
-      };
+      // return {
+      //   success: true,
+      //   message: buildMessage(schedule),
+      //   count: emailResults.length,
+      //   scheduledFor: schedule.scheduledFor,
+      //   scheduleMode: schedule.mode,
+      //   jobIds: emailResults.map((r) => r.jobId),
+      // };
     }),
 });

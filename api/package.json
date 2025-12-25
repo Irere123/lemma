@@ -3,9 +3,7 @@
   "main": "src/trpc/routers/_app.ts",
   "types": "src/trpc/routers/_app.ts",
   "scripts": {
-    "dev": "wrangler dev --env local",
-    "deploy": "wrangler deploy --minify --env production",
-    "types": "wrangler types --env local",
+    "dev": "bun run src/index.ts",
     "generate-migration": "drizzle-kit generate",
     "migrate:local": "bun run ./scripts/migrate.ts",
     "migrate:prod": "cross-env NODE_ENV=production bun run ./scripts/migrate.ts",

@@ -1,15 +1,13 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { env } from "cloudflare:workers";
 
-import { createRouter, generateId } from "@api/lib/utils";
+import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
 import {
   getSubscriberByEmail,
   getSubscriberByToken,
   upsertSubscriber,
 } from "@api/db/queries/subscribers";
+import { createRouter, generateId } from "@api/lib/utils";
 import { withAuth } from "@api/rest/middleware/auth";
-import { enqueueWelcomeNewsletter } from "@api/services/email-queue";
-import { getWriterNewsletterSettings } from "@api/db/queries/newsletter-settings";
 
 const newsletterRouter = createRouter();
 
@@ -76,17 +74,17 @@ newsletterRouter.openapi(
         writerId: session.user.id,
       });
 
-      await enqueueWelcomeNewsletter({
-        env,
-        email: input.email,
-        writerSettings,
-        token,
-        options: {
-          delayMs: 0,
-          priority: 9,
-          maxAttempts: 5,
-        },
-      });
+      // await enqueueWelcomeNewsletter({
+      //   env,
+      //   email: input.email,
+      //   writerSettings,
+      //   token,
+      //   options: {
+      //     delayMs: 0,
+      //     priority: 9,
+      //     maxAttempts: 5,
+      //   },
+      // });
 
       return c.json({ success: true });
     } catch (error) {

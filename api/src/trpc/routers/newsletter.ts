@@ -1,23 +1,22 @@
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "@api/trpc/init";
-import { generateId } from "@api/lib/utils";
 import {
   getWriterNewsletterSettings,
   upsertWriterNewsletterSettings,
 } from "@api/db/queries/newsletter-settings";
-import { enqueueWelcomeNewsletter } from "@api/services/email-queue";
-import { newsletterSettingsSchema } from "@api/schemas/newsletter";
 import {
   getSubscriberByEmail,
   getSubscriberByToken,
   upsertSubscriber,
 } from "@api/db/queries/subscribers";
+import { generateId } from "@api/lib/utils";
+import { newsletterSettingsSchema } from "@api/schemas/newsletter";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "@api/trpc/init";
 
 export const newsletterRouter = createTRPCRouter({
   getWriterNewsletterSettings: protectedProcedure.query(async ({ ctx }) => {
@@ -88,17 +87,17 @@ export const newsletterRouter = createTRPCRouter({
           });
         }
 
-        await enqueueWelcomeNewsletter({
-          env: ctx.env,
-          email: subCreated.email,
-          writerSettings,
-          token: subCreated.token,
-          options: {
-            delayMs: 0,
-            priority: 9,
-            maxAttempts: 5,
-          },
-        });
+        // await enqueueWelcomeNewsletter({
+        //   env: ctx.env,
+        //   email: subCreated.email,
+        //   writerSettings,
+        //   token: subCreated.token,
+        //   options: {
+        //     delayMs: 0,
+        //     priority: 9,
+        //     maxAttempts: 5,
+        //   },
+        // });
       } catch (error) {
         console.log(error);
         throw new TRPCError({

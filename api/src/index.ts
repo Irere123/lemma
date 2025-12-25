@@ -1,15 +1,15 @@
-import { cors } from "hono/cors";
-import { Scalar } from "@scalar/hono-api-reference";
-import { env } from "cloudflare:workers";
-import { secureHeaders } from "hono/secure-headers";
 import { trpcServer } from "@hono/trpc-server";
+import { Scalar } from "@scalar/hono-api-reference";
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 
-import { routers } from "./rest/routers";
-import { appRouter } from "./trpc/routers/_app";
-import { createTRPCContext } from "./trpc/init";
-import { createRouter } from "./lib/utils";
+import { env } from "./env-runtime";
 import { createAuth } from "./lib/auth";
 import { BASE_URL } from "./lib/constants";
+import { createRouter } from "./lib/utils";
+import { routers } from "./rest/routers";
+import { createTRPCContext } from "./trpc/init";
+import { appRouter } from "./trpc/routers/_app";
 
 const app = createRouter();
 
@@ -18,7 +18,7 @@ app.use(secureHeaders());
 app.use(
   "*",
   cors({
-    origin: process.env.ALLOWED_API_ORIGINS?.split(",") ?? [],
+    origin: env.ALLOWED_API_ORIGINS?.split(",") ?? [],
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowHeaders: [
@@ -50,16 +50,16 @@ app.doc("/openapi", {
   openapi: "3.1.0",
   info: {
     version: "0.0.1",
-    title: "Irere API",
-    description: "Irere.DEV Blogging platform",
+    title: "Lemma Developer API",
+    description: "Lemma Developer API",
     contact: {
       name: "Support",
-      email: "hello@irere.dev",
-      url: "irere.dev",
+      email: "hello@lemma.now",
+      url: "lemma.now",
     },
     license: {
       name: "AGPL-3.0 license",
-      url: "https://github.com/irere123/brainos/blob/main/LICENSE",
+      url: "https://github.com/irere123/lemma/blob/main/LICENSE",
     },
   },
   servers: [
@@ -76,12 +76,12 @@ app.openAPIRegistry.registerComponent("securitySchemes", "token", {
   type: "http",
   scheme: "bearer",
   description: "Default authenticaton mechanism",
-  "x-api-key-example": "IRERE.DEV API KEY",
+  "x-api-key-example": "LEMMA.NOW API KEY",
 });
 
 app.get(
   "/",
-  Scalar({ url: "/openapi", pageTitle: "Irere.DEV API", theme: "saturn" })
+  Scalar({ url: "/openapi", pageTitle: "Lemma API", theme: "saturn" })
 );
 
 app.on(["POST", "GET"], "/auth/*", (c) => {
@@ -93,34 +93,4 @@ app.route("/v1", routers);
 export default {
   port: env.PORT || 4000,
   fetch: app.fetch,
-  async scheduled(
-    _controller: ScheduledController,
-    env: Env,
-    ctx: ExecutionContext
-  ) {
-    const { processDelayedEmailJobs, processEmailJobs } = await import(
-      "./services/email-queue"
-    );
-
-    ctx.waitUntil(
-      (async () => {
-        console.log("== Processing scheduled email jobs ==");
-        const delayedResult = await processDelayedEmailJobs(env);
-        console.log(
-          `== Moved ${delayedResult.moved} delayed email jobs to waiting queue ==`
-        );
-
-        const results = await processEmailJobs(env);
-        const completed = results.filter(
-          (job) => job.status === "completed"
-        ).length;
-        const failed = results.filter((job) => job.status === "failed").length;
-        console.log(
-          `== Processed ${results.length} email jobs (${completed} completed, ${failed} failed) ==`
-        );
-      })()
-    );
-  },
 };
-
-export { QueueDurableObject } from "./queue";

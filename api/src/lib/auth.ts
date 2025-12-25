@@ -1,11 +1,11 @@
+import { env } from "@api/env-runtime";
 import { betterAuth } from "better-auth";
-import { env } from "cloudflare:workers";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { createDb } from "@api/db";
 
 export const createAuth = () => {
-  const { db } = createDb(env.HYPERDRIVE.connectionString);
+  const { db } = createDb(env.DATABASE_URL);
 
   return betterAuth({
     basePath: "/auth",
@@ -14,12 +14,12 @@ export const createAuth = () => {
     }),
     trustedOrigins: [...env.ALLOWED_API_ORIGINS.split(",")],
     advanced: {
-      cookiePrefix: "brain",
+      cookiePrefix: "lemma",
       crossSubDomainCookies: {
-        enabled: env.NODE_ENV !== "development",
+        enabled: env.ENV !== "development",
         domain: ".irere.dev",
       },
-      useSecureCookies: env.NODE_ENV !== "development",
+      useSecureCookies: env.ENV !== "development",
     },
     socialProviders: {
       google: {

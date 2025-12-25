@@ -1,5 +1,6 @@
-import type { Scope } from "@api/lib/scopes";
+import type { Scope } from "@lemma/common/scopes";
 import type { MiddlewareHandler } from "hono";
+import { HTTPException } from "hono/http-exception";
 
 export const withRequiredScope = (
   ...requiredScopes: Scope[]
@@ -8,14 +9,9 @@ export const withRequiredScope = (
     const scopes = c.get("scopes") as Scope[] | undefined;
 
     if (!scopes) {
-      return c.json(
-        {
-          error: "Unauthorized",
-          description:
-            "No scopes found for the current user. Authentication is required.",
-        },
-        401
-      );
+      throw new HTTPException(401, {
+        message: "No scopes found for the current user. Authentication is required.",
+      });
     }
 
     // Check if user has at least one of the required scopes
@@ -24,9 +20,8 @@ export const withRequiredScope = (
     );
 
     if (!hasRequiredScope) {
-      return c.json({
-        error: "Forbidden",
-        description: `Insufficient permissions. Required scopes: ${requiredScopes.join(",")}. Your scopes: ${scopes.join(", ")}`,
+      throw new HTTPException(403, {
+        message: `Insufficient permissions. Required scopes: ${requiredScopes.join(",")}. Your scopes: ${scopes.join(", ")}`,
       });
     }
 

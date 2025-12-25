@@ -1,13 +1,11 @@
-import { env } from "cloudflare:workers";
 import type { ApiKey } from "@api/db/queries";
+import { RedisCache } from "./redis-client";
+
+// Redis-based cache for API keys shared across all server instances
+const cache = new RedisCache("api-key", 30 * 60); // 30 minutes TTL
 
 export const apiKeyCache = {
-  get: (key: string): Promise<string | null> =>
-    env.CACHE_KV.get<string>(`api-keys:${key}`),
-  set: (key: string, value: ApiKey): Promise<void> =>
-    env.CACHE_KV.put(`api-keys:${key}`, JSON.stringify(value), {
-      expirationTtl: 30 * 60, // 30 minutes
-    }),
-  delete: (key: string): Promise<void> =>
-    env.CACHE_KV.delete(`api-keys:${key}`),
+  get: (key: string): Promise<ApiKey | undefined> => cache.get<ApiKey>(key),
+  set: (key: string, value: ApiKey): Promise<void> => cache.set(key, value),
+  delete: (key: string): Promise<void> => cache.delete(key),
 };

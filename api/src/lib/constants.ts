@@ -1,6 +1,6 @@
-import { env } from "cloudflare:workers";
+import { env } from "@api/env-runtime";
 
 export const BASE_URL =
-  env.NODE_ENV === "development"
+  env.ENV === "development"
     ? "http://localhost:4000"
     : "https://api.irere.dev";

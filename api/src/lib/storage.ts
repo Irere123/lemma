@@ -1,6 +1,6 @@
+import { env } from "@api/env-runtime";
 import { fetchWithTimeout } from "@api/utils";
 import { AwsClient } from "aws4fetch";
-import { env } from "cloudflare:workers";
 
 interface imageOptions {
   contentType?: string;
@@ -253,7 +253,7 @@ class StorageClient {
         if (opts.width) proxyUrl.searchParams.set("w", opts.width.toString());
         if (opts.height) proxyUrl.searchParams.set("h", opts.height.toString());
         proxyUrl.searchParams.set("fit", "cover");
-        response = await fetchWithTimeout(proxyUrl.toString());
+        response = await fetchWithTimeout(new URL(proxyUrl.toString()));
       } catch (error) {
         response = await fetch(url);
       }

@@ -1,11 +1,10 @@
-import { and, desc, eq, ne, lt } from "drizzle-orm";
-
-import { env } from "cloudflare:workers";
+import { and, desc, eq, lt, ne } from "drizzle-orm";
 
 import type { DB } from "@api/db";
 import { documents, type Document, type DocumentStatus } from "@api/db/schema";
-import { generateId } from "@api/lib/utils";
 import { slugifyString } from "@api/db/utils/slugify";
+import { env } from "@api/env-runtime";
+import { generateId } from "@api/lib/utils";
 import type { UpsertDocumentData } from "@api/schemas";
 
 // Default page size for pagination
