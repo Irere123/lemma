@@ -12,9 +12,9 @@
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
   },
   "dependencies": {
-    "@brain/api": "workspace:*",
-    "@brain/common": "workspace:*",
-    "@brain/editor": "workspace:*",
+    "@lemma/api": "workspace:*",
+    "@lemma/common": "workspace:*",
+    "@lemma/editor": "workspace:*",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

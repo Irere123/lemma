@@ -1,5 +1,5 @@
 {
-  "name": "@brain/common",
+  "name": "@lemma/common",
   "private": true,
   "type": "module",
   "exports": {

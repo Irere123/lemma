@@ -1,5 +1,5 @@
 {
-  "name": "@brain/api",
+  "name": "@lemma/api",
   "main": "src/trpc/routers/_app.ts",
   "types": "src/trpc/routers/_app.ts",
   "scripts": {
@@ -13,8 +13,8 @@
     "seed-slugs:prod": "cross-env NODE_ENV=production bun run ./scripts/seed-slugs.ts"
   },
   "dependencies": {
-    "@brain/common": "workspace:*",
-    "@brain/email": "workspace:*",
+    "@lemma/common": "workspace:*",
+    "@lemma/email": "workspace:*",
     "@hono/trpc-server": "^0.4.0",
     "@hono/zod-openapi": "^1.1.0",
     "@scalar/hono-api-reference": "^0.9.16",
