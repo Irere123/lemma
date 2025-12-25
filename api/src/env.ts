@@ -35,15 +35,11 @@ const EnvSchema = z.object({
 export type Environment = z.infer<typeof EnvSchema>;
 
 export function parseEnv(data: any) {
-  const { data: env, error } = EnvSchema.safeParse(data);
+  const { data: env,  error, success } = EnvSchema.safeParse(data);
 
-  if (error) {
-    const errorMessage = `error: invalid env:\n${Object.entries(
-      error.flatten().fieldErrors
-    )
-      .map(([key, errors]) => `${key}: ${errors.join(", ")}`)
-      .join("\n")}`;
-    throw new Error(errorMessage);
+  if (!success) {
+    console.error("Invalid environment variables:", error.format());
+    process.exit(1);
   }
 
   return env;

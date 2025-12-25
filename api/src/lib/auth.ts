@@ -21,6 +21,15 @@ export const createAuth = () => {
       },
       useSecureCookies: env.ENV !== "development",
     },
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 24 * 60 * 60, // 24 hours in seconds
+      },
+      expiresIn: 30 * 24 * 60 * 60, // 30 days (how long a session can last overall)
+      updateAge: 24 * 60 * 60, // 24 hours (how often to refresh the expiry)
+      freshAge: 60 * 60, // 1 hour (or set to 0 to disable completely)
+    },
     socialProviders: {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID!,
