@@ -1,6 +1,7 @@
 import { Queue } from 'bullmq'
-import { getRedisConnection, defaultJobOptions, QUEUE_NAMES } from './queue-config'
-import type { EmailJobData, NewsletterJobData, AnalyticsJobData, ScheduledJobData } from './types'
+
+import { defaultJobOptions, getRedisConnection, QUEUE_NAMES } from './queue-config'
+import type { AnalyticsJobData, EmailJobData, NewsletterJobData, ScheduledJobData } from './types'
 
 let emailQueue: Queue<EmailJobData> | null = null
 let newsletterQueue: Queue<NewsletterJobData> | null = null

@@ -1,17 +1,17 @@
-import { Worker, Job } from 'bullmq'
+import { Job, Worker } from 'bullmq'
+import { eq, sql } from 'drizzle-orm'
 
+import { createDb } from '@api/db'
+import { clickEvents } from '@api/db/schema'
+import { env } from '@api/env-runtime'
+import { generateId } from '@api/lib/utils'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
+  AggregateCampaignStatsJob,
   AnalyticsJobData,
   TrackClickJob,
   TrackOpenJob,
-  AggregateCampaignStatsJob,
 } from '../types'
-import { createDb } from '@api/db'
-import { env } from '@api/env-runtime'
-import { clickEvents, campaigns } from '@api/db/schema'
-import { generateId } from '@api/lib/utils'
-import { eq, sql } from 'drizzle-orm'
 
 async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<void> {
   const { db, conn } = createDb(env.DATABASE_URL)

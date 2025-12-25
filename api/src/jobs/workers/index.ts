@@ -1,11 +1,11 @@
+import { createAnalyticsWorker } from './analytics-worker'
 import { createEmailWorker } from './email-worker'
 import { createNewsletterWorker } from './newsletter-worker'
-import { createAnalyticsWorker } from './analytics-worker'
 import { createScheduledWorker } from './scheduled-worker'
 
+export { createAnalyticsWorker } from './analytics-worker'
 export { createEmailWorker } from './email-worker'
 export { createNewsletterWorker } from './newsletter-worker'
-export { createAnalyticsWorker } from './analytics-worker'
 export { createScheduledWorker } from './scheduled-worker'
 
 let workers: ReturnType<typeof createAllWorkers> | null = null

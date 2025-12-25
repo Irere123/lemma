@@ -1,16 +1,16 @@
-import { Worker, Job } from 'bullmq'
+import { Job, Worker } from 'bullmq'
+import { eq } from 'drizzle-orm'
 
+import { createDb } from '@api/db'
+import { documents } from '@api/db/schema'
+import { env } from '@api/env-runtime'
+import { enqueueNewsletter } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
-  ScheduledJobData,
   PublishScheduledDocumentJob,
+  ScheduledJobData,
   SendScheduledNewsletterJob,
 } from '../types'
-import { createDb } from '@api/db'
-import { env } from '@api/env-runtime'
-import { documents } from '@api/db/schema'
-import { eq } from 'drizzle-orm'
-import { enqueueNewsletter } from '../producers'
 
 async function processScheduledJob(job: Job<ScheduledJobData>): Promise<void> {
   const { db, conn } = createDb(env.DATABASE_URL)

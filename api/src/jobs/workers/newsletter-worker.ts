@@ -1,6 +1,16 @@
-import { Worker, Job } from 'bullmq'
 import { render } from '@react-email/render'
+import { Job, Worker } from 'bullmq'
+import { inArray } from 'drizzle-orm'
 
+
+import { createDb } from '@api/db'
+import { getDocumentById } from '@api/db/queries/documents'
+import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
+import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
+import { subscribers } from '@api/db/schema'
+import { env } from '@api/env-runtime'
+import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
+import { enqueueNewsletter } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
   NewsletterJobData,
@@ -8,15 +18,6 @@ import type {
   ScheduleNewsletterJob,
   SendABTestJob,
 } from '../types'
-import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
-import { createDb } from '@api/db'
-import { env } from '@api/env-runtime'
-import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
-import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
-import { getDocumentById } from '@api/db/queries/documents'
-import { enqueueNewsletter, enqueueNewsletterBatch } from '../producers'
-import { inArray } from 'drizzle-orm'
-import { subscribers } from '@api/db/schema'
 
 const getNewsletterTemplate = async () => {
   const { DynamicDocumentNewsletter } = await import('@lemma/email/emails/newsletter')

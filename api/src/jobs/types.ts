@@ -1,4 +1,3 @@
-import type { NewsletterSettings, Document, Subscriber, Campaign } from '@api/db/schema'
 
 // Email Job Types
 export type EmailJobType =

@@ -1,20 +1,20 @@
-import { Worker, Job } from 'bullmq'
 import { render } from '@react-email/render'
+import { Job, Worker } from 'bullmq'
 
+import { createDb } from '@api/db'
+import { getDocumentById } from '@api/db/queries/documents'
+import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
+import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
+import { env } from '@api/env-runtime'
+import { sendBatchEmails, sendEmail } from '@api/lib/messaging/email/mailer'
+import { enqueueNewsletterBatch } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
   EmailJobData,
+  SendConfirmationEmailJob,
   SendNewsletterJob,
   SendWelcomeEmailJob,
-  SendConfirmationEmailJob,
 } from '../types'
-import { sendEmail, sendBatchEmails } from '@api/lib/messaging/email/mailer'
-import { createDb } from '@api/db'
-import { env } from '@api/env-runtime'
-import { getConfirmedSubscribers, getSubscriberByEmail } from '@api/db/queries/subscribers'
-import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
-import { getDocumentById } from '@api/db/queries/documents'
-import { enqueueNewsletterBatch } from '../producers'
 
 // Lazy import email templates to avoid bundling issues
 const getNewsletterTemplate = async () => {
