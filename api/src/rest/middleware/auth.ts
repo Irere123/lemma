@@ -12,7 +12,7 @@ import {
 } from "@api/db/queries";
 import { apiKeyCache } from "@api/cache/api-keys-cache";
 import { userCache } from "@api/cache/user-cache";
-import { expandScopes } from "@brain/common/scopes";
+import { expandScopes } from "@lemma/common/scopes";
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
   const sessionCookie = getSessionCookie(c.req.raw.headers, {

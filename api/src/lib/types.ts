@@ -1,5 +1,5 @@
 import type { env } from "cloudflare:workers";
-import { type Scope } from "@brain/common/scopes";
+import { type Scope } from "@lemma/common/scopes";
 
 import type { Auth } from "@api/lib/auth";
 import type { DB } from "@api/db";

@@ -16,7 +16,7 @@ import {
   type ImageUploadFn,
   type EditorStoreApi,
   type DocumentStoreApi,
-} from "@brain/editor";
+} from "@lemma/editor";
 
 import {
   Tooltip,
@@ -198,5 +198,5 @@ export function BrainTitle(props: TitleProps) {
 }
 
 // Re-export types and utilities from the editor package
-export type { EditorProps, TitleProps } from "@brain/editor";
-export { slateToMarkdown, getDefaultEditorValue, ElementType, Mark } from "@brain/editor";
+export type { EditorProps, TitleProps } from "@lemma/editor";
+export { slateToMarkdown, getDefaultEditorValue, ElementType, Mark } from "@lemma/editor";

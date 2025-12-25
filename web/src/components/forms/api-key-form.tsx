@@ -8,7 +8,7 @@ import {
   type ScopePreset,
   scopePresets,
   scopesToName,
-} from "@brain/common/scopes";
+} from "@lemma/common/scopes";
 
 import { useZodForm } from "@/hooks/use-zod-form";
 import { useApiKeysModalStore } from "@/stores/api-keys-modal";

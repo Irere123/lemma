@@ -18,8 +18,8 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@brain/editor": ["./src"],
-      "@brain/editor/*": ["./src/*"]
+      "@lemma/editor": ["./src"],
+      "@lemma/editor/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],

@@ -44,14 +44,14 @@ const renderEmailTemplate = async (template: EmailTemplate, props: any) => {
   switch (template) {
     case "subscription": {
       const { default: SubscriptionEmailTemplate } = await import(
-        "@brain/email/emails/subscription"
+        "@lemma/email/emails/subscription"
       );
 
       return SubscriptionEmailTemplate(props);
     }
     case "newsletter": {
       const { default: NewsletterEmailTemplate } = await import(
-        "@brain/email/emails/newsletter"
+        "@lemma/email/emails/newsletter"
       );
       return NewsletterEmailTemplate(props);
     }

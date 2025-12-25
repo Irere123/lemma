@@ -1,7 +1,7 @@
 // Server-side tRPC utilities for TanStack Start
 // Only import this file in server-side contexts (loaders, server components)
 
-import type { AppRouter } from "@brain/api";
+import type { AppRouter } from "@lemma/api";
 import {
   HydrationBoundary,
   QueryClient,

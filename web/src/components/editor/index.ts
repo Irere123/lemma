@@ -36,4 +36,4 @@ export type {
   Callout,
   Toggle,
   Divider,
-} from "@brain/editor";
+} from "@lemma/editor";

@@ -4,7 +4,7 @@ import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { useState } from "react";
 import superjson from "superjson";
-import type { AppRouter } from "@brain/api";
+import type { AppRouter } from "@lemma/api";
 
 import { makeQueryClient } from "./query-client";
 

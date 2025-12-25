@@ -1,4 +1,4 @@
-import { createCustomEditor } from "@brain/editor";
+import { createCustomEditor } from "@lemma/editor";
 import { type Descendant, Editor } from "slate";
 
 // Map from index of the editor to slate editor
