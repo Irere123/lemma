@@ -42,7 +42,7 @@ COPY --from=installer --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=installer --chown=bun:bun /app/package.json ./package.json
 
 # Copy the application code
-COPY --from=builder --chown=bun:bun /app/out/full/api ./api
+COPY --from=builder --chown=bun:bun /app/out/full/apps/api ./api
 COPY --from=builder --chown=bun:bun /app/out/full/packages ./packages
 
 # Set environment variables
