@@ -2,13 +2,9 @@ import { createYoga } from 'graphql-yoga'
 import type { Context } from 'hono'
 
 import { isProduction } from '@api/lib/constants'
-import { logger } from '@api/lib/observability'
-import { withResolverSpan } from '@api/lib/observability/tracing'
 import { createGraphQLContext, type GraphQLContext } from './context'
 import { schema } from './schema'
 import { getSecurityPlugins } from './security'
-
-const graphqlLogger = logger.child({ component: 'graphql' })
 
 type ServerContext = { honoContext: Context }
 

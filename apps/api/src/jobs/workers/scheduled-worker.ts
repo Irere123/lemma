@@ -5,7 +5,6 @@ import { createDb } from '@api/db'
 import { documents } from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
-import { withJobSpan } from '@api/lib/observability/tracing'
 import { enqueueNewsletter } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
@@ -17,51 +16,38 @@ import type {
 const workerLogger = logger.child({ component: 'jobs', subcomponent: 'scheduled-worker' })
 
 async function processScheduledJob(job: Job<ScheduledJobData>): Promise<void> {
-  return withJobSpan(`scheduled-${job.data.type}`, job.id || 'unknown', async (span) => {
-    const { db, conn } = createDb(env.DATABASE_URL)
-    const timer = workerLogger.time(`process-scheduled-job-${job.data.type}`, {
+  const { db, conn } = createDb(env.DATABASE_URL)
+  const timer = workerLogger.time(`process-scheduled-job-${job.data.type}`, {
+    jobId: job.id,
+    jobType: job.data.type,
+  })
+
+  try {
+    switch (job.data.type) {
+      case 'publish-scheduled-document': {
+        await processDocumentPublish(job.data, db)
+        break
+      }
+
+      case 'send-scheduled-newsletter': {
+        await processScheduledNewsletter(job.data, db)
+        break
+      }
+    }
+  } catch (error) {
+    workerLogger.error('Scheduled job failed', error as Error, {
       jobId: job.id,
       jobType: job.data.type,
     })
-
-    try {
-      span.setAttribute('job.id', job.id!)
-      span.setAttribute('job.type', job.data.type)
-
-      switch (job.data.type) {
-        case 'publish-scheduled-document': {
-          await processDocumentPublish(job.data, db, span)
-          break
-        }
-
-        case 'send-scheduled-newsletter': {
-          await processScheduledNewsletter(job.data, db, span)
-          break
-        }
-      }
-    } catch (error) {
-      workerLogger.error('Scheduled job failed', error as Error, {
-        jobId: job.id,
-        jobType: job.data.type,
-      })
-      throw error
-    } finally {
-      await conn.end()
-      timer()
-    }
-  })
+    throw error
+  } finally {
+    await conn.end()
+    timer()
+  }
 }
 
-async function processDocumentPublish(
-  data: PublishScheduledDocumentJob,
-  db: any,
-  span?: any
-): Promise<void> {
+async function processDocumentPublish(data: PublishScheduledDocumentJob, db: any): Promise<void> {
   const { documentId } = data
-
-  if (span) {
-    span.setAttribute('document.id', documentId)
-  }
 
   // Update document status to PUBLISHED
   const [updatedDocument] = await db
@@ -85,16 +71,9 @@ async function processDocumentPublish(
 
 async function processScheduledNewsletter(
   data: SendScheduledNewsletterJob,
-  db: any,
-  span?: any
+  db: any
 ): Promise<void> {
   const { campaignId, documentId, writerId } = data
-
-  if (span) {
-    span.setAttribute('newsletter.campaignId', campaignId)
-    span.setAttribute('newsletter.documentId', documentId)
-    span.setAttribute('newsletter.writerId', writerId)
-  }
 
   // Enqueue the newsletter for immediate sending
   await enqueueNewsletter({

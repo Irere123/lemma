@@ -1,7 +1,6 @@
 import type { MiddlewareHandler } from 'hono'
 
 import { logger } from '@api/lib/observability'
-import { withHttpClientSpan } from '@api/lib/observability/tracing'
 
 const requestLogger = logger.child({ component: 'rest', subcomponent: 'request' })
 
@@ -14,31 +13,24 @@ export const requestLogging: MiddlewareHandler = async (c, next) => {
   const path = c.req.path
   const url = c.req.url
 
-  return withHttpClientSpan(method, url, async (span) => {
-    span.setAttribute('http.route', path)
-    span.setAttribute('http.method', method)
+  try {
+    await next()
 
-    try {
-      await next()
+    const duration = performance.now() - start
+    const statusCode = c.res.status
 
-      const duration = performance.now() - start
-      const statusCode = c.res.status
-
-      span.setAttribute('http.status_code', statusCode)
-      requestLogger.request(method, path, statusCode, duration, {
-        url,
-        userAgent: c.req.header('user-agent'),
-      })
-    } catch (error) {
-      const duration = performance.now() - start
-      span.setAttribute('http.status_code', 500)
-      requestLogger.error('Request failed', error as Error, {
-        method,
-        path,
-        url,
-        duration,
-      })
-      throw error
-    }
-  })
+    requestLogger.request(method, path, statusCode, duration, {
+      url,
+      userAgent: c.req.header('user-agent'),
+    })
+  } catch (error) {
+    const duration = performance.now() - start
+    requestLogger.error('Request failed', error as Error, {
+      method,
+      path,
+      url,
+      duration,
+    })
+    throw error
+  }
 }

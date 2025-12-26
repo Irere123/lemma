@@ -8,7 +8,6 @@ import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
 import { env } from '@api/env-runtime'
 import { sendBatchEmails, sendEmail } from '@api/lib/messaging/email/mailer'
 import { logger } from '@api/lib/observability'
-import { withJobSpan } from '@api/lib/observability/tracing'
 import { enqueueNewsletterBatch } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
@@ -20,11 +19,6 @@ import type {
 
 const workerLogger = logger.child({ component: 'jobs', subcomponent: 'email-worker' })
 
-// Lazy import email templates to avoid bundling issues
-const getNewsletterTemplate = async () => {
-  const { DynamicDocumentNewsletter } = await import('@lemma/email/emails/newsletter')
-  return DynamicDocumentNewsletter
-}
 
 const getSubscriptionTemplate = async () => {
   const { NewsletterSubscriptionEmail } = await import('@lemma/email/emails/subscription')
@@ -34,84 +28,71 @@ const getSubscriptionTemplate = async () => {
 const BATCH_SIZE = 50
 
 async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
-  return withJobSpan(`email-${job.data.type}`, job.id || 'unknown', async (span) => {
-    const { db, conn } = createDb(env.DATABASE_URL)
-    const processTimer = workerLogger.time(`process-email-job-${job.data.type}`, {
+  const { db, conn } = createDb(env.DATABASE_URL)
+  const processTimer = workerLogger.time(`process-email-job-${job.data.type}`, {
+    jobId: job.id,
+    jobType: job.data.type,
+  })
+
+  try {
+    switch (job.data.type) {
+      case 'send-single-email': {
+        const { to, subject, html, text, from, replyTo } = job.data
+        await sendEmail({
+          to,
+          subject,
+          html,
+          text,
+          from,
+          replyTo,
+          emailType: 'transactional',
+        })
+        workerLogger.info('Single email sent', { jobId: job.id, to })
+        break
+      }
+
+      case 'send-batch-email': {
+        const { emails } = job.data
+        await sendBatchEmails({
+          emails: emails.map((e) => ({
+            ...e,
+            emailType: 'marketing' as const,
+          })),
+        })
+        workerLogger.info('Batch emails sent', { jobId: job.id, count: emails.length })
+        break
+      }
+
+      case 'send-welcome-email': {
+        await processWelcomeEmail(job.data, db)
+        break
+      }
+
+      case 'send-confirmation-email': {
+        await processConfirmationEmail(job.data, db)
+        break
+      }
+
+      case 'send-newsletter': {
+        await processNewsletterSend(job.data, db)
+        break
+      }
+    }
+  } catch (error) {
+    workerLogger.error('Email job failed', error as Error, {
       jobId: job.id,
       jobType: job.data.type,
+      attempts: job.attemptsMade,
     })
-
-    try {
-      span.setAttribute('job.id', job.id!)
-      span.setAttribute('job.type', job.data.type)
-      span.setAttribute('job.attempts', job.attemptsMade)
-
-      switch (job.data.type) {
-        case 'send-single-email': {
-          const { to, subject, html, text, from, replyTo } = job.data
-          span.setAttribute('email.to', to)
-          await sendEmail({
-            to,
-            subject,
-            html,
-            text,
-            from,
-            replyTo,
-            emailType: 'transactional',
-          })
-          workerLogger.info('Single email sent', { jobId: job.id, to })
-          break
-        }
-
-        case 'send-batch-email': {
-          const { emails } = job.data
-          span.setAttribute('email.count', emails.length)
-          await sendBatchEmails({
-            emails: emails.map((e) => ({
-              ...e,
-              emailType: 'marketing' as const,
-            })),
-          })
-          workerLogger.info('Batch emails sent', { jobId: job.id, count: emails.length })
-          break
-        }
-
-        case 'send-welcome-email': {
-          await processWelcomeEmail(job.data, db, span)
-          break
-        }
-
-        case 'send-confirmation-email': {
-          await processConfirmationEmail(job.data, db, span)
-          break
-        }
-
-        case 'send-newsletter': {
-          await processNewsletterSend(job.data, db, span)
-          break
-        }
-      }
-    } catch (error) {
-      workerLogger.error('Email job failed', error as Error, {
-        jobId: job.id,
-        jobType: job.data.type,
-        attempts: job.attemptsMade,
-      })
-      throw error
-    } finally {
-      await conn.end()
-      processTimer()
-    }
-  })
+    throw error
+  } finally {
+    await conn.end()
+    processTimer()
+  }
 }
 
-async function processWelcomeEmail(data: SendWelcomeEmailJob, db: any, span?: any): Promise<void> {
+async function processWelcomeEmail(data: SendWelcomeEmailJob, db: any): Promise<void> {
   const { email, token, writerSettings } = data
-
-  if (span) {
-    span.setAttribute('email.to', email)
-    span.setAttribute('email.writerId', data.writerId)
-  }
 
   const SubscriptionTemplate = await getSubscriptionTemplate()
   const html = await render(
@@ -140,17 +121,8 @@ async function processWelcomeEmail(data: SendWelcomeEmailJob, db: any, span?: an
   workerLogger.info('Welcome email sent', { email, writerId: data.writerId })
 }
 
-async function processConfirmationEmail(
-  data: SendConfirmationEmailJob,
-  db: any,
-  span?: any
-): Promise<void> {
+async function processConfirmationEmail(data: SendConfirmationEmailJob, db: any): Promise<void> {
   const { email, token, writerSettings } = data
-
-  if (span) {
-    span.setAttribute('email.to', email)
-    span.setAttribute('email.writerId', data.writerId)
-  }
 
   const SubscriptionTemplate = await getSubscriptionTemplate()
   const html = await render(
@@ -179,14 +151,8 @@ async function processConfirmationEmail(
   workerLogger.info('Confirmation email sent', { email, writerId: data.writerId })
 }
 
-async function processNewsletterSend(data: SendNewsletterJob, db: any, span?: any): Promise<void> {
+async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<void> {
   const { documentId, writerId, campaignId, subscriberIds } = data
-
-  if (span) {
-    span.setAttribute('newsletter.campaignId', campaignId)
-    span.setAttribute('newsletter.documentId', documentId)
-    span.setAttribute('newsletter.writerId', writerId)
-  }
 
   // Get document
   const document = await getDocumentById(db, documentId)
@@ -220,10 +186,6 @@ async function processNewsletterSend(data: SendNewsletterJob, db: any, span?: an
   if (subscribers.length === 0) {
     workerLogger.warn('No subscribers to send newsletter to', { campaignId, writerId })
     return
-  }
-
-  if (span) {
-    span.setAttribute('newsletter.subscriberCount', subscribers.length)
   }
 
   // Split into batches and enqueue batch jobs

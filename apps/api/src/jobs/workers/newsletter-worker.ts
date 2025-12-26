@@ -9,7 +9,6 @@ import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
 import { subscribers } from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
-import { withJobSpan } from '@api/lib/observability/tracing'
 import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
 import { enqueueNewsletter } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
@@ -28,57 +27,44 @@ const getNewsletterTemplate = async () => {
 }
 
 async function processNewsletterJob(job: Job<NewsletterJobData>): Promise<void> {
-  return withJobSpan(`newsletter-${job.data.type}`, job.id || 'unknown', async (span) => {
-    const { db, conn } = createDb(env.DATABASE_URL)
-    const timer = workerLogger.time(`process-newsletter-job-${job.data.type}`, {
+  const { db, conn } = createDb(env.DATABASE_URL)
+  const timer = workerLogger.time(`process-newsletter-job-${job.data.type}`, {
+    jobId: job.id,
+    jobType: job.data.type,
+  })
+
+  try {
+    switch (job.data.type) {
+      case 'process-newsletter-batch': {
+        await processBatch(job.data, db)
+        break
+      }
+
+      case 'schedule-newsletter': {
+        await processScheduledNewsletter(job.data, db)
+        break
+      }
+
+      case 'send-ab-test': {
+        await processABTest(job.data, db)
+        break
+      }
+    }
+  } catch (error) {
+    workerLogger.error('Newsletter job failed', error as Error, {
       jobId: job.id,
       jobType: job.data.type,
+      attempts: job.attemptsMade,
     })
-
-    try {
-      span.setAttribute('job.id', job.id!)
-      span.setAttribute('job.type', job.data.type)
-      span.setAttribute('job.attempts', job.attemptsMade)
-
-      switch (job.data.type) {
-        case 'process-newsletter-batch': {
-          await processBatch(job.data, db, span)
-          break
-        }
-
-        case 'schedule-newsletter': {
-          await processScheduledNewsletter(job.data, db, span)
-          break
-        }
-
-        case 'send-ab-test': {
-          await processABTest(job.data, db, span)
-          break
-        }
-      }
-    } catch (error) {
-      workerLogger.error('Newsletter job failed', error as Error, {
-        jobId: job.id,
-        jobType: job.data.type,
-        attempts: job.attemptsMade,
-      })
-      throw error
-    } finally {
-      await conn.end()
-      timer()
-    }
-  })
+    throw error
+  } finally {
+    await conn.end()
+    timer()
+  }
 }
 
-async function processBatch(data: ProcessNewsletterBatchJob, db: any, span?: any): Promise<void> {
+async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<void> {
   const { campaignId, documentId, writerId, subscriberBatch, batchIndex, totalBatches } = data
-
-  if (span) {
-    span.setAttribute('newsletter.campaignId', campaignId)
-    span.setAttribute('newsletter.batchIndex', batchIndex)
-    span.setAttribute('newsletter.totalBatches', totalBatches)
-    span.setAttribute('newsletter.subscriberCount', subscriberBatch.length)
-  }
 
   workerLogger.info('Processing newsletter batch', {
     campaignId,
@@ -166,17 +152,8 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any, span?: any
   })
 }
 
-async function processScheduledNewsletter(
-  data: ScheduleNewsletterJob,
-  db: any,
-  span?: any
-): Promise<void> {
+async function processScheduledNewsletter(data: ScheduleNewsletterJob, db: any): Promise<void> {
   const { campaignId, documentId, writerId, scheduledAt } = data
-
-  if (span) {
-    span.setAttribute('newsletter.campaignId', campaignId)
-    span.setAttribute('newsletter.scheduledAt', scheduledAt)
-  }
 
   const scheduledDate = new Date(scheduledAt)
   const now = new Date()
@@ -196,14 +173,8 @@ async function processScheduledNewsletter(
   }
 }
 
-async function processABTest(data: SendABTestJob, db: any, span?: any): Promise<void> {
+async function processABTest(data: SendABTestJob, db: any): Promise<void> {
   const { campaignId, variants, writerId, testDurationHours } = data
-
-  if (span) {
-    span.setAttribute('abtest.campaignId', campaignId)
-    span.setAttribute('abtest.variantCount', variants.length)
-    span.setAttribute('abtest.durationHours', testDurationHours)
-  }
 
   // Get all confirmed subscribers
   const allSubscribers = await getConfirmedSubscribers(db, writerId)

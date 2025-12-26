@@ -11,7 +11,6 @@ import { isValidApiKeyFormat } from '@api/db/utils/api-keys'
 import { createAuth } from '@api/lib/auth'
 import { hash } from '@api/lib/encryption'
 import { logger } from '@api/lib/observability'
-import { withSpan } from '@api/lib/observability/tracing'
 import type { Session } from '@api/lib/types'
 
 const graphqlLogger = logger.child({ component: 'graphql', subcomponent: 'context' })
@@ -24,119 +23,107 @@ export type GraphQLContext = {
 }
 
 export async function createGraphQLContext(honoContext: Context): Promise<GraphQLContext> {
-  return withSpan({ name: 'graphql.create-context', op: 'graphql' }, async (span) => {
-    const timer = graphqlLogger.time('create-graphql-context')
-    const db = honoContext.get('db') as DB
-    const request = honoContext.req.raw
+  const timer = graphqlLogger.time('create-graphql-context')
+  const db = honoContext.get('db') as DB
+  const request = honoContext.req.raw
 
-    let session: Session | null = null
-    let scopes: string[] = []
+  let session: Session | null = null
+  let scopes: string[] = []
 
-    try {
-      // Try session cookie authentication
-      const sessionCookie = getSessionCookie(request.headers, {
-        cookiePrefix: 'lemma',
+  try {
+    // Try session cookie authentication
+    const sessionCookie = getSessionCookie(request.headers, {
+      cookiePrefix: 'lemma',
+    })
+
+    if (sessionCookie) {
+      const auth = createAuth()
+      const authSession = await auth.api.getSession({
+        headers: request.headers,
       })
 
-      if (sessionCookie) {
-        span.setAttribute('auth.method', 'session-cookie')
-        const auth = createAuth()
-        const authSession = await auth.api.getSession({
-          headers: request.headers,
+      if (authSession && authSession.user) {
+        session = authSession
+        scopes = expandScopes(['apis.all'])
+        graphqlLogger.debug('GraphQL context: session authentication', {
+          userId: session.user.id,
         })
-
-        if (authSession && authSession.user) {
-          session = authSession
-          scopes = expandScopes(['apis.all'])
-          span.setAttribute('auth.userId', session.user.id)
-          graphqlLogger.debug('GraphQL context: session authentication', {
-            userId: session.user.id,
-          })
-        }
       }
+    }
 
-      // Try Bearer token authentication
-      if (!session) {
-        const authHeader = request.headers.get('Authorization')
+    // Try Bearer token authentication
+    if (!session) {
+      const authHeader = request.headers.get('Authorization')
 
-        if (authHeader) {
-          const [scheme, token] = authHeader.split(' ')
+      if (authHeader) {
+        const [scheme, token] = authHeader.split(' ')
 
-          if (scheme === 'Bearer' && token && isValidApiKeyFormat(token)) {
-            span.setAttribute('auth.method', 'api-key')
-            const keyHash = hash(token)
+        if (scheme === 'Bearer' && token && isValidApiKeyFormat(token)) {
+          const keyHash = hash(token)
 
-            // Check cache first for API key
-            let apiKey = await apiKeyCache.get(keyHash)
+          // Check cache first for API key
+          let apiKey = await apiKeyCache.get(keyHash)
 
-            if (!apiKey) {
-              apiKey = await getApiKeyByToken(db, keyHash)
-              if (apiKey) {
-                await apiKeyCache.set(keyHash, apiKey)
+          if (!apiKey) {
+            apiKey = await getApiKeyByToken(db, keyHash)
+            if (apiKey) {
+              await apiKeyCache.set(keyHash, apiKey)
+            }
+          }
+
+          if (apiKey) {
+            // Check cache first for user
+            let user = await userCache.get(apiKey.userId)
+
+            if (!user) {
+              user = await getUserById(db, apiKey.userId)
+              if (user) {
+                await userCache.set(apiKey.userId, user)
               }
             }
 
-            if (apiKey) {
-              // Check cache first for user
-              let user = await userCache.get(apiKey.userId)
-
-              if (!user) {
-                user = await getUserById(db, apiKey.userId)
-                if (user) {
-                  await userCache.set(apiKey.userId, user)
-                }
+            if (user) {
+              session = {
+                user: {
+                  id: user.id,
+                  email: user.email,
+                  name: user.name,
+                  image: user.image,
+                  emailVerified: user.emailVerified,
+                  createdAt: user.createdAt,
+                  updatedAt: user.updatedAt,
+                },
+                session: {} as any,
               }
+              scopes = expandScopes(apiKey.scopes ?? [])
 
-              if (user) {
-                session = {
-                  user: {
-                    id: user.id,
-                    email: user.email,
-                    name: user.name,
-                    image: user.image,
-                    emailVerified: user.emailVerified,
-                    createdAt: user.createdAt,
-                    updatedAt: user.updatedAt,
-                  },
-                  session: {} as any,
-                }
-                scopes = expandScopes(apiKey.scopes ?? [])
-                span.setAttribute('auth.userId', user.id)
-                span.setAttribute('auth.scopeCount', scopes.length)
+              // Update last used at (fire and forget)
+              updatedApiKeyLastUsedAt(db, apiKey.id)
 
-                // Update last used at (fire and forget)
-                updatedApiKeyLastUsedAt(db, apiKey.id)
-
-                graphqlLogger.debug('GraphQL context: API key authentication', {
-                  userId: user.id,
-                  scopeCount: scopes.length,
-                })
-              }
+              graphqlLogger.debug('GraphQL context: API key authentication', {
+                userId: user.id,
+                scopeCount: scopes.length,
+              })
             }
           }
         }
       }
-
-      const context = {
-        db,
-        session,
-        scopes,
-        isAuthenticated: session !== null,
-      }
-
-      span.setAttribute('graphql.authenticated', context.isAuthenticated)
-      if (context.isAuthenticated) {
-        span.setAttribute('graphql.scopeCount', scopes.length)
-      }
-
-      return context
-    } catch (error) {
-      graphqlLogger.error('Error creating GraphQL context', error as Error)
-      throw error
-    } finally {
-      timer()
     }
-  })
+
+    const context = {
+      db,
+      session,
+      scopes,
+      isAuthenticated: session !== null,
+    }
+
+    return context
+  } catch (error) {
+    graphqlLogger.error('Error creating GraphQL context', error as Error)
+    throw error
+  } finally {
+    timer()
+  }
 }
 
 export function requireAuth(

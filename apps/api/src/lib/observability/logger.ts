@@ -1,4 +1,3 @@
-import { context, trace } from '@opentelemetry/api'
 import * as Sentry from '@sentry/node'
 import winston from 'winston'
 
@@ -15,8 +14,6 @@ export interface LogEntry {
   message: string
   timestamp: string
   service: string
-  traceId?: string
-  spanId?: string
   context?: Record<string, unknown>
   error?: {
     name: string
@@ -45,29 +42,6 @@ const defaultConfig: LoggerConfig = {
 }
 
 /**
- * Get current trace context from OpenTelemetry
- */
-function getTraceContext(): { traceId?: string; spanId?: string } {
-  const activeSpan = trace.getSpan(context.active())
-  if (!activeSpan) return {}
-  const spanContext = activeSpan.spanContext()
-  return {
-    traceId: spanContext.traceId,
-    spanId: spanContext.spanId,
-  }
-}
-
-/**
- * Custom format to add OpenTelemetry trace context
- */
-const traceContextFormat = winston.format((info) => {
-  const traceContext = getTraceContext()
-  if (traceContext.traceId) info.traceId = traceContext.traceId
-  if (traceContext.spanId) info.spanId = traceContext.spanId
-  return info
-})()
-
-/**
  * Create Winston logger instance with proper transports
  */
 function createWinstonLogger(config: LoggerConfig): winston.Logger {
@@ -77,11 +51,7 @@ function createWinstonLogger(config: LoggerConfig): winston.Logger {
     if (config.enableJson) {
       transports.push(
         new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            traceContextFormat,
-            winston.format.json()
-          ),
+          format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
         })
       )
     } else {
@@ -89,19 +59,17 @@ function createWinstonLogger(config: LoggerConfig): winston.Logger {
         new winston.transports.Console({
           format: winston.format.combine(
             winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-            traceContextFormat,
             winston.format.colorize(),
             winston.format.printf((info) => {
               const timestamp = info.timestamp as string
               const time = timestamp.split('T')[1]?.slice(0, 12) || timestamp.split(' ')[1] || ''
-              const traceInfo = info.traceId ? ` [${(info.traceId as string).slice(0, 8)}]` : ''
               const contextStr = info.context ? ` ${JSON.stringify(info.context)}` : ''
               const errorStr = info.error
                 ? ` | ${(info.error as { name: string; message: string }).name}: ${
                     (info.error as { name: string; message: string }).message
                   }`
                 : ''
-              return `${time} ${info.level} [${config.service}]${traceInfo} ${info.message}${contextStr}${errorStr}`
+              return `${time} ${info.level} [${config.service}] ${info.message}${contextStr}${errorStr}`
             })
           ),
         })
@@ -114,7 +82,6 @@ function createWinstonLogger(config: LoggerConfig): winston.Logger {
     level: config.minLevel,
     format: winston.format.combine(
       winston.format.timestamp(),
-      traceContextFormat,
       winston.format.errors({ stack: true }),
       winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'service'] })
     ),
