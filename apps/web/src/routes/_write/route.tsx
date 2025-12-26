@@ -19,8 +19,8 @@ function WriteLayout() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center">
-        <div className="animate-pulse text-zinc-400">Loading...</div>
+      <div className='min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center'>
+        <div className='animate-pulse text-zinc-400'>Loading...</div>
       </div>
     )
   }

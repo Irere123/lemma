@@ -1,11 +1,6 @@
 import { EditorContent, useEditor } from '@tiptap/react'
 import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core'
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  type ForwardedRef,
-} from 'react'
+import { forwardRef, useEffect, useImperativeHandle, type ForwardedRef } from 'react'
 import { clsx } from 'clsx'
 
 import { createExtensions } from '../extensions'
@@ -109,20 +104,22 @@ function EditorComponent(
             const file = item.getAsFile()
             if (!file) return false
 
-            onImageUpload(file).then((result) => {
-              if (result) {
-                const node = view.state.schema.nodes.imageBlock?.create({
-                  src: result.url,
-                  alt: result.filename,
-                })
-                if (node) {
-                  const transaction = view.state.tr.replaceSelectionWith(node)
-                  view.dispatch(transaction)
+            onImageUpload(file)
+              .then((result) => {
+                if (result) {
+                  const node = view.state.schema.nodes.imageBlock?.create({
+                    src: result.url,
+                    alt: result.filename,
+                  })
+                  if (node) {
+                    const transaction = view.state.tr.replaceSelectionWith(node)
+                    view.dispatch(transaction)
+                  }
                 }
-              }
-            }).catch((error) => {
-              console.error('Image upload failed:', error)
-            })
+              })
+              .catch((error) => {
+                console.error('Image upload failed:', error)
+              })
 
             return true
           }

@@ -108,7 +108,7 @@ export function BrainEditor({
         onUpdate={handleUpdate}
         onFocus={handleFocus}
         onImageUpload={uploadImage}
-        className="min-h-[200px]"
+        className='min-h-[200px]'
       />
     </div>
   )
@@ -143,11 +143,7 @@ export function BrainReadOnlyEditor({ content, className }: BrainReadOnlyEditorP
 
   return (
     <div className={`brain-editor read-only ${className || ''}`}>
-      <Editor
-        content={parsedContent}
-        editable={false}
-        className="min-h-0"
-      />
+      <Editor content={parsedContent} editable={false} className='min-h-0' />
     </div>
   )
 }

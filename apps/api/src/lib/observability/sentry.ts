@@ -50,7 +50,7 @@ export function initializeSentry(config: Partial<SentryConfig> = {}): typeof Sen
     debug: mergedConfig.debug,
 
     // Performance monitoring
-      tracesSampleRate: mergedConfig.tracesSampleRate,
+    tracesSampleRate: mergedConfig.tracesSampleRate,
 
     // Integrations
     integrations: [

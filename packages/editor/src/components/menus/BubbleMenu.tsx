@@ -135,12 +135,12 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
         return true
       }}
     >
-      <div className="bubble-menu">
+      <div className='bubble-menu'>
         {isLinkMode ? (
-          <div className="bubble-menu-link-input">
+          <div className='bubble-menu-link-input'>
             <input
-              type="url"
-              placeholder="Enter URL..."
+              type='url'
+              placeholder='Enter URL...'
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               onKeyDown={(e) => {
@@ -154,21 +154,21 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
                 }
               }}
               autoFocus
-              className="bubble-menu-link-field"
+              className='bubble-menu-link-field'
             />
             <button
-              type="button"
+              type='button'
               onClick={setLink}
-              className="bubble-menu-link-button"
-              title="Apply link"
+              className='bubble-menu-link-button'
+              title='Apply link'
             >
               <IconCheck size={16} />
             </button>
             <button
-              type="button"
+              type='button'
               onClick={cancelLink}
-              className="bubble-menu-link-button"
-              title="Cancel"
+              className='bubble-menu-link-button'
+              title='Cancel'
             >
               <IconX size={16} />
             </button>
@@ -177,7 +177,7 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
           buttons.map((button) => (
             <button
               key={button.id}
-              type="button"
+              type='button'
               onClick={button.command}
               className={clsx(
                 'bubble-menu-button',

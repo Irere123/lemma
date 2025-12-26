@@ -12,24 +12,24 @@ export function ToggleView({ node, updateAttributes }: NodeViewProps) {
 
   return (
     <NodeViewWrapper className={clsx('toggle-wrapper', isOpen && 'toggle-open')}>
-      <div className="toggle-header">
+      <div className='toggle-header'>
         <button
-          type="button"
+          type='button'
           onClick={toggleOpen}
-          className="toggle-button"
+          className='toggle-button'
           contentEditable={false}
           aria-expanded={isOpen}
           title={isOpen ? 'Collapse' : 'Expand'}
         >
           {isOpen ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
         </button>
-        <div className="toggle-summary" data-placeholder="Toggle heading...">
+        <div className='toggle-summary' data-placeholder='Toggle heading...'>
           {/* The first child should be the summary/heading text */}
         </div>
       </div>
       {isOpen && (
-        <div className="toggle-content">
-          <NodeViewContent className="toggle-inner" />
+        <div className='toggle-content'>
+          <NodeViewContent className='toggle-inner' />
         </div>
       )}
     </NodeViewWrapper>

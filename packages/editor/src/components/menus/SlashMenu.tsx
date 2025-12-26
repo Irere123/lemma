@@ -2,13 +2,7 @@ import { Extension, type Editor } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion, { type SuggestionOptions } from '@tiptap/suggestion'
 import tippy, { type Instance as TippyInstance } from 'tippy.js'
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useState,
-} from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react'
 import { clsx } from 'clsx'
 
 import { slashMenuItems, filterSlashMenuItems, type SlashMenuItem } from './items'
@@ -75,19 +69,15 @@ export const SlashMenuList = forwardRef<SlashMenuRef, SlashMenuListProps>(
     }))
 
     if (items.length === 0) {
-      return (
-        <div className="slash-menu-empty">
-          No results
-        </div>
-      )
+      return <div className='slash-menu-empty'>No results</div>
     }
 
     return (
-      <div className="slash-menu">
+      <div className='slash-menu'>
         {items.map((item, index) => (
           <button
             key={item.id}
-            type="button"
+            type='button'
             className={clsx(
               'slash-menu-item',
               index === selectedIndex && 'slash-menu-item-selected'
@@ -95,10 +85,10 @@ export const SlashMenuList = forwardRef<SlashMenuRef, SlashMenuListProps>(
             onClick={() => selectItem(index)}
             onMouseEnter={() => setSelectedIndex(index)}
           >
-            <div className="slash-menu-item-icon">{item.icon}</div>
-            <div className="slash-menu-item-content">
-              <div className="slash-menu-item-title">{item.title}</div>
-              <div className="slash-menu-item-description">{item.description}</div>
+            <div className='slash-menu-item-icon'>{item.icon}</div>
+            <div className='slash-menu-item-content'>
+              <div className='slash-menu-item-title'>{item.title}</div>
+              <div className='slash-menu-item-description'>{item.description}</div>
             </div>
           </button>
         ))}

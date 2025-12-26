@@ -533,3 +533,152 @@ export const apiKeys = pgTable(
     unique('api_keys_key_unique').on(table.keyHash),
   ]
 )
+
+// ============================================================================
+// OAUTH
+// ============================================================================
+
+// OAuth applications
+export const oauthApplications = pgTable(
+  'oauth_applications',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull().unique(),
+    description: text('description'),
+    overview: text('overview'),
+    logoUrl: text('logo_url'),
+    website: text('website'),
+    installUrl: text('install_url'),
+    screenshots: text('screenshots').array().notNull().default(sql`'{}'::text[]`),
+    redirectUris: text('redirect_uris').array().notNull().default(sql`'{}'::text[]`),
+    clientId: text('client_id').notNull(),
+    clientSecret: text('client_secret').notNull(),
+    scopes: text('scopes').array().notNull().default(sql`'{}'::text[]`),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+    isPublic: boolean('is_public').default(false),
+    active: boolean('active').default(true),
+    status: text('status', { enum: ['draft', 'pending', 'approved', 'rejected'] }).default('draft'),
+  },
+  (table) => [
+    index('oauth_applications_client_id_idx').using(
+      'btree',
+      table.clientId.asc().nullsLast().op('text_ops')
+    ),
+    index('oauth_applications_slug_idx').using(
+      'btree',
+      table.slug.asc().nullsLast().op('text_ops')
+    ),
+  ]
+)
+
+// OAuth Authorization codes
+export const oauthAuthorizationCodes = pgTable(
+  'oauth_authorization_codes',
+  {
+    id: text('id').primaryKey(),
+    code: text('code').notNull().unique(),
+    applicationId: text('application_id').notNull(),
+    userId: text('user_id').notNull(),
+    scopes: text('scopes').array().notNull(),
+    redirectUri: text('redirect_uri').notNull(),
+    expiresAt: timestamp('expires_at', {
+      withTimezone: true,
+      mode: 'string',
+    }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+    used: boolean('used').default(false),
+    codeChallenge: text('code_challenge'),
+    codeChallengeMethod: text('code_challenge_method'),
+  },
+  (table) => [
+    index('oauth_authorization_codes_code_idx').using(
+      'btree',
+      table.code.asc().nullsLast().op('text_ops')
+    ),
+    index('oauth_authorization_codes_application_id_idx').using(
+      'btree',
+      table.applicationId.asc().nullsLast().op('text_ops')
+    ),
+    index('oauth_authorization_codes_user_id_idx').using(
+      'btree',
+      table.userId.asc().nullsLast().op('text_ops')
+    ),
+    foreignKey({
+      columns: [table.applicationId],
+      foreignColumns: [oauthApplications.id],
+      name: 'oauth_authorization_codes_application_id_fkey',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: 'oauth_authorization_codes_user_id_fkey',
+    }).onDelete('cascade'),
+  ]
+)
+
+// OAuth Access Tokens
+export const oauthAccessTokens = pgTable(
+  'oauth_access_tokens',
+  {
+    id: text('id').notNull().primaryKey(),
+    token: text('token').notNull().unique(),
+    refreshToken: text('refresh_token').unique(),
+    applicationId: text('application_id').notNull(),
+    userId: text('user_id').notNull(),
+    scopes: text('scopes').array().notNull(),
+    expiresAt: timestamp('expires_at', {
+      withTimezone: true,
+      mode: 'string',
+    }).notNull(),
+    refreshTokenExpiresAt: timestamp('refresh_token_expires_at', {
+      withTimezone: true,
+      mode: 'string',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+    lastUsedAt: timestamp('last_used_at', {
+      withTimezone: true,
+      mode: 'string',
+    }),
+    revoked: boolean('revoked').default(false),
+    revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'string' }),
+  },
+  (table) => [
+    index('oauth_access_tokens_token_idx').using(
+      'btree',
+      table.token.asc().nullsLast().op('text_ops')
+    ),
+    index('oauth_access_tokens_refresh_token_idx').using(
+      'btree',
+      table.refreshToken.asc().nullsLast().op('text_ops')
+    ),
+    index('oauth_access_tokens_application_id_idx').using(
+      'btree',
+      table.applicationId.asc().nullsLast().op('text_ops')
+    ),
+    index('oauth_access_tokens_user_id_idx').using(
+      'btree',
+      table.userId.asc().nullsLast().op('text_ops')
+    ),
+    foreignKey({
+      columns: [table.applicationId],
+      foreignColumns: [oauthApplications.id],
+      name: 'oauth_access_tokens_application_id_fkey',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: 'oauth_access_tokens_user_id_fkey',
+    }).onDelete('cascade'),
+  ]
+)

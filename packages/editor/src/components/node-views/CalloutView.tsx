@@ -44,18 +44,18 @@ export function CalloutView({ node, updateAttributes }: NodeViewProps) {
       className={clsx('callout-wrapper', variantColors[variant])}
       data-variant={variant}
     >
-      <div className="callout-container">
+      <div className='callout-container'>
         <button
-          type="button"
-          className="callout-icon-button"
+          type='button'
+          className='callout-icon-button'
           onClick={cycleVariant}
           contentEditable={false}
-          title="Click to change callout type"
+          title='Click to change callout type'
         >
           {variantIcons[variant]}
         </button>
-        <div className="callout-content">
-          <NodeViewContent className="callout-text" />
+        <div className='callout-content'>
+          <NodeViewContent className='callout-text' />
         </div>
       </div>
     </NodeViewWrapper>

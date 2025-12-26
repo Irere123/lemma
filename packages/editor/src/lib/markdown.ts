@@ -33,9 +33,7 @@ function serializeNode(node: JSONContent, depth = 0): string {
     }
 
     case 'bulletList':
-      return (node.content || [])
-        .map((item) => serializeListItem(item, '- ', depth))
-        .join('\n')
+      return (node.content || []).map((item) => serializeListItem(item, '- ', depth)).join('\n')
 
     case 'orderedList':
       return (node.content || [])
@@ -113,7 +111,9 @@ function serializeListItem(item: JSONContent, prefix: string, depth: number): st
   const indent = '  '.repeat(depth)
   const content = (item.content || []).map(serializeNode).join('\n')
   const lines = content.split('\n')
-  return lines.map((line, i) => (i === 0 ? `${indent}${prefix}${line}` : `${indent}  ${line}`)).join('\n')
+  return lines
+    .map((line, i) => (i === 0 ? `${indent}${prefix}${line}` : `${indent}  ${line}`))
+    .join('\n')
 }
 
 function serializeInlineContent(content?: JSONContent[]): string {

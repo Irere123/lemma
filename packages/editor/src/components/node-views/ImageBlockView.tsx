@@ -11,12 +11,7 @@ import {
 
 type Alignment = 'left' | 'center' | 'right'
 
-export function ImageBlockView({
-  node,
-  updateAttributes,
-  deleteNode,
-  selected,
-}: NodeViewProps) {
+export function ImageBlockView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
   const [isResizing, setIsResizing] = useState(false)
   const [showControls, setShowControls] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
@@ -26,34 +21,39 @@ export function ImageBlockView({
 
   const { src, alt, title, width, alignment = 'center' } = node.attrs
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, direction: 'left' | 'right') => {
-    e.preventDefault()
-    setIsResizing(true)
-    startXRef.current = e.clientX
-    startWidthRef.current = imageRef.current?.offsetWidth || 0
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent, direction: 'left' | 'right') => {
+      e.preventDefault()
+      setIsResizing(true)
+      startXRef.current = e.clientX
+      startWidthRef.current = imageRef.current?.offsetWidth || 0
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const delta = direction === 'right'
-        ? e.clientX - startXRef.current
-        : startXRef.current - e.clientX
+      const handleMouseMove = (e: MouseEvent) => {
+        const delta =
+          direction === 'right' ? e.clientX - startXRef.current : startXRef.current - e.clientX
 
-      const newWidth = Math.max(100, startWidthRef.current + delta * 2)
-      updateAttributes({ width: Math.round(newWidth) })
-    }
+        const newWidth = Math.max(100, startWidthRef.current + delta * 2)
+        updateAttributes({ width: Math.round(newWidth) })
+      }
 
-    const handleMouseUp = () => {
-      setIsResizing(false)
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
+      const handleMouseUp = () => {
+        setIsResizing(false)
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [updateAttributes])
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    },
+    [updateAttributes]
+  )
 
-  const setAlignment = useCallback((newAlignment: Alignment) => {
-    updateAttributes({ alignment: newAlignment })
-  }, [updateAttributes])
+  const setAlignment = useCallback(
+    (newAlignment: Alignment) => {
+      updateAttributes({ alignment: newAlignment })
+    },
+    [updateAttributes]
+  )
 
   const downloadImage = useCallback(async () => {
     try {
@@ -85,7 +85,7 @@ export function ImageBlockView({
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => !isResizing && setShowControls(false)}
     >
-      <div className="image-block-container" style={{ width: width ? `${width}px` : 'auto' }}>
+      <div className='image-block-container' style={{ width: width ? `${width}px` : 'auto' }}>
         {/* Resize handles */}
         <div
           className={clsx('image-resize-handle image-resize-left', showControls && 'visible')}
@@ -104,51 +104,51 @@ export function ImageBlockView({
           src={src}
           alt={alt || ''}
           title={title || ''}
-          className="image-block-img"
+          className='image-block-img'
           draggable={false}
         />
 
         {/* Controls toolbar */}
         {showControls && (
-          <div className="image-block-toolbar" contentEditable={false}>
+          <div className='image-block-toolbar' contentEditable={false}>
             <button
-              type="button"
+              type='button'
               onClick={() => setAlignment('left')}
               className={clsx('image-toolbar-button', alignment === 'left' && 'active')}
-              title="Align left"
+              title='Align left'
             >
               <IconAlignLeft size={16} />
             </button>
             <button
-              type="button"
+              type='button'
               onClick={() => setAlignment('center')}
               className={clsx('image-toolbar-button', alignment === 'center' && 'active')}
-              title="Align center"
+              title='Align center'
             >
               <IconAlignCenter size={16} />
             </button>
             <button
-              type="button"
+              type='button'
               onClick={() => setAlignment('right')}
               className={clsx('image-toolbar-button', alignment === 'right' && 'active')}
-              title="Align right"
+              title='Align right'
             >
               <IconAlignRight size={16} />
             </button>
-            <div className="image-toolbar-divider" />
+            <div className='image-toolbar-divider' />
             <button
-              type="button"
+              type='button'
               onClick={downloadImage}
-              className="image-toolbar-button"
-              title="Download image"
+              className='image-toolbar-button'
+              title='Download image'
             >
               <IconDownload size={16} />
             </button>
             <button
-              type="button"
+              type='button'
               onClick={deleteNode}
-              className="image-toolbar-button image-toolbar-delete"
-              title="Delete image"
+              className='image-toolbar-button image-toolbar-delete'
+              title='Delete image'
             >
               <IconTrash size={16} />
             </button>
@@ -157,7 +157,7 @@ export function ImageBlockView({
 
         {/* Caption */}
         {title && (
-          <figcaption className="image-block-caption" contentEditable={false}>
+          <figcaption className='image-block-caption' contentEditable={false}>
             {title}
           </figcaption>
         )}

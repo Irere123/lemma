@@ -72,7 +72,7 @@ export function createExtensions(options: ExtensionOptions = {}) {
     Callout,
     Toggle,
     ImageBlock,
-   
+
     // Placeholder
     Placeholder.configure({
       placeholder: options.placeholder || "Start writing, or press '/' for commands...",
@@ -102,4 +102,3 @@ export function createExtensions(options: ExtensionOptions = {}) {
 // Re-export individual extensions for customization
 export { Callout, ImageBlock, Toggle } from './nodes'
 export type { CalloutOptions, ImageBlockOptions, ToggleOptions } from './nodes'
-

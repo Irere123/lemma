@@ -19,7 +19,6 @@ import type {
 
 const workerLogger = logger.child({ component: 'jobs', subcomponent: 'email-worker' })
 
-
 const getSubscriptionTemplate = async () => {
   const { NewsletterSubscriptionEmail } = await import('@lemma/email/emails/subscription')
   return NewsletterSubscriptionEmail

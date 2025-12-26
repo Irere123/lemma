@@ -53,27 +53,26 @@ export function CodeBlockView({ node, updateAttributes }: NodeViewProps) {
     [updateAttributes]
   )
 
-  const currentLanguageLabel =
-    LANGUAGES.find((l) => l.value === language)?.label || language
+  const currentLanguageLabel = LANGUAGES.find((l) => l.value === language)?.label || language
 
   return (
-    <NodeViewWrapper className="code-block-wrapper">
-      <div className="code-block-header" contentEditable={false}>
-        <div className="code-block-language-select">
+    <NodeViewWrapper className='code-block-wrapper'>
+      <div className='code-block-header' contentEditable={false}>
+        <div className='code-block-language-select'>
           <button
-            type="button"
+            type='button'
             onClick={() => setShowLanguageSelect(!showLanguageSelect)}
-            className="code-block-language-button"
+            className='code-block-language-button'
           >
             {currentLanguageLabel}
             <IconChevronDown size={14} />
           </button>
           {showLanguageSelect && (
-            <div className="code-block-language-dropdown">
+            <div className='code-block-language-dropdown'>
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.value}
-                  type="button"
+                  type='button'
                   onClick={() => selectLanguage(lang.value)}
                   className={clsx(
                     'code-block-language-option',
@@ -87,16 +86,16 @@ export function CodeBlockView({ node, updateAttributes }: NodeViewProps) {
           )}
         </div>
         <button
-          type="button"
+          type='button'
           onClick={copyCode}
-          className="code-block-copy-button"
-          title="Copy code"
+          className='code-block-copy-button'
+          title='Copy code'
         >
           {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
         </button>
       </div>
-      <pre className="code-block-pre">
-        <NodeViewContent as="code" className={`language-${language}`} />
+      <pre className='code-block-pre'>
+        <NodeViewContent as='code' className={`language-${language}`} />
       </pre>
     </NodeViewWrapper>
   )
