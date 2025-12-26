@@ -75,24 +75,6 @@ export function hasEmailService(): boolean {
 
 export async function sendEmail(options: EmailOptions): Promise<SendEmailResult> {
   try {
-    if (options.emailType !== 'transactional') {
-      // const unsubscribeType = options.emailType as 'marketing' | 'updates' | 'notifications'
-      // const primaryEmail = Array.isArray(options.to) ? options.to[0] : options.to
-      // const hasUnsubscribed = await isUnsubscribed(primaryEmail, unsubscribeType)
-      // if (hasUnsubscribed) {
-      //   console.info('Email not sent (user unsubscribed):', {
-      //     to: options.to,
-      //     subject: options.subject,
-      //     emailType: options.emailType,
-      //   })
-      //   return {
-      //     success: true,
-      //     message: 'Email skipped (user unsubscribed)',
-      //     data: { id: 'skipped-unsubscribed' },
-      //   }
-      // }
-    }
-
     const processedData = await processEmailData(options)
 
     if (resend) {
@@ -251,28 +233,9 @@ async function sendBatchWithResend(emails: EmailOptions[]): Promise<BatchSendEma
   if (!resend) throw new Error('Resend not configured')
 
   const results: SendEmailResult[] = []
-  const skippedIndices: number[] = []
   const batchEmails: any[] = []
 
-  for (let i = 0; i < emails.length; i++) {
-    const email = emails[i]
-    // const { emailType = 'transactional', includeUnsubscribe = true } = email as EmailOptions
-
-    // if (emailType !== 'transactional') {
-    //   const unsubscribeType = emailType as 'marketing' | 'updates' | 'notifications'
-    //   const primaryEmail = Array.isArray(email.to) ? email.to[0] : email.to
-    // const hasUnsubscribed = await isUnsubscribed(primaryEmail, unsubscribeType)
-    // if (hasUnsubscribed) {
-    //   skippedIndices.push(i)
-    //   results.push({
-    //     success: true,
-    //     message: 'Email skipped (user unsubscribed)',
-    //     data: { id: 'skipped-unsubscribed' },
-    //   })
-    //   continue
-    // }
-    // }
-
+  for (const email of emails) {
     const senderEmail = email?.from || getFromEmailAddress()
     const emailData: any = {
       from: senderEmail,
@@ -283,21 +246,13 @@ async function sendBatchWithResend(emails: EmailOptions[]): Promise<BatchSendEma
     if (email?.html) emailData.html = email.html
     if (email?.text) emailData.text = email.text
 
-    //   if (includeUnsubscribe && emailType !== 'transactional') {
-    //     const primaryEmail = Array.isArray(email.to) ? email.to[0] : email.to
-    //     const unsubData = addUnsubscribeData(primaryEmail, emailType, email.html, email.text)
-    //     emailData.headers = unsubData.headers
-    //     if (unsubData.html) emailData.html = unsubData.html
-    //     if (unsubData.text) emailData.text = unsubData.text
-    //   }
-
     batchEmails.push(emailData)
   }
 
   if (batchEmails.length === 0) {
     return {
       success: true,
-      message: 'All batch emails skipped (users unsubscribed)',
+      message: 'No emails to send',
       results,
       data: { count: 0 },
     }
@@ -320,10 +275,7 @@ async function sendBatchWithResend(emails: EmailOptions[]): Promise<BatchSendEma
 
     return {
       success: true,
-      message:
-        skippedIndices.length > 0
-          ? `${batchEmails.length} emails sent, ${skippedIndices.length} skipped (unsubscribed)`
-          : 'All batch emails sent successfully via Resend',
+      message: 'All batch emails sent successfully via Resend',
       results,
       data: { count: batchEmails.length },
     }

@@ -1,5 +1,4 @@
-import { Body, Container, Heading, Img, Link, Preview, Text } from '@react-email/components'
-import { EmailThemeProvider, getEmailInlineStyles, getEmailThemeClasses } from '../components/theme'
+import { Body, Container, Head, Html, Link, Preview, Text } from '@react-email/components'
 import type { NewsletterSettings } from '../types'
 
 interface Props {
@@ -8,97 +7,99 @@ interface Props {
 }
 
 export const NewsletterSubscriptionEmail = ({ writerSettings, token }: Props) => {
-  const themeClasses = getEmailThemeClasses()
-  const lightStyles = getEmailInlineStyles('light')
+  const confirmUrl = token && writerSettings.confirmationUrl
+    ? `${writerSettings.confirmationUrl}/?token=${token}&writer=${writerSettings.id}`
+    : null
 
   return (
-    <EmailThemeProvider preview={<Preview>welcome to {writerSettings.newsletterName}</Preview>}>
-      <Body className={`my-auto mx-auto font-sans ${themeClasses.body}`} style={lightStyles.body}>
-        <Container
-          className={`my-[40px] mx-auto p-[20px] max-w-[600px] ${themeClasses.container}`}
-          style={{
-            borderStyle: 'solid',
-            borderWidth: 1,
-            borderColor: lightStyles.container.borderColor,
-          }}
-        >
-          {/* Custom Logo or Newsletter Name */}
-          {writerSettings.logoUrl ? (
-            <Img
-              src={writerSettings.logoUrl}
-              alt={writerSettings.newsletterName}
-              className='w-full h-auto mb-[30px] max-w-[200px] mx-auto'
-            />
-          ) : (
-            <div className='text-center mb-[30px]'>
-              <Heading
-                className={`text-[24px] font-bold ${themeClasses.heading}`}
-                style={{ color: writerSettings.brandColor ?? undefined }}
-              >
-                {writerSettings.newsletterName}
-              </Heading>
-            </div>
-          )}
-
-          <Heading
-            className={`text-[21px] font-normal text-center p-0 my-[30px] mx-0 ${themeClasses.heading}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            You're in.
-          </Heading>
-
-          <Text
-            className={`text-base ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            Hey, I'm {writerSettings.fromName}.
-            <br />
-            <br />
-            Welcome to {writerSettings.newsletterName} <br />
-            <br />
-            This newsletter is more than just writing, it's a way to operate. You'll get updates,
-            systems I'm testing, and frameworks that might help you move a bit faster and think a
-            bit clearer.
-            <br />
-            <br />
-            Before we go further, confirm your email to stay in the loop.
+    <Html>
+      <Head>
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+      </Head>
+      <Preview>Confirm your subscription to {writerSettings.newsletterName}</Preview>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <Text style={styles.greeting}>
+            Hey,
           </Text>
 
-          {token && writerSettings.confirmationUrl ? (
-            <Link
-              href={`${writerSettings.confirmationUrl}/?token=${token}&writer=${writerSettings.id}`}
-              className={`my-[24px] p-[12px_24px] text-white rounded-md text-sm font-medium ${themeClasses.button}`}
-              style={{
-                backgroundColor: writerSettings.brandColor ?? undefined,
-                color: '#fff',
-              }}
-            >
-              Confirm your email
-            </Link>
-          ) : null}
+          <Text style={styles.paragraph}>
+            Thanks for subscribing to <strong>{writerSettings.newsletterName}</strong>.
+          </Text>
 
-          <style>{`
-            .signature-blend {
-              filter: none;
-            }
+          <Text style={styles.paragraph}>
+            I'm {writerSettings.fromName}, and I'm excited to have you here.
+          </Text>
 
-            @media (prefers-color-scheme: dark) {
-              .signature-blend:not([class^="x_"]) {
-                filter: invert(1) brightness(1);
-              }
-            }
+          {confirmUrl && (
+            <>
+              <Text style={styles.paragraph}>
+                Please confirm your email to start receiving updates:
+              </Text>
 
-            [data-ogsb] .signature-blend,
-            [data-ogsc] .signature-blend,
-            [data-ogac] .signature-blend,
-            [data-ogab] .signature-blend {
-              filter: invert(1) brightness(1);
-            }
-          `}</style>
+              <Text style={styles.paragraph}>
+                <Link href={confirmUrl} style={styles.link}>
+                  Confirm your subscription
+                </Link>
+              </Text>
+            </>
+          )}
+
+          <Text style={styles.signoff}>
+            — {writerSettings.fromName}
+          </Text>
+
+          <Text style={styles.footer}>
+            If you didn't subscribe to this newsletter, you can safely ignore this email.
+          </Text>
         </Container>
       </Body>
-    </EmailThemeProvider>
+    </Html>
   )
 }
+
+const styles = {
+  body: {
+    backgroundColor: '#ffffff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    margin: '0',
+    padding: '0',
+  },
+  container: {
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '40px 20px',
+  },
+  greeting: {
+    fontSize: '17px',
+    color: '#1a1a1a',
+    lineHeight: '1.7',
+    margin: '0 0 20px 0',
+  },
+  paragraph: {
+    fontSize: '17px',
+    color: '#1a1a1a',
+    lineHeight: '1.7',
+    margin: '0 0 20px 0',
+  },
+  link: {
+    color: '#0969da',
+    textDecoration: 'underline',
+  },
+  signoff: {
+    fontSize: '17px',
+    color: '#1a1a1a',
+    lineHeight: '1.7',
+    margin: '32px 0 0 0',
+  },
+  footer: {
+    fontSize: '13px',
+    color: '#9ca3af',
+    marginTop: '48px',
+    paddingTop: '24px',
+    borderTop: '1px solid #e5e7eb',
+  },
+} as const
 
 export default NewsletterSubscriptionEmail

@@ -1,7 +1,4 @@
-import { Body, Container, Heading, Hr, Preview, Text } from '@react-email/components'
-import { Footer } from '../components/footer'
-import { Logo } from '../components/logo'
-import { EmailThemeProvider, getEmailInlineStyles, getEmailThemeClasses } from '../components/theme'
+import { Body, Container, Head, Html, Preview, Text } from '@react-email/components'
 
 interface Props {
   user: {
@@ -10,96 +7,85 @@ interface Props {
   }
   otp: string
   baseUrl?: string
-  expiresIn?: number // in minutes
+  expiresIn?: number
 }
 
 export const OTPVerification = ({ user, otp, expiresIn = 10 }: Props) => {
-  const themeClasses = getEmailThemeClasses()
-  const lightStyles = getEmailInlineStyles('light')
-
   const userName = user.name || 'there'
   const previewText = `Your verification code is ${otp}`
 
   return (
-    <EmailThemeProvider preview={<Preview>{previewText}</Preview>}>
-      <Body className={`my-auto mx-auto font-sans ${themeClasses.body}`} style={lightStyles.body}>
-        <Container
-          className={`my-[40px] mx-auto p-[20px] max-w-[600px] ${themeClasses.container}`}
-          style={{
-            borderStyle: 'solid',
-            borderWidth: 1,
-            borderColor: lightStyles.container.borderColor,
-          }}
-        >
-          <Logo />
-
-          <Heading
-            className={`text-[24px] font-bold text-center p-0 my-[30px] mx-0 ${themeClasses.heading}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            Verify your account
-          </Heading>
-
-          <Text
-            className={`text-base ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
+    <Html>
+      <Head>
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+      </Head>
+      <Preview>{previewText}</Preview>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <Text style={styles.paragraph}>
             Hello {userName},
-            <br />
-            <br />
-            Use the verification code below to complete your verification:
           </Text>
 
-          <div
-            style={{
-              backgroundColor: lightStyles.container.borderColor,
-              padding: '20px',
-              borderRadius: '8px',
-              textAlign: 'center',
-              margin: '24px 0',
-            }}
-          >
-            <Text
-              className={`text-[32px] font-bold tracking-widest ${themeClasses.heading}`}
-              style={{
-                color: lightStyles.text.color,
-                margin: 0,
-                letterSpacing: '8px',
-                fontFamily: 'monospace',
-              }}
-            >
-              {otp}
-            </Text>
-          </div>
-
-          <Text
-            className={`text-sm ${themeClasses.mutedText}`}
-            style={{ color: lightStyles.mutedText.color }}
-          >
-            Enter this code in the verification field to complete your account setup.
+          <Text style={styles.paragraph}>
+            Use this verification code to complete your sign in:
           </Text>
 
-          <Hr
-            className='my-[26px]'
-            style={{
-              borderColor: lightStyles.container.borderColor,
-              borderWidth: 1,
-            }}
-          />
-
-          <Text
-            className={`text-xs ${themeClasses.mutedText}`}
-            style={{ color: lightStyles.mutedText.color }}
-          >
-            This verification code will expire in {expiresIn} minutes. If you didn't request this
-            code, you can safely ignore this email.
+          <Text style={styles.code}>
+            {otp}
           </Text>
 
-          <Footer />
+          <Text style={styles.paragraph}>
+            This code expires in {expiresIn} minutes.
+          </Text>
+
+          <Text style={styles.footer}>
+            If you didn't request this code, you can safely ignore this email.
+          </Text>
         </Container>
       </Body>
-    </EmailThemeProvider>
+    </Html>
   )
 }
+
+const styles = {
+  body: {
+    backgroundColor: '#ffffff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    margin: '0',
+    padding: '0',
+  },
+  container: {
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '40px 20px',
+  },
+  paragraph: {
+    fontSize: '17px',
+    color: '#1a1a1a',
+    lineHeight: '1.7',
+    margin: '0 0 20px 0',
+  },
+  code: {
+    fontSize: '32px',
+    fontWeight: '700' as const,
+    fontFamily: 'ui-monospace, monospace',
+    letterSpacing: '6px',
+    color: '#1a1a1a',
+    backgroundColor: '#f6f8fa',
+    padding: '16px 24px',
+    borderRadius: '8px',
+    textAlign: 'center' as const,
+    margin: '24px 0',
+    display: 'block',
+  },
+  footer: {
+    fontSize: '13px',
+    color: '#9ca3af',
+    marginTop: '32px',
+    paddingTop: '24px',
+    borderTop: '1px solid #e5e7eb',
+  },
+} as const
 
 export default OTPVerification

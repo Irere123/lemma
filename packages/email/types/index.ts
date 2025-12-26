@@ -17,3 +17,8 @@ export interface NewsletterSettings {
   baseUrl: string
   confirmationUrl?: string
 }
+
+export interface AuthorInfo {
+  name: string
+  publication: string
+}
