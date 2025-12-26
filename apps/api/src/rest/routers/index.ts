@@ -1,12 +1,13 @@
 import { createRouter } from '@api/lib/utils'
 
 import { protectedMiddleware, publicMiddleware } from '../middleware'
-import { documentsRouter } from './documents'
-import { postsRouter } from './posts'
-import { newsletterRouter } from './newsletter'
-import { uploadsRouter } from './uploads'
 import { campaignsRouter } from './campaigns'
+import { documentsRouter } from './documents'
 import { feedsRouter } from './feeds'
+import { newsletterRouter } from './newsletter'
+import { oauthRouter } from './oauth'
+import { postsRouter } from './posts'
+import { uploadsRouter } from './uploads'
 
 const routers = createRouter()
 
@@ -14,6 +15,8 @@ const routers = createRouter()
 
 routers.use(...publicMiddleware)
 
+// Mount public routes first
+routers.route('/oauth', oauthRouter)
 routers.route('/posts', postsRouter)
 routers.route('/newsletter', newsletterRouter)
 routers.route('/feeds', feedsRouter)
