@@ -5,7 +5,7 @@ on:
     branches:
       - staging
     paths:
-      - web/**
+      - apps/web/**
       - packages/**
       - package.json
       - bun.lock
@@ -25,7 +25,7 @@ jobs:
 
       # build web app
       - name: Build web application
-        working-directory: web
+        working-directory: apps/web
         run: bun run build
         env:
           VITE_PUBLIC_BACKEND_URL: ${{ secrets.VITE_PUBLIC_BACKEND_URL }}
@@ -40,7 +40,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           packageManager: bun
-          workingDirectory: "web"
+          workingDirectory: "apps/web"
           wranglerVersion: "4.32.0"
 
       - name: Print deployment URL

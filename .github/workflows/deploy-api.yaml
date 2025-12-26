@@ -6,7 +6,7 @@ on:
       - staging
       - main
     paths:
-      - api/**
+      - apps/api/**
       - packages/**
       - infra/docker/**
       - package.json
@@ -74,7 +74,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./api/Dockerfile
+          file: ./infra/docker/api.Dockerfile
           push: true
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
