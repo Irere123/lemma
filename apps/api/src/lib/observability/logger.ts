@@ -10,7 +10,6 @@ import { addBreadcrumb, captureException, captureMessage } from './sentry'
  */
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 
-
 export interface LogEntry {
   level: LogLevel
   message: string
@@ -164,7 +163,12 @@ export class Logger {
   /**
    * Send to Sentry if enabled (only in production)
    */
-  private sendToSentry(level: LogLevel, message: string, context?: Record<string, unknown>, error?: Error): void {
+  private sendToSentry(
+    level: LogLevel,
+    message: string,
+    context?: Record<string, unknown>,
+    error?: Error
+  ): void {
     if (!this.config.enableSentryIntegration || !isProduction) return
 
     const sentryLevel = mapToSentryLevel(level)
@@ -235,7 +239,10 @@ export class Logger {
     this.debug(`Starting: ${operation}`, context)
     return () => {
       const duration = performance.now() - start
-      this.info(`Completed: ${operation}`, { ...context, durationMs: Math.round(duration * 100) / 100 })
+      this.info(`Completed: ${operation}`, {
+        ...context,
+        durationMs: Math.round(duration * 100) / 100,
+      })
     }
   }
 

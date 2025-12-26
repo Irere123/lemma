@@ -1,48 +1,68 @@
-import { getEmailQueue, getNewsletterQueue, getAnalyticsQueue, getScheduledQueue } from './queues'
+import { logger } from '@api/lib/observability'
+import { withJobSpan } from '@api/lib/observability/tracing'
+import { getAnalyticsQueue, getEmailQueue, getNewsletterQueue, getScheduledQueue } from './queues'
 import type {
-  SendSingleEmailJob,
-  SendBatchEmailJob,
-  SendWelcomeEmailJob,
-  SendConfirmationEmailJob,
-  SendNewsletterJob,
+  AggregateCampaignStatsJob,
   ProcessNewsletterBatchJob,
+  PublishScheduledDocumentJob,
   ScheduleNewsletterJob,
   SendABTestJob,
+  SendBatchEmailJob,
+  SendConfirmationEmailJob,
+  SendNewsletterJob,
+  SendScheduledNewsletterJob,
+  SendSingleEmailJob,
+  SendWelcomeEmailJob,
   TrackClickJob,
   TrackOpenJob,
-  AggregateCampaignStatsJob,
-  PublishScheduledDocumentJob,
-  SendScheduledNewsletterJob,
 } from './types'
+
+const jobLogger = logger.child({ component: 'jobs', subcomponent: 'producers' })
 
 // Email Jobs
 export async function enqueueSingleEmail(
   data: Omit<SendSingleEmailJob, 'type'>,
   options?: { priority?: number; delay?: number }
 ) {
-  const queue = getEmailQueue()
-  return queue.add(
-    'send-single-email',
-    { type: 'send-single-email', ...data },
-    {
-      priority: options?.priority ?? 5,
-      delay: options?.delay,
-    }
-  )
+  return withJobSpan('enqueue-single-email', 'send-single-email', async (span) => {
+    const queue = getEmailQueue()
+    const job = await queue.add(
+      'send-single-email',
+      { type: 'send-single-email', ...data },
+      {
+        priority: options?.priority ?? 5,
+        delay: options?.delay,
+      }
+    )
+
+    span.setAttribute('job.id', job.id!)
+    span.setAttribute('job.priority', options?.priority ?? 5)
+    jobLogger.info('Single email job enqueued', { jobId: job.id, to: data.to })
+
+    return job
+  })
 }
 
 export async function enqueueBatchEmail(
   data: Omit<SendBatchEmailJob, 'type'>,
   options?: { priority?: number }
 ) {
-  const queue = getEmailQueue()
-  return queue.add(
-    'send-batch-email',
-    { type: 'send-batch-email', ...data },
-    {
-      priority: options?.priority ?? 3,
-    }
-  )
+  return withJobSpan('enqueue-batch-email', 'send-batch-email', async (span) => {
+    const queue = getEmailQueue()
+    const job = await queue.add(
+      'send-batch-email',
+      { type: 'send-batch-email', ...data },
+      {
+        priority: options?.priority ?? 3,
+      }
+    )
+
+    span.setAttribute('job.id', job.id!)
+    span.setAttribute('job.emailCount', data.emails.length)
+    jobLogger.info('Batch email job enqueued', { jobId: job.id, emailCount: data.emails.length })
+
+    return job
+  })
 }
 
 export async function enqueueWelcomeEmail(
@@ -138,8 +158,20 @@ export async function enqueueABTest(
 
 // Analytics Jobs
 export async function trackClick(data: Omit<TrackClickJob, 'type'>) {
-  const queue = getAnalyticsQueue()
-  return queue.add('track-click', { type: 'track-click', ...data })
+  return withJobSpan('track-click', 'analytics', async (span) => {
+    const queue = getAnalyticsQueue()
+    const job = await queue.add('track-click', { type: 'track-click', ...data })
+
+    span.setAttribute('job.id', job.id!)
+    span.setAttribute('analytics.subscriberId', data.subscriberId)
+    span.setAttribute('analytics.campaignId', data.campaignId)
+    jobLogger.debug('Click tracking job enqueued', {
+      jobId: job.id,
+      subscriberId: data.subscriberId,
+    })
+
+    return job
+  })
 }
 
 export async function trackOpen(data: Omit<TrackOpenJob, 'type'>) {
@@ -202,28 +234,37 @@ export async function getJobStatus(
   queueName: 'email' | 'newsletter' | 'analytics' | 'scheduled',
   jobId: string
 ) {
-  const queues = {
-    email: getEmailQueue,
-    newsletter: getNewsletterQueue,
-    analytics: getAnalyticsQueue,
-    scheduled: getScheduledQueue,
-  }
+  return withJobSpan('get-job-status', 'query', async (span) => {
+    const queues = {
+      email: getEmailQueue,
+      newsletter: getNewsletterQueue,
+      analytics: getAnalyticsQueue,
+      scheduled: getScheduledQueue,
+    }
 
-  const queue = queues[queueName]()
-  const job = await queue.getJob(jobId)
+    const queue = queues[queueName]()
+    const job = await queue.getJob(jobId)
 
-  if (!job) {
-    return null
-  }
+    if (!job) {
+      jobLogger.warn('Job not found', { queueName, jobId })
+      return null
+    }
 
-  return {
-    id: job.id,
-    name: job.name,
-    state: await job.getState(),
-    progress: job.progress,
-    attemptsMade: job.attemptsMade,
-    failedReason: job.failedReason,
-    processedOn: job.processedOn,
-    finishedOn: job.finishedOn,
-  }
+    const state = await job.getState()
+    span.setAttribute('job.state', state)
+    span.setAttribute('job.attempts', job.attemptsMade)
+
+    jobLogger.debug('Job status retrieved', { queueName, jobId, state })
+
+    return {
+      id: job.id,
+      name: job.name,
+      state,
+      progress: job.progress,
+      attemptsMade: job.attemptsMade,
+      failedReason: job.failedReason,
+      processedOn: job.processedOn,
+      finishedOn: job.finishedOn,
+    }
+  })
 }

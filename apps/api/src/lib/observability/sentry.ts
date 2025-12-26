@@ -2,8 +2,7 @@ import * as Sentry from '@sentry/node'
 import { nodeProfilingIntegration } from '@sentry/profiling-node'
 
 import { env } from '@api/env-runtime'
-
-const isProduction = env.ENV === 'production'
+import { isProduction } from '@api/lib/constants'
 
 /**
  * Sentry Configuration

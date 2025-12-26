@@ -4,6 +4,8 @@ import { eq } from 'drizzle-orm'
 import { createDb } from '@api/db'
 import { documents } from '@api/db/schema'
 import { env } from '@api/env-runtime'
+import { logger } from '@api/lib/observability'
+import { withJobSpan } from '@api/lib/observability/tracing'
 import { enqueueNewsletter } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
@@ -12,28 +14,54 @@ import type {
   SendScheduledNewsletterJob,
 } from '../types'
 
+const workerLogger = logger.child({ component: 'jobs', subcomponent: 'scheduled-worker' })
+
 async function processScheduledJob(job: Job<ScheduledJobData>): Promise<void> {
-  const { db, conn } = createDb(env.DATABASE_URL)
+  return withJobSpan(`scheduled-${job.data.type}`, job.id || 'unknown', async (span) => {
+    const { db, conn } = createDb(env.DATABASE_URL)
+    const timer = workerLogger.time(`process-scheduled-job-${job.data.type}`, {
+      jobId: job.id,
+      jobType: job.data.type,
+    })
 
-  try {
-    switch (job.data.type) {
-      case 'publish-scheduled-document': {
-        await processDocumentPublish(job.data, db)
-        break
-      }
+    try {
+      span.setAttribute('job.id', job.id!)
+      span.setAttribute('job.type', job.data.type)
 
-      case 'send-scheduled-newsletter': {
-        await processScheduledNewsletter(job.data, db)
-        break
+      switch (job.data.type) {
+        case 'publish-scheduled-document': {
+          await processDocumentPublish(job.data, db, span)
+          break
+        }
+
+        case 'send-scheduled-newsletter': {
+          await processScheduledNewsletter(job.data, db, span)
+          break
+        }
       }
+    } catch (error) {
+      workerLogger.error('Scheduled job failed', error as Error, {
+        jobId: job.id,
+        jobType: job.data.type,
+      })
+      throw error
+    } finally {
+      await conn.end()
+      timer()
     }
-  } finally {
-    await conn.end()
-  }
+  })
 }
 
-async function processDocumentPublish(data: PublishScheduledDocumentJob, db: any): Promise<void> {
+async function processDocumentPublish(
+  data: PublishScheduledDocumentJob,
+  db: any,
+  span?: any
+): Promise<void> {
   const { documentId } = data
+
+  if (span) {
+    span.setAttribute('document.id', documentId)
+  }
 
   // Update document status to PUBLISHED
   const [updatedDocument] = await db
@@ -47,17 +75,26 @@ async function processDocumentPublish(data: PublishScheduledDocumentJob, db: any
     .returning()
 
   if (updatedDocument) {
-    console.log(`Document ${documentId} published successfully`)
+    workerLogger.info('Document published successfully', { documentId })
   } else {
-    console.error(`Document ${documentId} not found for publishing`)
+    const error = new Error(`Document ${documentId} not found for publishing`)
+    workerLogger.error('Document not found for publishing', error, { documentId })
+    throw error
   }
 }
 
 async function processScheduledNewsletter(
   data: SendScheduledNewsletterJob,
-  db: any
+  db: any,
+  span?: any
 ): Promise<void> {
   const { campaignId, documentId, writerId } = data
+
+  if (span) {
+    span.setAttribute('newsletter.campaignId', campaignId)
+    span.setAttribute('newsletter.documentId', documentId)
+    span.setAttribute('newsletter.writerId', writerId)
+  }
 
   // Enqueue the newsletter for immediate sending
   await enqueueNewsletter({
@@ -66,7 +103,7 @@ async function processScheduledNewsletter(
     writerId,
   })
 
-  console.log(`Scheduled newsletter ${campaignId} triggered for sending`)
+  workerLogger.info('Scheduled newsletter triggered', { campaignId, documentId, writerId })
 }
 
 export function createScheduledWorker() {
@@ -76,15 +113,22 @@ export function createScheduledWorker() {
   })
 
   worker.on('completed', (job) => {
-    console.log(`Scheduled job ${job.id} completed: ${job.data.type}`)
+    workerLogger.info('Scheduled job completed', {
+      jobId: job.id,
+      jobType: job.data.type,
+      duration: job.processedOn && job.finishedOn ? job.finishedOn - job.processedOn : undefined,
+    })
   })
 
   worker.on('failed', (job, err) => {
-    console.error(`Scheduled job ${job?.id} failed:`, err.message)
+    workerLogger.error('Scheduled job failed', err, {
+      jobId: job?.id,
+      jobType: job?.data.type,
+    })
   })
 
   worker.on('error', (err) => {
-    console.error('Scheduled worker error:', err)
+    workerLogger.error('Scheduled worker error', err)
   })
 
   return worker

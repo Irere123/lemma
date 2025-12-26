@@ -3,7 +3,7 @@ export {
   getOpenTelemetrySDK,
   initializeOpenTelemetry,
   shutdownOpenTelemetry,
-  type OtelConfig
+  type OtelConfig,
 } from './instrumentation'
 
 // Sentry integration
@@ -19,7 +19,7 @@ export {
   setUser,
   startTransaction,
   withSentry,
-  type SentryConfig
+  type SentryConfig,
 } from './sentry'
 
 // Structured logging
@@ -28,7 +28,7 @@ export {
   logger,
   type LogEntry,
   type LoggerConfig,
-  type LogLevel
+  type LogLevel,
 } from './logger'
 
 // Tracing utilities
@@ -55,7 +55,7 @@ export {
   withSpanSync,
   type Span,
   type SpanConfig,
-  type Tracer
+  type Tracer,
 } from './tracing'
 
 /**

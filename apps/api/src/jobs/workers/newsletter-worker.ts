@@ -8,6 +8,8 @@ import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings
 import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
 import { subscribers } from '@api/db/schema'
 import { env } from '@api/env-runtime'
+import { logger } from '@api/lib/observability'
+import { withJobSpan } from '@api/lib/observability/tracing'
 import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
 import { enqueueNewsletter } from '../producers'
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
@@ -18,40 +20,72 @@ import type {
   SendABTestJob,
 } from '../types'
 
+const workerLogger = logger.child({ component: 'jobs', subcomponent: 'newsletter-worker' })
+
 const getNewsletterTemplate = async () => {
   const { DynamicDocumentNewsletter } = await import('@lemma/email/emails/newsletter')
   return DynamicDocumentNewsletter
 }
 
 async function processNewsletterJob(job: Job<NewsletterJobData>): Promise<void> {
-  const { db, conn } = createDb(env.DATABASE_URL)
+  return withJobSpan(`newsletter-${job.data.type}`, job.id || 'unknown', async (span) => {
+    const { db, conn } = createDb(env.DATABASE_URL)
+    const timer = workerLogger.time(`process-newsletter-job-${job.data.type}`, {
+      jobId: job.id,
+      jobType: job.data.type,
+    })
 
-  try {
-    switch (job.data.type) {
-      case 'process-newsletter-batch': {
-        await processBatch(job.data, db)
-        break
-      }
+    try {
+      span.setAttribute('job.id', job.id!)
+      span.setAttribute('job.type', job.data.type)
+      span.setAttribute('job.attempts', job.attemptsMade)
 
-      case 'schedule-newsletter': {
-        await processScheduledNewsletter(job.data, db)
-        break
-      }
+      switch (job.data.type) {
+        case 'process-newsletter-batch': {
+          await processBatch(job.data, db, span)
+          break
+        }
 
-      case 'send-ab-test': {
-        await processABTest(job.data, db)
-        break
+        case 'schedule-newsletter': {
+          await processScheduledNewsletter(job.data, db, span)
+          break
+        }
+
+        case 'send-ab-test': {
+          await processABTest(job.data, db, span)
+          break
+        }
       }
+    } catch (error) {
+      workerLogger.error('Newsletter job failed', error as Error, {
+        jobId: job.id,
+        jobType: job.data.type,
+        attempts: job.attemptsMade,
+      })
+      throw error
+    } finally {
+      await conn.end()
+      timer()
     }
-  } finally {
-    await conn.end()
-  }
+  })
 }
 
-async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<void> {
+async function processBatch(data: ProcessNewsletterBatchJob, db: any, span?: any): Promise<void> {
   const { campaignId, documentId, writerId, subscriberBatch, batchIndex, totalBatches } = data
 
-  console.log(`Processing batch ${batchIndex + 1}/${totalBatches} for campaign ${campaignId}`)
+  if (span) {
+    span.setAttribute('newsletter.campaignId', campaignId)
+    span.setAttribute('newsletter.batchIndex', batchIndex)
+    span.setAttribute('newsletter.totalBatches', totalBatches)
+    span.setAttribute('newsletter.subscriberCount', subscriberBatch.length)
+  }
+
+  workerLogger.info('Processing newsletter batch', {
+    campaignId,
+    batchIndex: batchIndex + 1,
+    totalBatches,
+    subscriberCount: subscriberBatch.length,
+  })
 
   // Get document
   const document = await getDocumentById(db, documentId)
@@ -72,7 +106,7 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
     .where(inArray(subscribers.id, subscriberBatch))
 
   if (batchSubscribers.length === 0) {
-    console.log(`No subscribers found in batch ${batchIndex}`)
+    workerLogger.warn('No subscribers found in batch', { batchIndex, campaignId })
     return
   }
 
@@ -124,11 +158,25 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
     })),
   })
 
-  console.log(`Batch ${batchIndex + 1}/${totalBatches} completed: ${result.message}`)
+  workerLogger.info('Newsletter batch completed', {
+    campaignId,
+    batchIndex: batchIndex + 1,
+    totalBatches,
+    result: result.message,
+  })
 }
 
-async function processScheduledNewsletter(data: ScheduleNewsletterJob, db: any): Promise<void> {
+async function processScheduledNewsletter(
+  data: ScheduleNewsletterJob,
+  db: any,
+  span?: any
+): Promise<void> {
   const { campaignId, documentId, writerId, scheduledAt } = data
+
+  if (span) {
+    span.setAttribute('newsletter.campaignId', campaignId)
+    span.setAttribute('newsletter.scheduledAt', scheduledAt)
+  }
 
   const scheduledDate = new Date(scheduledAt)
   const now = new Date()
@@ -140,22 +188,28 @@ async function processScheduledNewsletter(data: ScheduleNewsletterJob, db: any):
       documentId,
       writerId,
     })
-    console.log(`Scheduled newsletter ${campaignId} triggered for immediate send`)
+    workerLogger.info('Scheduled newsletter triggered for immediate send', { campaignId })
   } else {
     // Re-schedule with remaining delay
     const delay = scheduledDate.getTime() - now.getTime()
-    console.log(`Newsletter ${campaignId} scheduled for ${scheduledAt}, delay: ${delay}ms`)
+    workerLogger.info('Newsletter rescheduled', { campaignId, scheduledAt, delay })
   }
 }
 
-async function processABTest(data: SendABTestJob, db: any): Promise<void> {
+async function processABTest(data: SendABTestJob, db: any, span?: any): Promise<void> {
   const { campaignId, variants, writerId, testDurationHours } = data
+
+  if (span) {
+    span.setAttribute('abtest.campaignId', campaignId)
+    span.setAttribute('abtest.variantCount', variants.length)
+    span.setAttribute('abtest.durationHours', testDurationHours)
+  }
 
   // Get all confirmed subscribers
   const allSubscribers = await getConfirmedSubscribers(db, writerId)
 
   if (allSubscribers.length === 0) {
-    console.log('No subscribers for A/B test')
+    workerLogger.warn('No subscribers for A/B test', { campaignId, writerId })
     return
   }
 
@@ -183,13 +237,15 @@ async function processABTest(data: SendABTestJob, db: any): Promise<void> {
         writerId,
         subscriberIds,
       })
-      console.log(
-        `A/B test variant ${variant.variantId}: sending to ${subscriberIds.length} subscribers`
-      )
+      workerLogger.info('A/B test variant enqueued', {
+        campaignId,
+        variantId: variant.variantId,
+        subscriberCount: subscriberIds.length,
+      })
     }
   }
 
-  console.log(`A/B test ${campaignId} started with ${variants.length} variants`)
+  workerLogger.info('A/B test started', { campaignId, variantCount: variants.length })
 }
 
 export function createNewsletterWorker() {
@@ -203,15 +259,23 @@ export function createNewsletterWorker() {
   })
 
   worker.on('completed', (job) => {
-    console.log(`Newsletter job ${job.id} completed: ${job.data.type}`)
+    workerLogger.info('Newsletter job completed', {
+      jobId: job.id,
+      jobType: job.data.type,
+      duration: job.processedOn && job.finishedOn ? job.finishedOn - job.processedOn : undefined,
+    })
   })
 
   worker.on('failed', (job, err) => {
-    console.error(`Newsletter job ${job?.id} failed:`, err.message)
+    workerLogger.error('Newsletter job failed', err, {
+      jobId: job?.id,
+      jobType: job?.data.type,
+      attempts: job?.attemptsMade,
+    })
   })
 
   worker.on('error', (err) => {
-    console.error('Newsletter worker error:', err)
+    workerLogger.error('Newsletter worker error', err)
   })
 
   return worker
