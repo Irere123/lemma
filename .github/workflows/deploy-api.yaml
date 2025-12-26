@@ -94,106 +94,106 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
-  deploy-staging:
-    name: Deploy to Staging
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/staging'
-    environment: staging
+  # deploy-staging:
+  #   name: Deploy to Staging
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/staging'
+  #   environment: staging
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Deploy to Swarm via SSH
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
+  #     - name: Deploy to Swarm via SSH
+  #       uses: appleboy/ssh-action@v1.2.2
+  #       with:
+  #         host: ${{ secrets.DEPLOY_HOST }}
+  #         username: ${{ secrets.DEPLOY_USER }}
+  #         key: ${{ secrets.DEPLOY_SSH_KEY }}
+  #         script: |
+  #           cd ${{ secrets.DEPLOY_PATH }}
 
-            # Pull latest compose files
-            git pull origin staging
+  #           # Pull latest compose files
+  #           git pull origin staging
 
-            # Login to registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  #           # Login to registry
+  #           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Pull new images
-            docker pull ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
-            docker pull ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
+  #           # Pull new images
+  #           docker pull ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
+  #           docker pull ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
 
-            # Update services with rolling update
-            docker service update \
-              --image ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
-              --update-parallelism 1 \
-              --update-delay 10s \
-              --update-order start-first \
-              --update-failure-action rollback \
-              lemma_api || true
+  #           # Update services with rolling update
+  #           docker service update \
+  #             --image ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
+  #             --update-parallelism 1 \
+  #             --update-delay 10s \
+  #             --update-order start-first \
+  #             --update-failure-action rollback \
+  #             lemma_api || true
 
-            docker service update \
-              --image ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
-              --update-parallelism 1 \
-              --update-delay 10s \
-              --update-failure-action rollback \
-              lemma_worker || true
+  #           docker service update \
+  #             --image ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
+  #             --update-parallelism 1 \
+  #             --update-delay 10s \
+  #             --update-failure-action rollback \
+  #             lemma_worker || true
 
-            # Verify deployment
-            sleep 30
-            docker service ls | grep lemma
+  #           # Verify deployment
+  #           sleep 30
+  #           docker service ls | grep lemma
 
-  deploy-production:
-    name: Deploy to Production
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    environment: production
+  # deploy-production:
+  #   name: Deploy to Production
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   environment: production
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Deploy to Swarm via SSH
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
+  #     - name: Deploy to Swarm via SSH
+  #       uses: appleboy/ssh-action@v1.2.2
+  #       with:
+  #         host: ${{ secrets.DEPLOY_HOST }}
+  #         username: ${{ secrets.DEPLOY_USER }}
+  #         key: ${{ secrets.DEPLOY_SSH_KEY }}
+  #         script: |
+  #           cd ${{ secrets.DEPLOY_PATH }}
 
-            # Pull latest compose files
-            git pull origin main
+  #           # Pull latest compose files
+  #           git pull origin main
 
-            # Login to registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  #           # Login to registry
+  #           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Pull new images
-            docker pull ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
-            docker pull ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
+  #           # Pull new images
+  #           docker pull ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
+  #           docker pull ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
 
-            # Update services with rolling update
-            docker service update \
-              --image ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
-              --update-parallelism 1 \
-              --update-delay 10s \
-              --update-order start-first \
-              --update-failure-action rollback \
-              lemma_api
+  #           # Update services with rolling update
+  #           docker service update \
+  #             --image ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
+  #             --update-parallelism 1 \
+  #             --update-delay 10s \
+  #             --update-order start-first \
+  #             --update-failure-action rollback \
+  #             lemma_api
 
-            docker service update \
-              --image ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
-              --update-parallelism 1 \
-              --update-delay 10s \
-              --update-failure-action rollback \
-              lemma_worker
+  #           docker service update \
+  #             --image ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }} \
+  #             --update-parallelism 1 \
+  #             --update-delay 10s \
+  #             --update-failure-action rollback \
+  #             lemma_worker
 
-            # Verify deployment
-            sleep 30
-            docker service ls | grep lemma
+  #           # Verify deployment
+  #           sleep 30
+  #           docker service ls | grep lemma
 
-            # Show rollout status
-            docker service ps lemma_api --no-trunc
-            docker service ps lemma_worker --no-trunc
+  #           # Show rollout status
+  #           docker service ps lemma_api --no-trunc
+  #           docker service ps lemma_worker --no-trunc

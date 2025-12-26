@@ -17,8 +17,8 @@ COPY . .
 RUN turbo prune @lemma/api --docker
 
 # Installer stage - installs dependencies from pruned workspace
-FROM base AS installer  
-RUN apk update && apk add --no-cache libc6-compat python3 make g++
+FROM base AS installer
+RUN apk update && apk add --no-cache libc6-compat python3 make g++ jq
 WORKDIR /app
 
 # Copy lockfile and package.json files from pruned workspace
@@ -26,7 +26,7 @@ COPY --from=builder /app/out/json/ .
 
 # Install dependencies with cache mount for faster rebuilds
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install
+    bun install --filter=@lemma/api
 
 # Copy source files and build
 COPY --from=builder /app/out/full/ .
