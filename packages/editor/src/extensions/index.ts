@@ -7,14 +7,13 @@ import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import Underline from '@tiptap/extension-underline'
 import StarterKit from '@tiptap/starter-kit'
-import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
+import { Markdown } from 'tiptap-markdown'
 
+import { SlashMenuExtension } from '../components/menus/SlashMenu'
 import { Callout } from './nodes/Callout'
 import { ImageBlock } from './nodes/ImageBlock'
 import { Toggle } from './nodes/Toggle'
-import { NoteLink } from './marks/NoteLink'
-import { SlashMenuExtension } from '../components/menus/SlashMenu'
 
 // Create lowlight instance with common languages
 const lowlight = createLowlight(common)
@@ -73,10 +72,7 @@ export function createExtensions(options: ExtensionOptions = {}) {
     Callout,
     Toggle,
     ImageBlock,
-    NoteLink.configure({
-      onNoteLinkClick: options.onNoteLinkClick,
-    }),
-
+   
     // Placeholder
     Placeholder.configure({
       placeholder: options.placeholder || "Start writing, or press '/' for commands...",
@@ -104,7 +100,6 @@ export function createExtensions(options: ExtensionOptions = {}) {
 }
 
 // Re-export individual extensions for customization
-export { Callout, Toggle, ImageBlock } from './nodes'
-export { NoteLink } from './marks'
-export type { CalloutOptions, ToggleOptions, ImageBlockOptions } from './nodes'
-export type { NoteLinkOptions } from './marks'
+export { Callout, ImageBlock, Toggle } from './nodes'
+export type { CalloutOptions, ImageBlockOptions, ToggleOptions } from './nodes'
+
