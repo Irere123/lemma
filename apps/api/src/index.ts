@@ -1,17 +1,22 @@
+// Initialize observability before anything else
+import { initializeObservability, logger, shutdownObservability } from './lib/observability'
+
+initializeObservability()
+
 import { trpcServer } from '@hono/trpc-server'
 import { Scalar } from '@scalar/hono-api-reference'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 
 import { env } from './env-runtime'
+import { yoga } from './graphql'
 import { createAuth } from './lib/auth'
 import { BASE_URL } from './lib/constants'
 import { createRouter } from './lib/utils'
+import { withDatabase } from './rest/middleware/db'
 import { routers } from './rest/routers'
 import { createTRPCContext } from './trpc/init'
 import { appRouter } from './trpc/routers/_app'
-import { yoga } from './graphql'
-import { withDatabase } from './rest/middleware/db'
 
 const app = createRouter()
 
@@ -95,6 +100,18 @@ app.on(['POST', 'GET'], '/auth/*', (c) => {
 })
 
 app.route('/v1', routers)
+
+// Graceful shutdown handling
+const shutdown = async (signal: string) => {
+  logger.info(`Received ${signal}, shutting down gracefully...`)
+  await shutdownObservability()
+  process.exit(0)
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))
+
+logger.info(`Server starting on port ${env.PORT || 4000}`)
 
 export default {
   port: env.PORT || 4000,

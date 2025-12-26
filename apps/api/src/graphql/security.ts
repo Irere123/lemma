@@ -3,9 +3,7 @@ import { maxDepthPlugin } from '@escape.tech/graphql-armor-max-depth'
 import { maxTokensPlugin } from '@escape.tech/graphql-armor-max-tokens'
 import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection'
 
-import { env } from '@api/env-runtime'
-
-const isProduction = env.ENV === 'production'
+import { isProduction } from '@api/lib/constants'
 
 /**
  * Query Depth Limiting

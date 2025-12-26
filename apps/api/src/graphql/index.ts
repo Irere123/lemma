@@ -1,14 +1,12 @@
 import { createYoga } from 'graphql-yoga'
 import type { Context } from 'hono'
 
-import { env } from '@api/env-runtime'
+import { isProduction } from '@api/lib/constants'
 import { createGraphQLContext, type GraphQLContext } from './context'
 import { schema } from './schema'
 import { getSecurityPlugins } from './security'
 
 type ServerContext = { honoContext: Context }
-
-const isProduction = env.ENV === 'production'
 
 export const yoga = createYoga<ServerContext, GraphQLContext>({
   // @ts-expect-error - Schema context type mismatch is expected, context is provided at runtime
@@ -28,4 +26,3 @@ export const yoga = createYoga<ServerContext, GraphQLContext>({
 
 export type { GraphQLContext } from './context'
 export { schema } from './schema'
-

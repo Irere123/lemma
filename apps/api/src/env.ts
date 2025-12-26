@@ -10,6 +10,10 @@ const EnvSchema = z.object({
   LEMMA_ENCRYPTION_KEY: z.string(),
   ADMIN_USER_ID: z.string(),
 
+  // observability (optional)
+  SENTRY_DSN: z.string().optional(),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
+
   // cloudflare R2 Storage
   CLOUDFLARE_ACCOUNT_ID: z.string(),
   R2_ACCESS_KEY_ID: z.string(),
