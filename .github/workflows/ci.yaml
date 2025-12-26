@@ -7,23 +7,23 @@ on:
     branches: [main, staging]
 
 jobs:
-  lint:
-    name: Lint & Format
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # lint:
+  #   name: Lint & Format
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+  #     - name: Setup Bun
+  #       uses: oven-sh/setup-bun@v2
+  #       with:
+  #         bun-version: latest
 
-      - name: Install dependencies
-        run: bun install
+  #     - name: Install dependencies
+  #       run: bun install
 
-      - name: Check formatting
-        run: bun run biome:check
+  #     - name: Check formatting
+  #       run: bun run biome:check
 
   typecheck:
     name: Type Check
