@@ -16,7 +16,7 @@ RUN bun install -g turbo@^2
 COPY . .
 
 # Generate a partial monorepo with pruned lockfile for api workspace (worker is part of api)
-RUN turbo prune api --docker
+RUN turbo prune @lemma/api --docker
 
 # Installer stage - installs dependencies from pruned workspace
 FROM base AS installer
