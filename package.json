@@ -9,8 +9,8 @@
   ],
   "scripts": {
     "dev": "turbo dev",
-    "format": "biome format --write", 
-    "lint": "biome lint", 
+    "format": "biome format --write",
+    "lint": "biome lint",
     "biome:check": "biome check"
   },
   "keywords": [],

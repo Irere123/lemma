@@ -17,15 +17,13 @@ export const ResetPassword = ({ user, url }: Props) => {
   return (
     <Html>
       <Head>
-        <meta name="color-scheme" content="light" />
-        <meta name="supported-color-schemes" content="light" />
+        <meta name='color-scheme' content='light' />
+        <meta name='supported-color-schemes' content='light' />
       </Head>
       <Preview>{previewText}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
-          <Text style={styles.paragraph}>
-            Hello {userName},
-          </Text>
+          <Text style={styles.paragraph}>Hello {userName},</Text>
 
           <Text style={styles.paragraph}>
             We received a request to reset your password. Click the link below to choose a new one:
@@ -37,16 +35,10 @@ export const ResetPassword = ({ user, url }: Props) => {
             </Link>
           </Text>
 
-          <Text style={styles.muted}>
-            Or copy and paste this URL into your browser:
-          </Text>
-          <Text style={styles.urlText}>
-            {url}
-          </Text>
+          <Text style={styles.muted}>Or copy and paste this URL into your browser:</Text>
+          <Text style={styles.urlText}>{url}</Text>
 
-          <Text style={styles.paragraph}>
-            This link will expire in 1 hour.
-          </Text>
+          <Text style={styles.paragraph}>This link will expire in 1 hour.</Text>
 
           <Text style={styles.footer}>
             If you didn't request a password reset, you can safely ignore this email.
@@ -60,7 +52,8 @@ export const ResetPassword = ({ user, url }: Props) => {
 const styles = {
   body: {
     backgroundColor: '#ffffff',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     margin: '0',
     padding: '0',
   },

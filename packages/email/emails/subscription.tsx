@@ -7,22 +7,21 @@ interface Props {
 }
 
 export const NewsletterSubscriptionEmail = ({ writerSettings, token }: Props) => {
-  const confirmUrl = token && writerSettings.confirmationUrl
-    ? `${writerSettings.confirmationUrl}/?token=${token}&writer=${writerSettings.id}`
-    : null
+  const confirmUrl =
+    token && writerSettings.confirmationUrl
+      ? `${writerSettings.confirmationUrl}/?token=${token}&writer=${writerSettings.id}`
+      : null
 
   return (
     <Html>
       <Head>
-        <meta name="color-scheme" content="light" />
-        <meta name="supported-color-schemes" content="light" />
+        <meta name='color-scheme' content='light' />
+        <meta name='supported-color-schemes' content='light' />
       </Head>
       <Preview>Confirm your subscription to {writerSettings.newsletterName}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
-          <Text style={styles.greeting}>
-            Hey,
-          </Text>
+          <Text style={styles.greeting}>Hey,</Text>
 
           <Text style={styles.paragraph}>
             Thanks for subscribing to <strong>{writerSettings.newsletterName}</strong>.
@@ -46,9 +45,7 @@ export const NewsletterSubscriptionEmail = ({ writerSettings, token }: Props) =>
             </>
           )}
 
-          <Text style={styles.signoff}>
-            — {writerSettings.fromName}
-          </Text>
+          <Text style={styles.signoff}>— {writerSettings.fromName}</Text>
 
           <Text style={styles.footer}>
             If you didn't subscribe to this newsletter, you can safely ignore this email.
@@ -62,7 +59,8 @@ export const NewsletterSubscriptionEmail = ({ writerSettings, token }: Props) =>
 const styles = {
   body: {
     backgroundColor: '#ffffff',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     margin: '0',
     padding: '0',
   },

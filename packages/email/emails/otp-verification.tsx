@@ -17,27 +17,19 @@ export const OTPVerification = ({ user, otp, expiresIn = 10 }: Props) => {
   return (
     <Html>
       <Head>
-        <meta name="color-scheme" content="light" />
-        <meta name="supported-color-schemes" content="light" />
+        <meta name='color-scheme' content='light' />
+        <meta name='supported-color-schemes' content='light' />
       </Head>
       <Preview>{previewText}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
-          <Text style={styles.paragraph}>
-            Hello {userName},
-          </Text>
+          <Text style={styles.paragraph}>Hello {userName},</Text>
 
-          <Text style={styles.paragraph}>
-            Use this verification code to complete your sign in:
-          </Text>
+          <Text style={styles.paragraph}>Use this verification code to complete your sign in:</Text>
 
-          <Text style={styles.code}>
-            {otp}
-          </Text>
+          <Text style={styles.code}>{otp}</Text>
 
-          <Text style={styles.paragraph}>
-            This code expires in {expiresIn} minutes.
-          </Text>
+          <Text style={styles.paragraph}>This code expires in {expiresIn} minutes.</Text>
 
           <Text style={styles.footer}>
             If you didn't request this code, you can safely ignore this email.
@@ -51,7 +43,8 @@ export const OTPVerification = ({ user, otp, expiresIn = 10 }: Props) => {
 const styles = {
   body: {
     backgroundColor: '#ffffff',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     margin: '0',
     padding: '0',
   },

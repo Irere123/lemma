@@ -23,8 +23,8 @@ export const DynamicDocumentNewsletter = ({
   return (
     <Html>
       <Head>
-        <meta name="color-scheme" content="light" />
-        <meta name="supported-color-schemes" content="light" />
+        <meta name='color-scheme' content='light' />
+        <meta name='supported-color-schemes' content='light' />
       </Head>
       <Preview>{previewText}</Preview>
       <Body style={styles.body}>
@@ -42,9 +42,27 @@ export const DynamicDocumentNewsletter = ({
             <div style={styles.content}>
               <Markdown
                 markdownCustomStyles={{
-                  h1: { fontSize: '24px', fontWeight: '600', marginTop: '32px', marginBottom: '16px', lineHeight: '1.3' },
-                  h2: { fontSize: '20px', fontWeight: '600', marginTop: '28px', marginBottom: '12px', lineHeight: '1.3' },
-                  h3: { fontSize: '18px', fontWeight: '600', marginTop: '24px', marginBottom: '8px', lineHeight: '1.3' },
+                  h1: {
+                    fontSize: '24px',
+                    fontWeight: '600',
+                    marginTop: '32px',
+                    marginBottom: '16px',
+                    lineHeight: '1.3',
+                  },
+                  h2: {
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    marginTop: '28px',
+                    marginBottom: '12px',
+                    lineHeight: '1.3',
+                  },
+                  h3: {
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    marginTop: '24px',
+                    marginBottom: '8px',
+                    lineHeight: '1.3',
+                  },
                   p: { marginTop: '0', marginBottom: '20px', lineHeight: '1.7' },
                   link: { color: '#0969da', textDecoration: 'underline' },
                   blockQuote: {
@@ -74,7 +92,8 @@ export const DynamicDocumentNewsletter = ({
                   image: { maxWidth: '100%', height: 'auto', borderRadius: '4px' },
                 }}
                 markdownContainerStyles={{
-                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                  fontFamily:
+                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                   fontSize: '17px',
                   lineHeight: '1.7',
                   color: '#1a1a1a',
@@ -106,7 +125,8 @@ export const DynamicDocumentNewsletter = ({
 const styles = {
   body: {
     backgroundColor: '#ffffff',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     margin: '0',
     padding: '0',
   },

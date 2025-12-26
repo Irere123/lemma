@@ -93,12 +93,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -203,12 +199,8 @@
           "name": "api_keys_api_user_fkey",
           "tableFrom": "api_keys",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -218,9 +210,7 @@
         "api_keys_key_unique": {
           "name": "api_keys_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key_hash"
-          ]
+          "columns": ["key_hash"]
         }
       },
       "policies": {},
@@ -278,12 +268,8 @@
           "name": "brainos_campaign_links_campaign_id_brainos_campaigns_id_fk",
           "tableFrom": "brainos_campaign_links",
           "tableTo": "brainos_campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -482,12 +468,8 @@
           "name": "brainos_campaigns_userId_user_id_fk",
           "tableFrom": "brainos_campaigns",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -495,12 +477,8 @@
           "name": "brainos_campaigns_document_id_brainos_documents_id_fk",
           "tableFrom": "brainos_campaigns",
           "tableTo": "brainos_documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -610,12 +588,8 @@
           "name": "brainos_categories_writer_id_user_id_fk",
           "tableFrom": "brainos_categories",
           "tableTo": "user",
-          "columnsFrom": [
-            "writer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["writer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -625,10 +599,7 @@
         "categories_writer_slug_unique": {
           "name": "categories_writer_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "writer_id",
-            "slug"
-          ]
+          "columns": ["writer_id", "slug"]
         }
       },
       "policies": {},
@@ -714,12 +685,8 @@
           "name": "brainos_click_events_subscriber_id_brainos_subscribers_id_fk",
           "tableFrom": "brainos_click_events",
           "tableTo": "brainos_subscribers",
-          "columnsFrom": [
-            "subscriber_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subscriber_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -727,12 +694,8 @@
           "name": "brainos_click_events_link_id_brainos_campaign_links_id_fk",
           "tableFrom": "brainos_click_events",
           "tableTo": "brainos_campaign_links",
-          "columnsFrom": [
-            "link_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["link_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -803,12 +766,8 @@
           "name": "brainos_document_categories_document_id_brainos_documents_id_fk",
           "tableFrom": "brainos_document_categories",
           "tableTo": "brainos_documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -816,12 +775,8 @@
           "name": "brainos_document_categories_category_id_brainos_categories_id_fk",
           "tableFrom": "brainos_document_categories",
           "tableTo": "brainos_categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -831,10 +786,7 @@
         "doc_categories_unique": {
           "name": "doc_categories_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "document_id",
-            "category_id"
-          ]
+          "columns": ["document_id", "category_id"]
         }
       },
       "policies": {},
@@ -901,12 +853,8 @@
           "name": "brainos_document_tags_document_id_brainos_documents_id_fk",
           "tableFrom": "brainos_document_tags",
           "tableTo": "brainos_documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -914,12 +862,8 @@
           "name": "brainos_document_tags_tag_id_brainos_tags_id_fk",
           "tableFrom": "brainos_document_tags",
           "tableTo": "brainos_tags",
-          "columnsFrom": [
-            "tag_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -929,10 +873,7 @@
         "doc_tags_unique": {
           "name": "doc_tags_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "document_id",
-            "tag_id"
-          ]
+          "columns": ["document_id", "tag_id"]
         }
       },
       "policies": {},
@@ -1177,12 +1118,8 @@
           "name": "brainos_documents_user_id_user_id_fk",
           "tableFrom": "brainos_documents",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1192,9 +1129,7 @@
         "documents_slug_unique": {
           "name": "documents_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -1307,12 +1242,8 @@
           "name": "brainos_newsletter_settings_writer_id_user_id_fk",
           "tableFrom": "brainos_newsletter_settings",
           "tableTo": "user",
-          "columnsFrom": [
-            "writer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["writer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1322,9 +1253,7 @@
         "brainos_newsletter_settings_writer_id_unique": {
           "name": "brainos_newsletter_settings_writer_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "writer_id"
-          ]
+          "columns": ["writer_id"]
         }
       },
       "policies": {},
@@ -1410,12 +1339,8 @@
           "name": "brainos_open_events_subscriber_id_brainos_subscribers_id_fk",
           "tableFrom": "brainos_open_events",
           "tableTo": "brainos_subscribers",
-          "columnsFrom": [
-            "subscriber_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subscriber_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1423,12 +1348,8 @@
           "name": "brainos_open_events_campaign_id_brainos_campaigns_id_fk",
           "tableFrom": "brainos_open_events",
           "tableTo": "brainos_campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1498,12 +1419,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1513,9 +1430,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -1651,12 +1566,8 @@
           "name": "brainos_subscribers_writer_id_user_id_fk",
           "tableFrom": "brainos_subscribers",
           "tableTo": "user",
-          "columnsFrom": [
-            "writer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["writer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1666,24 +1577,17 @@
         "brainos_subscribers_email_unique": {
           "name": "brainos_subscribers_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         },
         "brainos_subscribers_token_unique": {
           "name": "brainos_subscribers_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         },
         "sub_constraint": {
           "name": "sub_constraint",
           "nullsNotDistinct": false,
-          "columns": [
-            "email",
-            "token"
-          ]
+          "columns": ["email", "token"]
         }
       },
       "policies": {},
@@ -1770,12 +1674,8 @@
           "name": "brainos_tags_writer_id_user_id_fk",
           "tableFrom": "brainos_tags",
           "tableTo": "user",
-          "columnsFrom": [
-            "writer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["writer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1785,10 +1685,7 @@
         "tags_writer_slug_unique": {
           "name": "tags_writer_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "writer_id",
-            "slug"
-          ]
+          "columns": ["writer_id", "slug"]
         }
       },
       "policies": {},
@@ -1868,12 +1765,8 @@
           "name": "brainos_unsubscribe_events_subscriber_id_brainos_subscribers_id_fk",
           "tableFrom": "brainos_unsubscribe_events",
           "tableTo": "brainos_subscribers",
-          "columnsFrom": [
-            "subscriber_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subscriber_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1881,12 +1774,8 @@
           "name": "brainos_unsubscribe_events_campaign_id_brainos_campaigns_id_fk",
           "tableFrom": "brainos_unsubscribe_events",
           "tableTo": "brainos_campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1951,9 +1840,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -2123,12 +2010,8 @@
           "name": "brainos_workspace_invites_workspace_id_brainos_workspaces_id_fk",
           "tableFrom": "brainos_workspace_invites",
           "tableTo": "brainos_workspaces",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2136,12 +2019,8 @@
           "name": "brainos_workspace_invites_invited_by_user_id_fk",
           "tableFrom": "brainos_workspace_invites",
           "tableTo": "user",
-          "columnsFrom": [
-            "invited_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invited_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2151,9 +2030,7 @@
         "brainos_workspace_invites_token_unique": {
           "name": "brainos_workspace_invites_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -2254,12 +2131,8 @@
           "name": "brainos_workspace_members_workspace_id_brainos_workspaces_id_fk",
           "tableFrom": "brainos_workspace_members",
           "tableTo": "brainos_workspaces",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2267,12 +2140,8 @@
           "name": "brainos_workspace_members_user_id_user_id_fk",
           "tableFrom": "brainos_workspace_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2280,12 +2149,8 @@
           "name": "brainos_workspace_members_invited_by_user_id_fk",
           "tableFrom": "brainos_workspace_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "invited_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invited_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2295,10 +2160,7 @@
         "workspace_members_unique": {
           "name": "workspace_members_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "workspace_id",
-            "user_id"
-          ]
+          "columns": ["workspace_id", "user_id"]
         }
       },
       "policies": {},
@@ -2431,12 +2293,8 @@
           "name": "brainos_workspaces_owner_id_user_id_fk",
           "tableFrom": "brainos_workspaces",
           "tableTo": "user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2446,9 +2304,7 @@
         "brainos_workspaces_slug_unique": {
           "name": "brainos_workspaces_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -2460,32 +2316,17 @@
     "public.campaign_status": {
       "name": "campaign_status",
       "schema": "public",
-      "values": [
-        "DRAFT",
-        "SCHEDULED",
-        "SENDING",
-        "SENT",
-        "FAILED",
-        "CANCELLED"
-      ]
+      "values": ["DRAFT", "SCHEDULED", "SENDING", "SENT", "FAILED", "CANCELLED"]
     },
     "public.document_staus": {
       "name": "document_staus",
       "schema": "public",
-      "values": [
-        "DRAFT",
-        "PUBLISHED"
-      ]
+      "values": ["DRAFT", "PUBLISHED"]
     },
     "public.workspace_role": {
       "name": "workspace_role",
       "schema": "public",
-      "values": [
-        "OWNER",
-        "ADMIN",
-        "EDITOR",
-        "VIEWER"
-      ]
+      "values": ["OWNER", "ADMIN", "EDITOR", "VIEWER"]
     }
   },
   "schemas": {},

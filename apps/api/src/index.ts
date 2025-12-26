@@ -10,6 +10,8 @@ import { createRouter } from './lib/utils'
 import { routers } from './rest/routers'
 import { createTRPCContext } from './trpc/init'
 import { appRouter } from './trpc/routers/_app'
+import { yoga } from './graphql'
+import { withDatabase } from './rest/middleware/db'
 
 const app = createRouter()
 
@@ -45,6 +47,13 @@ app.use(
     createContext: createTRPCContext,
   })
 )
+
+// GraphQL endpoint
+app.use('/graphql', withDatabase)
+app.on(['GET', 'POST'], '/graphql', async (c) => {
+  const response = await yoga.handle(c.req.raw, { honoContext: c })
+  return response
+})
 
 app.doc('/openapi', {
   openapi: '3.1.0',

@@ -1,0 +1,36 @@
+import { documentResolvers } from './documents'
+import { campaignResolvers } from './campaigns'
+import { newsletterResolvers } from './newsletter'
+import { uploadResolvers } from './uploads'
+import { userResolvers } from './users'
+import { DateTimeScalar, JSONScalar } from '../scalars'
+
+export const resolvers = {
+  DateTime: DateTimeScalar,
+  JSON: JSONScalar,
+
+  Query: {
+    ...documentResolvers.Query,
+    ...campaignResolvers.Query,
+    ...newsletterResolvers.Query,
+    ...userResolvers.Query,
+  },
+
+  Mutation: {
+    ...documentResolvers.Mutation,
+    ...campaignResolvers.Mutation,
+    ...newsletterResolvers.Mutation,
+    ...uploadResolvers.Mutation,
+  },
+
+  // Field resolvers
+  Document: documentResolvers.Document,
+  Campaign: campaignResolvers.Campaign,
+
+  // Node interface resolver
+  Node: {
+    __resolveType(obj: { __typename?: string; id: string }) {
+      return obj.__typename || null
+    },
+  },
+}
