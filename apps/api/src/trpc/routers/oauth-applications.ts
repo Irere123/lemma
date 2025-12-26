@@ -1,0 +1,329 @@
+import {
+  createAuthorizationCode,
+  createOAuthApplication,
+  deleteOAuthApplication,
+  getOAuthApplicationByClientId,
+  getOAuthApplicationById,
+  getOAuthApplications,
+  getUserAuthorizedApplications,
+  hasUserEverAuthorizedApp,
+  regenerateClientSecret,
+  revokeUserApplicationTokens,
+  updateOAuthApplication,
+  updateOAuthApplicationstatus,
+} from '@api/db/queries'
+import { sendEmail } from '@api/lib/messaging/email/mailer'
+import {
+  authorizeOAuthApplicationSchema,
+  createOAuthApplicationSchema,
+  deleteOAuthApplicationSchema,
+  getApplicationInfoSchema,
+  getOAuthApplicationSchema,
+  regenerateClientSecretSchema,
+  updateApprovalStatusSchema,
+  updateOAuthApplicationSchema,
+} from '@api/schemas/oauth-applications'
+import { revokeUserApplicationAccessSchema } from '@api/schemas/oauth-flow'
+import { createTRPCRouter, protectedProcedure } from '@api/trpc/init'
+
+export const oauthApplicationsRouter = createTRPCRouter({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const { db, user } = ctx
+
+    const allApplications = await getOAuthApplications(db)
+    // Filter applications created by the current user
+    const applications = allApplications.filter((app) => app.createdBy === user.id)
+
+    return {
+      data: applications,
+    }
+  }),
+
+  getApplicationInfo: protectedProcedure
+    .input(getApplicationInfoSchema)
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx
+      const { clientId, redirectUri, scope, state } = input
+
+      // Validate client_id
+      const application = await getOAuthApplicationByClientId(db, clientId)
+      if (!application || !application.active) {
+        throw new Error('Invalid client_id')
+      }
+
+      // Validate redirect_uri
+      if (!application.redirectUris.includes(redirectUri)) {
+        throw new Error('Invalid redirect_uri')
+      }
+
+      // Validate scopes
+      const requestedScopes = scope.split(' ').filter(Boolean)
+      const invalidScopes = requestedScopes.filter((s) => !application.scopes.includes(s))
+
+      if (invalidScopes.length > 0) {
+        throw new Error(`Invalid scopes: ${invalidScopes.join(', ')}`)
+      }
+
+      // Return application info for consent screen
+      return {
+        id: application.id,
+        name: application.name,
+        description: application.description,
+        overview: application.overview,
+        logoUrl: application.logoUrl,
+        website: application.website,
+        installUrl: application.installUrl,
+        screenshots: application.screenshots,
+        clientId: application.clientId,
+        scopes: requestedScopes,
+        redirectUri: redirectUri,
+        state,
+        status: application.status,
+      }
+    }),
+
+  authorize: protectedProcedure
+    .input(authorizeOAuthApplicationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db, user } = ctx
+      const { clientId, decision, scopes, redirectUri, state, codeChallenge } = input
+
+      // Validate client_id first (needed for both allow and deny)
+      const application = await getOAuthApplicationByClientId(db, clientId)
+      if (!application || !application.active) {
+        throw new Error('Invalid client_id')
+      }
+
+      // Validate scopes against application's registered scopes (prevent privilege escalation)
+      const invalidScopes = scopes.filter((scope) => !application.scopes.includes(scope))
+
+      if (invalidScopes.length > 0) {
+        throw new Error(`Invalid scopes: ${invalidScopes.join(', ')}`)
+      }
+
+      const redirectUrl = new URL(redirectUri)
+
+      // Handle denial early
+      if (decision === 'deny') {
+        redirectUrl.searchParams.set('error', 'access_denied')
+        redirectUrl.searchParams.set('error_description', 'User denied access')
+        if (state) {
+          redirectUrl.searchParams.set('state', state)
+        }
+        return { redirect_url: redirectUrl.toString() }
+      }
+
+      // Enforce PKCE for public clients
+      if (application.isPublic && !codeChallenge) {
+        throw new Error('PKCE is required for public clients')
+      }
+
+      // Create authorization code
+      const authCode = await createAuthorizationCode(db, {
+        applicationId: application.id,
+        userId: user.id,
+        scopes,
+        redirectUri,
+        codeChallenge,
+      })
+
+      if (!authCode) {
+        throw new Error('Failed to create authorization code')
+      }
+
+      // Send app installation email only if this is the first time authorizing this app
+      try {
+        // Check if user has ever authorized this application (including expired tokens)
+        const hasAuthorizedBefore = await hasUserEverAuthorizedApp(db, user.id, application.id)
+
+        if (!hasAuthorizedBefore && user.email) {
+          // Send simple email notification
+          await sendEmail({
+            to: user.email,
+            subject: `App Installed: ${application.name}`,
+            html: `
+                <h2>App Installed</h2>
+                <p>You have successfully installed <strong>${application.name}</strong>.</p>
+                <p>This app now has access to your account based on the permissions you granted.</p>
+              `,
+            emailType: 'transactional',
+          })
+        }
+      } catch (error) {
+        // Log error but don't fail the OAuth flow
+        console.error('Failed to send app installation email:', error)
+      }
+
+      // Build success redirect URL
+      redirectUrl.searchParams.set('code', authCode.code)
+      if (state) {
+        redirectUrl.searchParams.set('state', state)
+      }
+
+      return { redirect_url: redirectUrl.toString() }
+    }),
+
+  create: protectedProcedure
+    .input(createOAuthApplicationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db, user } = ctx
+
+      const application = await createOAuthApplication(db, {
+        ...input,
+        createdBy: user.id,
+      })
+
+      return application
+    }),
+
+  get: protectedProcedure.input(getOAuthApplicationSchema).query(async ({ ctx, input }) => {
+    const { db, user } = ctx
+
+    const application = await getOAuthApplicationById(db, input.id)
+
+    if (!application) {
+      throw new Error('OAuth application not found')
+    }
+
+    // Verify user owns this application
+    if (application.createdBy !== user.id) {
+      throw new Error('OAuth application not found')
+    }
+
+    return application
+  }),
+
+  update: protectedProcedure
+    .input(updateOAuthApplicationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db, user } = ctx
+      const { id, ...updateData } = input
+
+      // Verify user owns this application before updating
+      const existingApp = await getOAuthApplicationById(db, id)
+      if (!existingApp || existingApp.createdBy !== user.id) {
+        throw new Error('OAuth application not found')
+      }
+
+      const application = await updateOAuthApplication(db, {
+        ...updateData,
+        id,
+      })
+
+      if (!application) {
+        throw new Error('OAuth application not found')
+      }
+
+      return application
+    }),
+
+  delete: protectedProcedure
+    .input(deleteOAuthApplicationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db, user } = ctx
+
+      // Verify user owns this application before deleting
+      const existingApp = await getOAuthApplicationById(db, input.id)
+      if (!existingApp || existingApp.createdBy !== user.id) {
+        throw new Error('OAuth application not found')
+      }
+
+      const result = await deleteOAuthApplication(db, {
+        id: input.id,
+      })
+
+      if (!result) {
+        throw new Error('OAuth application not found')
+      }
+
+      return { success: true }
+    }),
+
+  regenerateSecret: protectedProcedure
+    .input(regenerateClientSecretSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db, user } = ctx
+
+      // Verify user owns this application before regenerating secret
+      const existingApp = await getOAuthApplicationById(db, input.id)
+      if (!existingApp || existingApp.createdBy !== user.id) {
+        throw new Error('OAuth application not found')
+      }
+
+      const result = await regenerateClientSecret(db, input.id)
+
+      if (!result) {
+        throw new Error('OAuth application not found')
+      }
+
+      return result
+    }),
+
+  authorized: protectedProcedure.query(async ({ ctx }) => {
+    const { db, user } = ctx
+
+    const applications = await getUserAuthorizedApplications(db, user.id)
+
+    return {
+      data: applications,
+    }
+  }),
+
+  revokeAccess: protectedProcedure
+    .input(revokeUserApplicationAccessSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db, user } = ctx
+
+      await revokeUserApplicationTokens(db, user.id, input.applicationId)
+
+      return { success: true }
+    }),
+
+  updateApprovalStatus: protectedProcedure
+    .input(updateApprovalStatusSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db, user } = ctx
+
+      // Get full application details before updating
+      const application = await getOAuthApplicationById(db, input.id)
+
+      if (!application) {
+        throw new Error('OAuth application not found')
+      }
+
+      // Verify user owns this application before updating status
+      if (application.createdBy !== user.id) {
+        throw new Error('OAuth application not found')
+      }
+
+      const result = await updateOAuthApplicationstatus(db, {
+        id: input.id,
+        status: input.status,
+      })
+
+      if (!result) {
+        throw new Error('OAuth application not found')
+      }
+
+      // Send email notification when status changes to "pending"
+      if (input.status === 'pending' && user.email) {
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: `Application Review Request - ${application.name}`,
+            html: `
+                <h2>Application Review Request</h2>
+                <p>Your application <strong>${application.name}</strong> has been submitted for review.</p>
+                <p>We will review your application and notify you once a decision has been made.</p>
+              `,
+            emailType: 'transactional',
+          })
+        } catch (error) {
+          // Log error but don't fail the mutation
+          console.error('Failed to send application review request:', error)
+        }
+      }
+
+      return result
+    }),
+})

@@ -1,10 +1,11 @@
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 
 import { createTRPCRouter } from '../init'
-import { newsletterRouter } from './newsletter'
-import { documentRouter } from './documents'
 import { apiKeysRouter } from './api-keys'
 import { campaignsRouter } from './campaigns'
+import { documentRouter } from './documents'
+import { newsletterRouter } from './newsletter'
+import { oauthApplicationsRouter } from './oauth-applications'
 import { workspacesRouter } from './workspaces'
 
 export const appRouter = createTRPCRouter({
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   apiKeys: apiKeysRouter,
   campaigns: campaignsRouter,
   workspaces: workspacesRouter,
+  oauthApplications: oauthApplicationsRouter,
 })
 
 // export type definition of API
