@@ -1,23 +1,30 @@
 import 'dotenv/config'
-import { startWorkers, stopWorkers } from './jobs/workers'
 import { closeAllQueues } from './jobs/queues'
+import { startWorkers, stopWorkers } from './jobs/workers'
+import { initializeObservability, logger, shutdownObservability } from './lib/observability'
 
-console.log('Starting Lemma background worker process...')
+initializeObservability()
+
+const workerLogger = logger.child({ component: 'worker-process' })
+
+workerLogger.info('Starting Lemma background worker process...')
 
 // Start all workers
-const workers = startWorkers()
+startWorkers()
+workerLogger.info('All workers started successfully')
 
 // Graceful shutdown
-async function shutdown(signal: string) {
-  console.log(`\nReceived ${signal}. Shutting down gracefully...`)
+const shutdown = async (signal: string) => {
+  workerLogger.info(`Received ${signal}, shutting down gracefully...`)
 
   try {
     await stopWorkers()
     await closeAllQueues()
-    console.log('Shutdown complete')
+    await shutdownObservability()
+    workerLogger.info('Shutdown complete')
     process.exit(0)
   } catch (error) {
-    console.error('Error during shutdown:', error)
+    workerLogger.error('Error during shutdown', error as Error)
     process.exit(1)
   }
 }
@@ -26,4 +33,4 @@ process.on('SIGTERM', () => shutdown('SIGTERM'))
 process.on('SIGINT', () => shutdown('SIGINT'))
 
 // Keep the process running
-console.log('Workers are running. Press Ctrl+C to stop.')
+workerLogger.info('Workers are running. Press Ctrl+C to stop.')
