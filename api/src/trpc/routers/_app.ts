@@ -5,7 +5,6 @@ import { newsletterRouter } from './newsletter'
 import { documentRouter } from './documents'
 import { apiKeysRouter } from './api-keys'
 import { campaignsRouter } from './campaigns'
-import { templatesRouter } from './templates'
 import { workspacesRouter } from './workspaces'
 
 export const appRouter = createTRPCRouter({
@@ -13,7 +12,6 @@ export const appRouter = createTRPCRouter({
   documents: documentRouter,
   apiKeys: apiKeysRouter,
   campaigns: campaignsRouter,
-  templates: templatesRouter,
   workspaces: workspacesRouter,
 })
 

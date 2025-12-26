@@ -276,47 +276,6 @@ export const newsletterSettings = createTable(
 export type NewsletterSettings = typeof newsletterSettings.$inferSelect
 export type NewsletterSettingsInsert = typeof newsletterSettings.$inferInsert
 
-export const templateTypeEnum = pgEnum('template_type', [
-  'NEWSLETTER',
-  'WELCOME',
-  'CONFIRMATION',
-  'TRANSACTIONAL',
-  'CUSTOM',
-])
-
-export const emailTemplates = createTable(
-  'email_templates',
-  {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    slug: text('slug').notNull(),
-    description: text('description'),
-    type: templateTypeEnum().default('CUSTOM'),
-    subject: text('subject'),
-    htmlContent: text('html_content'),
-    jsonContent: jsonb('json_content').$type<any>(),
-    previewText: text('preview_text'),
-    writerId: text('writer_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    isDefault: boolean('is_default').default(false),
-    isActive: boolean('is_active').default(true),
-    variables: jsonb('variables').$type<string[]>().default([]),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
-  },
-  (table) => [
-    index('templates_writer_id_idx').on(table.writerId),
-    index('templates_type_idx').on(table.type),
-    index('templates_slug_idx').on(table.slug),
-    unique('templates_writer_slug_unique').on(table.writerId, table.slug),
-  ]
-)
-
-export type EmailTemplate = typeof emailTemplates.$inferSelect
-export type EmailTemplateInsert = typeof emailTemplates.$inferInsert
-export type TemplateType = (typeof templateTypeEnum.enumValues)[number]
-
 // ============================================================================
 // CAMPAIGNS & ANALYTICS
 // ============================================================================
