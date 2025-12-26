@@ -1,96 +1,204 @@
-import type { Node as ProseMirrorNode } from 'prosemirror-model'
-import { forwardRef, useImperativeHandle, useMemo, type ReactNode } from 'react'
-import { EditorContext, type EditorContextValue } from '../context/EditorContext'
-import { useEditor, type UseEditorOptions } from '../hooks/useEditor'
-import { EditorContent } from './EditorContent'
+import { EditorContent, useEditor } from '@tiptap/react'
+import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  type ForwardedRef,
+} from 'react'
+import { clsx } from 'clsx'
 
-export interface EditorProps extends Omit<UseEditorOptions, 'content'> {
-  /** Document ID for store integration */
-  documentId?: string
-  /** Initial content (ProseMirror Node) */
-  initialContent?: ProseMirrorNode
-  /** Called when document changes */
-  onChange?: (doc: ProseMirrorNode) => void
-  /** Additional class name for the editor container */
-  className?: string
-  /** Children (menus, toolbars, etc.) */
-  children?: ReactNode
-}
+import { createExtensions } from '../extensions'
+import { BubbleMenu } from './menus/BubbleMenu'
+import type { ImageUploadFn, LemmaEditorProps } from '../types'
 
 export interface EditorHandle {
-  /** Focus the editor */
+  editor: TiptapEditor | null
+  getContent: () => JSONContent | null
+  getMarkdown: () => string
+  setContent: (content: JSONContent | string) => void
   focus: () => void
-  /** Blur the editor */
   blur: () => void
-  /** Get the current document */
-  getDocument: () => ProseMirrorNode | null
-  /** Set new content */
-  setContent: (content: ProseMirrorNode) => void
-  /** Check if editor is empty */
-  isEmpty: boolean
+  isEmpty: () => boolean
 }
 
-/**
- * Main Editor component
- */
-export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
+export interface EditorProps extends LemmaEditorProps {
+  onImageUpload?: ImageUploadFn
+  onNoteLinkClick?: (noteId: string, noteTitle: string) => void
+  showBubbleMenu?: boolean
+}
+
+function EditorComponent(
   {
-    initialContent,
-    onChange,
-    className = '',
-    children,
-    placeholder,
+    content,
+    placeholder = "Start writing, or press '/' for commands...",
     editable = true,
-    autoFocus = false,
-  },
-  ref
+    autofocus = false,
+    onUpdate,
+    onFocus,
+    onBlur,
+    onImageUpload,
+    onNoteLinkClick,
+    showBubbleMenu = true,
+    className,
+  }: EditorProps,
+  ref: ForwardedRef<EditorHandle>
 ) {
-  const { view, state, setContainer, setContent, isFocused, focus, blur, isEmpty, getDocument } =
-    useEditor({
-      content: initialContent,
-      onUpdate: onChange,
-      placeholder,
-      editable,
-      autoFocus,
-    })
+  const extensions = createExtensions({
+    placeholder,
+    onNoteLinkClick,
+  })
 
-  // Expose methods via ref
-  useImperativeHandle(
-    ref,
-    () => ({
-      focus,
-      blur,
-      getDocument,
-      setContent,
-      isEmpty,
-    }),
-    [focus, blur, getDocument, setContent, isEmpty]
-  )
+  const editor = useEditor({
+    extensions,
+    content: content || '',
+    editable,
+    autofocus,
+    editorProps: {
+      attributes: {
+        class: clsx(
+          'lemma-editor',
+          'prose prose-stone dark:prose-invert',
+          'max-w-none',
+          'focus:outline-none',
+          className
+        ),
+      },
+      handleDrop: (view, event, _slice, moved) => {
+        if (!moved && event.dataTransfer && event.dataTransfer.files.length > 0) {
+          const files = Array.from(event.dataTransfer.files)
+          const images = files.filter((file) => file.type.startsWith('image/'))
 
-  // Context value for children
-  const contextValue = useMemo<EditorContextValue>(
-    () => ({
-      view,
-      state,
-      isFocused,
-      isEmpty,
-    }),
-    [view, state, isFocused, isEmpty]
-  )
+          if (images.length > 0 && onImageUpload) {
+            event.preventDefault()
+            const coordinates = view.posAtCoords({
+              left: event.clientX,
+              top: event.clientY,
+            })
+
+            images.forEach(async (image) => {
+              try {
+                const result = await onImageUpload(image)
+                if (result && coordinates) {
+                  const node = view.state.schema.nodes.imageBlock?.create({
+                    src: result.url,
+                    alt: result.filename,
+                  })
+                  if (node) {
+                    const transaction = view.state.tr.insert(coordinates.pos, node)
+                    view.dispatch(transaction)
+                  }
+                }
+              } catch (error) {
+                console.error('Image upload failed:', error)
+              }
+            })
+
+            return true
+          }
+        }
+        return false
+      },
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items
+        if (!items) return false
+
+        for (const item of items) {
+          if (item.type.startsWith('image/') && onImageUpload) {
+            event.preventDefault()
+            const file = item.getAsFile()
+            if (!file) return false
+
+            onImageUpload(file).then((result) => {
+              if (result) {
+                const node = view.state.schema.nodes.imageBlock?.create({
+                  src: result.url,
+                  alt: result.filename,
+                })
+                if (node) {
+                  const transaction = view.state.tr.replaceSelectionWith(node)
+                  view.dispatch(transaction)
+                }
+              }
+            }).catch((error) => {
+              console.error('Image upload failed:', error)
+            })
+
+            return true
+          }
+        }
+
+        return false
+      },
+    },
+    onUpdate: ({ editor }) => {
+      if (onUpdate) {
+        const content = editor.getJSON()
+        const markdown = editor.storage.markdown?.getMarkdown() || ''
+        onUpdate({ editor, content, markdown })
+      }
+    },
+    onFocus: ({ editor }) => {
+      if (onFocus) {
+        onFocus({ editor })
+      }
+    },
+    onBlur: ({ editor }) => {
+      if (onBlur) {
+        onBlur({ editor })
+      }
+    },
+  })
+
+  // Expose editor methods via ref
+  useImperativeHandle(ref, () => ({
+    editor,
+    getContent: () => editor?.getJSON() || null,
+    getMarkdown: () => editor?.storage.markdown?.getMarkdown() || '',
+    setContent: (newContent: JSONContent | string) => {
+      if (typeof newContent === 'string') {
+        editor?.commands.setContent(newContent)
+      } else {
+        editor?.commands.setContent(newContent)
+      }
+    },
+    focus: () => editor?.commands.focus(),
+    blur: () => editor?.commands.blur(),
+    isEmpty: () => editor?.isEmpty || true,
+  }))
+
+  // Update editable state
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable)
+    }
+  }, [editor, editable])
+
+  // Update content when it changes externally
+  useEffect(() => {
+    if (editor && content) {
+      const currentContent = JSON.stringify(editor.getJSON())
+      const newContent = typeof content === 'string' ? content : JSON.stringify(content)
+
+      if (currentContent !== newContent && typeof content !== 'string') {
+        editor.commands.setContent(content, false)
+      }
+    }
+  }, [editor, content])
+
+  if (!editor) {
+    return null
+  }
 
   return (
-    <EditorContext.Provider value={contextValue}>
-      <div className={`pm-editor ${className}`} data-focused={isFocused} data-empty={isEmpty}>
-        {children}
-        <EditorContent
-          view={view}
-          setContainer={setContainer}
-          editable={editable}
-          className='pm-editor-editable focus:outline-none'
-        />
-      </div>
-    </EditorContext.Provider>
+    <>
+      <EditorContent editor={editor} />
+      {showBubbleMenu && editable && <BubbleMenu editor={editor} />}
+    </>
   )
-})
+}
 
+export const Editor = forwardRef(EditorComponent)
 Editor.displayName = 'Editor'
+
+export default Editor

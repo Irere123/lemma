@@ -1,6 +1,10 @@
-export { Editor, type EditorProps, type EditorHandle } from './Editor'
-export { EditorProvider, type EditorProviderProps } from './EditorProvider'
-export { EditorContent, type EditorContentProps, type EditorContentHandle } from './EditorContent'
-export { BubbleMenu, bubbleMenuStyles, type BubbleMenuProps } from './BubbleMenu'
-export { DragHandle, dragHandleComponentStyles, type DragHandleProps } from './DragHandle'
-export { SlashMenu, useSlashMenuState } from './SlashMenu'
+// Main Editor component
+export { Editor } from './Editor'
+export type { EditorProps, EditorHandle } from './Editor'
+
+// Menus
+export { BubbleMenu, SlashMenuExtension, SlashMenuList, slashMenuItems, filterSlashMenuItems } from './menus'
+export type { BubbleMenuProps, SlashMenuItem, SlashMenuRef, SlashMenuListProps } from './menus'
+
+// Node Views
+export { CalloutView, CodeBlockView, ToggleView, ImageBlockView } from './node-views'

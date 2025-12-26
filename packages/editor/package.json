@@ -1,6 +1,6 @@
 {
   "name": "@lemma/editor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -13,30 +13,34 @@
     "./types": {
       "types": "./src/types.ts",
       "import": "./src/types.ts"
-    }
+    },
+    "./styles": "./src/styles/editor.css",
+    "./styles/editor.css": "./src/styles/editor.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@floating-ui/react": "^0.26.0",
-    "@popperjs/core": "^2.11.8",
     "@tabler/icons-react": "^3.35.0",
+    "@tiptap/core": "^2.4.0",
+    "@tiptap/extension-code-block-lowlight": "^2.4.0",
+    "@tiptap/extension-highlight": "^2.4.0",
+    "@tiptap/extension-image": "^2.4.0",
+    "@tiptap/extension-link": "^2.4.0",
+    "@tiptap/extension-placeholder": "^2.4.0",
+    "@tiptap/extension-task-item": "^2.4.0",
+    "@tiptap/extension-task-list": "^2.4.0",
+    "@tiptap/extension-underline": "^2.4.0",
+    "@tiptap/pm": "^2.4.0",
+    "@tiptap/react": "^2.4.0",
+    "@tiptap/starter-kit": "^2.4.0",
+    "@tiptap/suggestion": "^2.4.0",
     "clsx": "^2.1.1",
-    "is-hotkey": "^0.2.0",
-    "prism-react-renderer": "^2.4.1",
-    "prosemirror-commands": "^1.5.0",
-    "prosemirror-dropcursor": "^1.8.0",
-    "prosemirror-gapcursor": "^1.3.0",
-    "prosemirror-history": "^1.3.0",
-    "prosemirror-inputrules": "^1.3.0",
-    "prosemirror-keymap": "^1.2.0",
-    "prosemirror-model": "^1.19.0",
-    "prosemirror-schema-list": "^1.3.0",
-    "prosemirror-state": "^1.4.0",
-    "prosemirror-transform": "^1.8.0",
-    "prosemirror-view": "^1.32.0",
+    "lowlight": "^3.1.0",
     "tailwind-merge": "^3.3.1",
+    "tiptap-markdown": "^0.8.10",
+    "tippy.js": "^6.3.7",
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
@@ -44,7 +48,6 @@
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
-    "@types/is-hotkey": "^0.1.10",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/uuid": "^10.0.0",

@@ -1,12 +1,12 @@
-import { IconFilter2, IconClock, IconMail } from '@tabler/icons-react'
+import { IconClock, IconFilter2, IconMail } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
 
-import { Button } from '@/components/ui/button'
 import { DocumentsSkeleton } from '@/components/skeletons'
-import { useTRPC } from '@/trpc/client'
+import { Button } from '@/components/ui/button'
 import { formatWithTimezone } from '@/lib/date'
+import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/_app/documents')({
   component: RouteComponent,
@@ -73,7 +73,7 @@ function RouteComponent() {
               <div className='flex-1'>
                 <div className='flex items-center gap-2'>
                   <Link
-                    to={`/editor/$docId`}
+                    to={`/write/$docId`}
                     params={{ docId: document.id }}
                     className='hover:underline'
                   >

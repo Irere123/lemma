@@ -10,7 +10,9 @@ import {
   toggleDocumentTreeItemCollapsed,
 } from './document-store-utils'
 import { caseInsensitiveStringEqual } from '@/lib/utils'
-import type { Descendant } from 'slate'
+
+// Content can be Slate Descendant[] (legacy) or Tiptap JSONContent (new)
+type EditorContent = unknown
 
 type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
@@ -65,7 +67,7 @@ export type Document = {
   updatedAt: Date | null
   userId: string | null
   title: string | null
-  content?: Descendant[]
+  content?: EditorContent
   subtitle: string | null
   markdown?: string | null
   bannerImage?: string | null

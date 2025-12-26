@@ -1,111 +1,53 @@
-// Schema
-export { schema, getDefaultDoc, createNodeId, nodeTypes, markTypes } from './schema'
-
 // Types
 export * from './types'
 
-// Plugins
-export {
-  createEditorPlugins,
-  createHistoryPlugins,
-  createEditorKeymaps,
-  createInputRules,
-  createPlaceholderPlugin,
-  createNodeIdPlugin,
-  createCursorPlugins,
-  createDragHandlePlugin,
-  dragHandlePluginKey,
-  getDragHandleState,
-  startDrag,
-  updateDropPosition,
-  endDrag,
-  insertBlockAfter,
-  dragHandleStyles,
-  undo,
-  redo,
-  placeholderStyles,
-} from './plugins'
-export type { DragHandleState } from './plugins'
-
-// Hooks
-export {
-  useEditor,
-  useEditorState,
-  useMarkActive,
-  useNodeActive,
-  useSelectionPosition,
-  useSelectionRect,
-} from './hooks'
+// Extensions
+export { createExtensions, Callout, Toggle, ImageBlock, NoteLink } from './extensions'
+export type {
+  ExtensionOptions,
+  CalloutOptions,
+  ToggleOptions,
+  ImageBlockOptions,
+  NoteLinkOptions,
+} from './extensions'
 
 // Components
 export {
   Editor,
-  EditorProvider,
-  EditorContent,
   BubbleMenu,
-  bubbleMenuStyles,
-  DragHandle,
-  dragHandleComponentStyles,
-  SlashMenu,
-  useSlashMenuState,
+  SlashMenuExtension,
+  SlashMenuList,
+  slashMenuItems,
+  filterSlashMenuItems,
+  CalloutView,
+  CodeBlockView,
+  ToggleView,
+  ImageBlockView,
 } from './components'
 export type {
   EditorProps,
-  EditorProviderProps,
   EditorHandle,
-  EditorContentProps,
-  EditorContentHandle,
   BubbleMenuProps,
-  DragHandleProps,
+  SlashMenuItem,
+  SlashMenuRef,
+  SlashMenuListProps,
 } from './components'
 
-// Context
-export { EditorContext, useEditorContext, useEditorView } from './context/EditorContext'
-export type { EditorContextValue } from './context/EditorContext'
-
-// Commands
-export * from './commands'
-
-// Node Views
+// Utilities
 export {
-  createNodeViews,
-  createReactNodeView,
-  nodeViewStyles,
-  injectNodeViewStyles,
-  CodeBlockView,
-  ImageView,
-  CalloutView,
-  ToggleView,
-  TaskItemView,
-  codeBlockStyles,
-  imageStyles,
-  calloutStyles,
-  toggleStyles,
-  taskItemStyles,
-} from './nodeViews'
-export type { ReactNodeViewProps, ReactNodeViewOptions, NodeViewFactory } from './nodeViews'
-
-// Serialization
-export {
-  toMarkdown,
-  prosemirrorToMarkdown,
-  fromMarkdown,
-  markdownToProsemirror,
+  migrateContent,
   migrateFromSlate,
-  slateToProsemir,
-} from './serialization'
+  migrateFromProseMirror,
+  isSlateContent,
+  isProseMirrorContent,
+  isTiptapContent,
+  needsMigration,
+  toMarkdown,
+  fromMarkdown,
+  toPlainText,
+  countWords,
+  countCharacters,
+} from './lib'
 
-// SlashMenu
-export {
-  createSlashMenuPlugin,
-  slashMenuPluginKey,
-  closeSlashMenu,
-  getSlashMenuState,
-  deleteSlashTrigger,
-} from './plugins/slashMenu'
-export type { SlashMenuState } from './plugins/slashMenu'
-
-// Re-export useful ProseMirror types
-export type { EditorState, Transaction, Plugin, PluginKey } from 'prosemirror-state'
-export type { EditorView } from 'prosemirror-view'
-export type { Node as ProseMirrorNode, Schema, Mark, MarkType, NodeType } from 'prosemirror-model'
+// Styles (import in your app)
+// import '@lemma/editor/styles/editor.css'
