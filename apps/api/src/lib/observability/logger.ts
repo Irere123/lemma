@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node'
+import * as Sentry from '@sentry/bun'
 import winston from 'winston'
 
 import { isProduction } from '@api/lib/constants'

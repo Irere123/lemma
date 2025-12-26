@@ -1,5 +1,4 @@
-import * as Sentry from '@sentry/node'
-import { nodeProfilingIntegration } from '@sentry/profiling-node'
+import * as Sentry from '@sentry/bun'
 
 import { env } from '@api/env-runtime'
 import { isProduction } from '@api/lib/constants'
@@ -51,13 +50,12 @@ export function initializeSentry(config: Partial<SentryConfig> = {}): typeof Sen
     debug: mergedConfig.debug,
 
     // Performance monitoring
-    tracesSampleRate: mergedConfig.tracesSampleRate,
-    profilesSampleRate: mergedConfig.profilesSampleRate,
+      tracesSampleRate: mergedConfig.tracesSampleRate,
 
     // Integrations
     integrations: [
       // Profiling integration for performance insights
-      nodeProfilingIntegration(),
+      // nodeProfilingIntegration(),
       // HTTP integration for automatic request tracing
       Sentry.httpIntegration({ spans: true }),
       // Console integration to capture console.error
