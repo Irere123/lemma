@@ -3,7 +3,6 @@ import { getSessionCookie } from 'better-auth/cookies'
 import { GraphQLError } from 'graphql'
 import type { Context } from 'hono'
 
-
 import { apiKeyCache } from '@api/cache/api-keys-cache'
 import { userCache } from '@api/cache/user-cache'
 import type { DB } from '@api/db'
@@ -51,11 +50,7 @@ export async function createGraphQLContext(honoContext: Context): Promise<GraphQ
     if (authHeader) {
       const [scheme, token] = authHeader.split(' ')
 
-      if (
-        scheme === 'Bearer' &&
-        token &&
-        isValidApiKeyFormat(token)
-      ) {
+      if (scheme === 'Bearer' && token && isValidApiKeyFormat(token)) {
         const keyHash = hash(token)
 
         // Check cache first for API key

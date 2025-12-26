@@ -12,7 +12,7 @@ import { expandScopes } from '@lemma/common/scopes'
 
 export const withAuth: MiddlewareHandler = async (c, next) => {
   const sessionCookie = getSessionCookie(c.req.raw.headers, {
-    cookiePrefix: 'brain',
+    cookiePrefix: 'lemma',
   })
   const authHeader = c.req.header('Authorization')
 
@@ -50,8 +50,8 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
     throw new HTTPException(401, { message: 'Token required' })
   }
 
-  // Handle API keys (start with brain_ but not brain_access_token_)
-  if (!token.startsWith('brain_') || !isValidApiKeyFormat(token)) {
+  // Handle API keys (start with lemma_ but not lemma_access_token_)
+  if (!token.startsWith('lemma_') || !isValidApiKeyFormat(token)) {
     throw new HTTPException(401, { message: 'Invalid token format' })
   }
 

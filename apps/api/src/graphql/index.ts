@@ -1,8 +1,8 @@
 import { createYoga } from 'graphql-yoga'
 import type { Context } from 'hono'
 
-import { schema } from './schema'
 import { createGraphQLContext, type GraphQLContext } from './context'
+import { schema } from './schema'
 
 type ServerContext = { honoContext: Context }
 
@@ -15,9 +15,9 @@ export const yoga = createYoga<ServerContext, GraphQLContext>({
   graphqlEndpoint: '/graphql',
   landingPage: false,
   graphiql: {
-    title: 'Lemma GraphQL API',
+    title: 'Lemma',
   },
 })
 
-export { schema } from './schema'
 export type { GraphQLContext } from './context'
+export { schema } from './schema'
