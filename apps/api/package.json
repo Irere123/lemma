@@ -14,6 +14,10 @@
     "seed-slugs:prod": "cross-env NODE_ENV=production bun run ./scripts/seed-slugs.ts"
   },
   "dependencies": {
+    "@escape.tech/graphql-armor-cost-limit": "2.4.3",
+    "@escape.tech/graphql-armor-max-depth": "2.4.2",
+    "@escape.tech/graphql-armor-max-tokens": "2.5.1",
+    "@graphql-yoga/plugin-disable-introspection": "2.19.0",
     "@hono/trpc-server": "^0.4.0",
     "@hono/zod-openapi": "^1.1.0",
     "@lemma/common": "workspace:*",
