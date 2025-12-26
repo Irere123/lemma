@@ -1,4 +1,7 @@
 # syntax=docker/dockerfile:1
+# Lemma Background Worker Dockerfile
+# Uses turbo prune for optimal monorepo builds
+
 FROM oven/bun:1.3.5-alpine AS base
 
 # Builder stage - prunes monorepo and installs dependencies
@@ -9,15 +12,14 @@ WORKDIR /app
 # Install turbo globally
 RUN bun install -g turbo@^2
 
-
 # Copy entire monorepo for pruning
 COPY . .
 
-# Generate a partial monorepo with pruned lockfile for server workspace
+# Generate a partial monorepo with pruned lockfile for api workspace (worker is part of api)
 RUN turbo prune api --docker
 
 # Installer stage - installs dependencies from pruned workspace
-FROM base AS installer  
+FROM base AS installer
 RUN apk update && apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
@@ -28,7 +30,7 @@ COPY --from=builder /app/out/json/ .
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install
 
-# Copy source files and build
+# Copy source files
 COPY --from=builder /app/out/full/ .
 
 # Production stage
@@ -45,20 +47,14 @@ COPY --from=builder --chown=bun:bun /app/out/full/packages ./packages
 
 # Set environment variables
 ENV ENV=production
-ENV PORT=4000
 
 USER bun
 
 # Set working directory to the API app
 WORKDIR /app/api
 
-EXPOSE 4000
-
-# Health check for Swarm rolling updates - ensures traffic only routes to healthy containers
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:4000/ || exit 1
-
 # Graceful shutdown signal for rolling updates
 STOPSIGNAL SIGTERM
 
-CMD ["bun", "run", "src/index.ts"]
+# Run the background worker
+CMD ["bun", "run", "src/worker.ts"]

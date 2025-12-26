@@ -1,4 +1,7 @@
 # syntax=docker/dockerfile:1
+# Lemma API Server Dockerfile
+# Uses turbo prune for optimal monorepo builds
+
 FROM oven/bun:1.3.5-alpine AS base
 
 # Builder stage - prunes monorepo and installs dependencies
@@ -9,15 +12,14 @@ WORKDIR /app
 # Install turbo globally
 RUN bun install -g turbo@^2
 
-
 # Copy entire monorepo for pruning
 COPY . .
 
-# Generate a partial monorepo with pruned lockfile for server workspace
+# Generate a partial monorepo with pruned lockfile for api workspace
 RUN turbo prune api --docker
 
 # Installer stage - installs dependencies from pruned workspace
-FROM base AS installer  
+FROM base AS installer
 RUN apk update && apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
@@ -28,7 +30,7 @@ COPY --from=builder /app/out/json/ .
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install
 
-# Copy source files and build
+# Copy source files
 COPY --from=builder /app/out/full/ .
 
 # Production stage

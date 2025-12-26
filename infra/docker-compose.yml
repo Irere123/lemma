@@ -1,0 +1,122 @@
+# Lemma API Infrastructure
+# Development/Local setup with all services
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: lemma-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lemma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lemma_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-lemma}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lemma} -d ${POSTGRES_DB:-lemma}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for BullMQ job queues
+  redis:
+    image: redis:7-alpine
+    container_name: lemma-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Main API Server
+  api:
+    build:
+      context: ..
+      dockerfile: infra/docker/api.Dockerfile
+    container_name: lemma-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      ENV: ${ENV:-development}
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lemma}:${POSTGRES_PASSWORD:-lemma_dev_password}@postgres:5432/${POSTGRES_DB:-lemma}
+      REDIS_URL: redis://redis:6379
+      ALLOWED_API_ORIGINS: ${ALLOWED_API_ORIGINS:-http://localhost:3000}
+      LEMMA_ENCRYPTION_KEY: ${LEMMA_ENCRYPTION_KEY}
+      ADMIN_USER_ID: ${ADMIN_USER_ID}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_URL: ${R2_BUCKET_URL}
+      R2_STORAGE_BASE_URL: ${R2_STORAGE_BASE_URL}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_DOMAIN: ${RESEND_DOMAIN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:4000}
+      BASE_URL: ${BASE_URL:-http://localhost:4000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Background Worker
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/docker/worker.Dockerfile
+    container_name: lemma-worker
+    restart: unless-stopped
+    environment:
+      ENV: ${ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lemma}:${POSTGRES_PASSWORD:-lemma_dev_password}@postgres:5432/${POSTGRES_DB:-lemma}
+      REDIS_URL: redis://redis:6379
+      LEMMA_ENCRYPTION_KEY: ${LEMMA_ENCRYPTION_KEY}
+      ADMIN_USER_ID: ${ADMIN_USER_ID}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_URL: ${R2_BUCKET_URL}
+      R2_STORAGE_BASE_URL: ${R2_STORAGE_BASE_URL}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_DOMAIN: ${RESEND_DOMAIN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:4000}
+      BASE_URL: ${BASE_URL:-http://localhost:4000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 1
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: lemma-network
