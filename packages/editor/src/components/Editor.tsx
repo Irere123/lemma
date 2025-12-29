@@ -1,11 +1,11 @@
+import type { JSONContent, Editor as TiptapEditor } from '@tiptap/core'
 import { EditorContent, useEditor } from '@tiptap/react'
-import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core'
-import { forwardRef, useEffect, useImperativeHandle, type ForwardedRef } from 'react'
 import { clsx } from 'clsx'
+import { type ForwardedRef, forwardRef, useEffect, useImperativeHandle } from 'react'
 
 import { createExtensions } from '../extensions'
-import { BubbleMenu } from './menus/BubbleMenu'
 import type { ImageUploadFn, LemmaEditorProps } from '../types'
+import { BubbleMenu } from './menus/BubbleMenu'
 
 export interface EditorHandle {
   editor: TiptapEditor | null

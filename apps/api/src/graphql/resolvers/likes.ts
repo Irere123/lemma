@@ -1,11 +1,6 @@
 import { GraphQLError } from 'graphql'
 
-import {
-  getLikeStatus,
-  toggleLike,
-  getDocumentById,
-  getDocumentLikeCount,
-} from '@api/db/queries'
+import { getLikeStatus, toggleLike, getDocumentById, getDocumentLikeCount } from '@api/db/queries'
 import type { GraphQLContext } from '../context'
 import { requireAuth, requireScope } from '../context'
 

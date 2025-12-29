@@ -1,19 +1,25 @@
-import type { Editor, Range } from '@tiptap/core'
 import {
+  IconAlertCircle,
+  IconBlockquote,
+  IconChevronRight,
+  IconCode,
+  IconColumnInsertLeft,
+  IconColumnInsertRight,
   IconH1,
   IconH2,
   IconH3,
   IconList,
-  IconListNumbers,
   IconListCheck,
-  IconBlockquote,
-  IconCode,
+  IconListNumbers,
   IconPhoto,
-  IconSeparator,
-  IconAlertCircle,
-  IconChevronRight,
   IconPilcrow,
+  IconRowInsertBottom,
+  IconRowInsertTop,
+  IconSeparator,
+  IconTable,
+  IconTrash,
 } from '@tabler/icons-react'
+import type { Editor, Range } from '@tiptap/core'
 
 export interface SlashMenuItem {
   id: string
@@ -96,6 +102,21 @@ export const slashMenuItems: SlashMenuItem[] = [
     },
   },
   {
+    id: 'table',
+    title: 'Table',
+    description: 'Add a table to organize data.',
+    icon: <IconTable size={18} />,
+    keywords: ['table', 'grid', 'spreadsheet', 'data'],
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run()
+    },
+  },
+  {
     id: 'blockquote',
     title: 'Quote',
     description: 'Capture a quote.',
@@ -108,7 +129,7 @@ export const slashMenuItems: SlashMenuItem[] = [
   {
     id: 'codeBlock',
     title: 'Code Block',
-    description: 'Capture a code snippet.',
+    description: 'Capture a code snippet with syntax highlighting.',
     icon: <IconCode size={18} />,
     keywords: ['code', 'codeblock', 'snippet', 'programming'],
     command: ({ editor, range }) => {
@@ -156,6 +177,60 @@ export const slashMenuItems: SlashMenuItem[] = [
       editor.chain().focus().deleteRange(range).run()
       // Dispatch a custom event for image upload
       window.dispatchEvent(new CustomEvent('lemma-editor:upload-image'))
+    },
+  },
+]
+
+// Table-specific menu items (shown when inside a table)
+export const tableMenuItems: SlashMenuItem[] = [
+  {
+    id: 'addRowBefore',
+    title: 'Add Row Above',
+    description: 'Insert a row above the current row.',
+    icon: <IconRowInsertTop size={18} />,
+    keywords: ['row', 'above', 'insert', 'before'],
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).addRowBefore().run()
+    },
+  },
+  {
+    id: 'addRowAfter',
+    title: 'Add Row Below',
+    description: 'Insert a row below the current row.',
+    icon: <IconRowInsertBottom size={18} />,
+    keywords: ['row', 'below', 'insert', 'after'],
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).addRowAfter().run()
+    },
+  },
+  {
+    id: 'addColumnBefore',
+    title: 'Add Column Left',
+    description: 'Insert a column to the left.',
+    icon: <IconColumnInsertLeft size={18} />,
+    keywords: ['column', 'left', 'insert', 'before'],
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).addColumnBefore().run()
+    },
+  },
+  {
+    id: 'addColumnAfter',
+    title: 'Add Column Right',
+    description: 'Insert a column to the right.',
+    icon: <IconColumnInsertRight size={18} />,
+    keywords: ['column', 'right', 'insert', 'after'],
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).addColumnAfter().run()
+    },
+  },
+  {
+    id: 'deleteTable',
+    title: 'Delete Table',
+    description: 'Remove the entire table.',
+    icon: <IconTrash size={18} />,
+    keywords: ['delete', 'remove', 'table'],
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).deleteTable().run()
     },
   },
 ]

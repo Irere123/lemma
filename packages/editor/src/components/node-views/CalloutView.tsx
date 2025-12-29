@@ -1,13 +1,13 @@
-import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
-import { clsx } from 'clsx'
 import {
-  IconInfoCircle,
   IconAlertTriangle,
+  IconBulb,
   IconCircleCheck,
   IconCircleX,
-  IconBulb,
+  IconInfoCircle,
   IconNote,
 } from '@tabler/icons-react'
+import { NodeViewContent, type NodeViewProps, NodeViewWrapper } from '@tiptap/react'
+import { clsx } from 'clsx'
 
 import type { CalloutVariant } from '../../types'
 

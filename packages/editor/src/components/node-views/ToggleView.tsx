@@ -1,7 +1,7 @@
-import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
-import { useCallback } from 'react'
+import { IconChevronDown, IconChevronRight } from '@tabler/icons-react'
+import { NodeViewContent, type NodeViewProps, NodeViewWrapper } from '@tiptap/react'
 import { clsx } from 'clsx'
-import { IconChevronRight, IconChevronDown } from '@tabler/icons-react'
+import { useCallback } from 'react'
 
 export function ToggleView({ node, updateAttributes }: NodeViewProps) {
   const isOpen = node.attrs.open !== false

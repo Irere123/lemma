@@ -88,7 +88,7 @@ export const Callout = Node.create<CalloutOptions>({
     return [
       // >! for info callout
       wrappingInputRule({
-        find: /^>\!\s$/,
+        find: /^>!\s$/,
         type: this.type,
         getAttributes: () => ({ variant: 'info' }),
       }),

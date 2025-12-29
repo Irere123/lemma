@@ -1,11 +1,11 @@
-import { Extension, type Editor } from '@tiptap/core'
+import { type Editor, Extension } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion, { type SuggestionOptions } from '@tiptap/suggestion'
-import tippy, { type Instance as TippyInstance } from 'tippy.js'
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react'
 import { clsx } from 'clsx'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react'
+import tippy, { type Instance as TippyInstance } from 'tippy.js'
 
-import { slashMenuItems, filterSlashMenuItems, type SlashMenuItem } from './items'
+import { filterSlashMenuItems, type SlashMenuItem, slashMenuItems } from './items'
 
 export interface SlashMenuRef {
   onKeyDown: (props: { event: KeyboardEvent }) => boolean

@@ -80,3 +80,5 @@ bun.lockb
 package-lock.json
 
 .turbo
+
+opencode.json

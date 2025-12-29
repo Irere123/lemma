@@ -1,17 +1,17 @@
-import { BubbleMenu as TiptapBubbleMenu, type Editor } from '@tiptap/react'
-import { useCallback, useState } from 'react'
-import { clsx } from 'clsx'
 import {
   IconBold,
-  IconItalic,
-  IconUnderline,
-  IconStrikethrough,
+  IconCheck,
   IconCode,
   IconHighlight,
+  IconItalic,
   IconLink,
-  IconCheck,
+  IconStrikethrough,
+  IconUnderline,
   IconX,
 } from '@tabler/icons-react'
+import { type Editor, BubbleMenu as TiptapBubbleMenu } from '@tiptap/react'
+import { clsx } from 'clsx'
+import { useCallback, useState } from 'react'
 
 export interface BubbleMenuProps {
   editor: Editor | null
@@ -153,7 +153,6 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
                   cancelLink()
                 }
               }}
-              autoFocus
               className='bubble-menu-link-field'
             />
             <button

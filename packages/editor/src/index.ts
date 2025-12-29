@@ -1,53 +1,61 @@
 // Types
-export * from './types'
 
-// Extensions
-export { createExtensions, Callout, Toggle, ImageBlock, NoteLink } from './extensions'
 export type {
-  ExtensionOptions,
-  CalloutOptions,
-  ToggleOptions,
-  ImageBlockOptions,
-  NoteLinkOptions,
-} from './extensions'
-
+  BubbleMenuProps,
+  EditorHandle,
+  EditorProps,
+  SlashMenuItem,
+  SlashMenuListProps,
+  SlashMenuRef,
+} from './components'
 // Components
 export {
-  Editor,
   BubbleMenu,
+  CalloutView,
+  CodeBlockView,
+  Editor,
+  filterSlashMenuItems,
+  ImageBlockView,
   SlashMenuExtension,
   SlashMenuList,
   slashMenuItems,
-  filterSlashMenuItems,
-  CalloutView,
-  CodeBlockView,
   ToggleView,
-  ImageBlockView,
 } from './components'
 export type {
-  EditorProps,
-  EditorHandle,
-  BubbleMenuProps,
-  SlashMenuItem,
-  SlashMenuRef,
-  SlashMenuListProps,
-} from './components'
-
+  CalloutOptions,
+  ExtensionOptions,
+  ImageBlockOptions,
+  ToggleOptions,
+} from './extensions'
+// Extensions
+export { Callout, createExtensions, ImageBlock, Toggle } from './extensions'
+// Table Extensions
+// Enhanced CodeBlock
+export {
+  EnhancedCodeBlock,
+  LemmaTable,
+  LemmaTableCell,
+  LemmaTableHeader,
+  LemmaTableRow,
+  lowlight,
+  TableExtensions,
+} from './extensions/nodes'
 // Utilities
 export {
-  migrateContent,
-  migrateFromSlate,
-  migrateFromProseMirror,
-  isSlateContent,
+  countCharacters,
+  countWords,
+  fromMarkdown,
   isProseMirrorContent,
+  isSlateContent,
   isTiptapContent,
+  migrateContent,
+  migrateFromProseMirror,
+  migrateFromSlate,
   needsMigration,
   toMarkdown,
-  fromMarkdown,
   toPlainText,
-  countWords,
-  countCharacters,
 } from './lib'
+export * from './types'
 
 // Styles (import in your app)
 // import '@lemma/editor/styles/editor.css'

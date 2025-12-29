@@ -19,6 +19,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsIndexRouteImport } from './routes/posts/index'
 import { Route as PostsSlugRouteImport } from './routes/posts/$slug'
+import { Route as DevelopersOauthAppsRouteImport } from './routes/_developers/oauth-apps'
 import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/developers'
 import { Route as AppNewsletterSettingsRouteImport } from './routes/_app/newsletter-settings'
 import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
@@ -71,6 +72,11 @@ const PostsSlugRoute = PostsSlugRouteImport.update({
   path: '/posts/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevelopersOauthAppsRoute = DevelopersOauthAppsRouteImport.update({
+  id: '/oauth-apps',
+  path: '/oauth-apps',
+  getParentRoute: () => DevelopersRouteRoute,
+} as any)
 const DevelopersDevelopersRoute = DevelopersDevelopersRouteImport.update({
   id: '/developers',
   path: '/developers',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AppDocumentsRoute
   '/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/developers': typeof DevelopersDevelopersRoute
+  '/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
   '/write/$docId': typeof WriteWriteDocIdRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AppDocumentsRoute
   '/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/developers': typeof DevelopersDevelopersRoute
+  '/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
   '/write/$docId': typeof WriteWriteDocIdRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/_app/documents': typeof AppDocumentsRoute
   '/_app/newsletter-settings': typeof AppNewsletterSettingsRoute
   '/_developers/developers': typeof DevelopersDevelopersRoute
+  '/_developers/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/': typeof PostsIndexRoute
   '/_write/write/$docId': typeof WriteWriteDocIdRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/newsletter-settings'
     | '/developers'
+    | '/oauth-apps'
     | '/posts/$slug'
     | '/posts'
     | '/write/$docId'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/newsletter-settings'
     | '/developers'
+    | '/oauth-apps'
     | '/posts/$slug'
     | '/posts'
     | '/write/$docId'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/_app/documents'
     | '/_app/newsletter-settings'
     | '/_developers/developers'
+    | '/_developers/oauth-apps'
     | '/posts/$slug'
     | '/posts/'
     | '/_write/write/$docId'
@@ -265,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_developers/oauth-apps': {
+      id: '/_developers/oauth-apps'
+      path: '/oauth-apps'
+      fullPath: '/oauth-apps'
+      preLoaderRoute: typeof DevelopersOauthAppsRouteImport
+      parentRoute: typeof DevelopersRouteRoute
+    }
     '/_developers/developers': {
       id: '/_developers/developers'
       path: '/developers'
@@ -312,10 +331,12 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 
 interface DevelopersRouteRouteChildren {
   DevelopersDevelopersRoute: typeof DevelopersDevelopersRoute
+  DevelopersOauthAppsRoute: typeof DevelopersOauthAppsRoute
 }
 
 const DevelopersRouteRouteChildren: DevelopersRouteRouteChildren = {
   DevelopersDevelopersRoute: DevelopersDevelopersRoute,
+  DevelopersOauthAppsRoute: DevelopersOauthAppsRoute,
 }
 
 const DevelopersRouteRouteWithChildren = DevelopersRouteRoute._addFileChildren(

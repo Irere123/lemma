@@ -1,11 +1,25 @@
 export const SCOPES = [
   'documents.read',
   'documents.write',
+  'comments.read',
+  'comments.write',
+  'likes.read',
+  'likes.write',
   'users.read',
   'users.write',
   'search.read',
   'tags.read',
   'tags.write',
+  'categories.read',
+  'categories.write',
+  'subscribers.read',
+  'subscribers.write',
+  'campaigns.read',
+  'campaigns.write',
+  'newsletter.read',
+  'newsletter.write',
+  'uploads.write',
+  'feeds.read',
   'apis.all', // All API scopes
   'apis.read', // All read scopes
 ] as const

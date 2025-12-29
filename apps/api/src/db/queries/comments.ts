@@ -12,11 +12,7 @@ const MAX_PAGE_SIZE = 100
 // CREATE OPERATIONS
 // ============================================================================
 
-export const createComment = async (
-  db: DB,
-  data: CreateCommentData,
-  userId: string
-) => {
+export const createComment = async (db: DB, data: CreateCommentData, userId: string) => {
   const [comment] = await db
     .insert(comments)
     .values({
@@ -177,12 +173,7 @@ export const getDocumentCommentCount = async (db: DB, documentId: string): Promi
 // UPDATE OPERATIONS
 // ============================================================================
 
-export const updateComment = async (
-  db: DB,
-  id: string,
-  userId: string,
-  content: string
-) => {
+export const updateComment = async (db: DB, id: string, userId: string, content: string) => {
   const [comment] = await db
     .update(comments)
     .set({ content, updatedAt: new Date() })

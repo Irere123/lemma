@@ -13,10 +13,10 @@
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.1",
     "@lemma/api": "workspace:*",
     "@lemma/common": "workspace:*",
     "@lemma/editor": "workspace:*",
-    "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.7",
@@ -47,6 +47,7 @@
     "localforage": "^1.10.0",
     "lucide-react": "^0.544.0",
     "nprogress": "^0.2.0",
+    "nuqs": "2.8.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.62.0",

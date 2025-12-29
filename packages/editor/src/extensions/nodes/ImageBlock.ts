@@ -66,7 +66,7 @@ export const ImageBlock = Node.create<ImageBlockOptions>({
         default: null,
         parseHTML: (element) => {
           const width = element.querySelector('img')?.getAttribute('width')
-          return width ? parseInt(width, 10) : null
+          return width ? Number.parseInt(width, 10) : null
         },
         renderHTML: (attributes) => {
           if (!attributes.width) return {}

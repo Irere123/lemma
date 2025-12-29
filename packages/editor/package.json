@@ -29,8 +29,13 @@
     "@tiptap/extension-image": "^2.4.0",
     "@tiptap/extension-link": "^2.4.0",
     "@tiptap/extension-placeholder": "^2.4.0",
+    "@tiptap/extension-table": "3.14.0",
+    "@tiptap/extension-table-cell": "3.14.0",
+    "@tiptap/extension-table-header": "3.14.0",
+    "@tiptap/extension-table-row": "3.14.0",
     "@tiptap/extension-task-item": "^2.4.0",
     "@tiptap/extension-task-list": "^2.4.0",
+    "@tiptap/extension-typography": "3.14.0",
     "@tiptap/extension-underline": "^2.4.0",
     "@tiptap/pm": "^2.4.0",
     "@tiptap/react": "^2.4.0",
@@ -39,8 +44,8 @@
     "clsx": "^2.1.1",
     "lowlight": "^3.1.0",
     "tailwind-merge": "^3.3.1",
-    "tiptap-markdown": "^0.8.10",
     "tippy.js": "^6.3.7",
+    "tiptap-markdown": "^0.8.10",
     "uuid": "^11.1.0"
   },
   "peerDependencies": {

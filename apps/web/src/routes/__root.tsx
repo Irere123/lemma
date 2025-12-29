@@ -1,7 +1,8 @@
 // src/routes/__root.tsx
 /// <reference types="vite/client" />
+import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import type { ReactNode } from 'react'
-import { Outlet, createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 
 import appCss from '@/app.css?url'
 import NotFound from '@/components/not-found'
@@ -42,14 +43,16 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <RootDocument>
-      <Outlet />
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
     </RootDocument>
   )
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html>
+    <html lang='en'>
       <head>
         <HeadContent />
       </head>

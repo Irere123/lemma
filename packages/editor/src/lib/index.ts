@@ -1,17 +1,16 @@
 export {
-  migrateContent,
-  migrateFromSlate,
-  migrateFromProseMirror,
-  isSlateContent,
+  countCharacters,
+  countWords,
+  fromMarkdown,
+  toMarkdown,
+  toPlainText,
+} from './markdown'
+export {
   isProseMirrorContent,
+  isSlateContent,
   isTiptapContent,
+  migrateContent,
+  migrateFromProseMirror,
+  migrateFromSlate,
   needsMigration,
 } from './migration'
-
-export {
-  toMarkdown,
-  fromMarkdown,
-  toPlainText,
-  countWords,
-  countCharacters,
-} from './markdown'

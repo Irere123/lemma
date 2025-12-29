@@ -65,7 +65,9 @@ commentsRouter.openapi(
 
     const nextCursor = hasMore ? (results.at(-1)?.createdAt?.toISOString() ?? null) : null
 
-    return c.json(validateResponse({ data: commentsWithReplyCounts, nextCursor }, commentsResponseSchema))
+    return c.json(
+      validateResponse({ data: commentsWithReplyCounts, nextCursor }, commentsResponseSchema)
+    )
   }
 )
 

@@ -1,13 +1,13 @@
-import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
-import { useState, useCallback, useRef } from 'react'
-import { clsx } from 'clsx'
 import {
-  IconAlignLeft,
   IconAlignCenter,
+  IconAlignLeft,
   IconAlignRight,
-  IconTrash,
   IconDownload,
+  IconTrash,
 } from '@tabler/icons-react'
+import { type NodeViewProps, NodeViewWrapper } from '@tiptap/react'
+import { clsx } from 'clsx'
+import { useCallback, useRef, useState } from 'react'
 
 type Alignment = 'left' | 'center' | 'right'
 
