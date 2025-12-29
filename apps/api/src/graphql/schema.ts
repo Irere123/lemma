@@ -198,6 +198,55 @@ const typeDefs = /* GraphQL */ `
   }
 
   # ============================================================================
+  # COMMENT TYPES
+  # ============================================================================
+
+  type CommentAuthor {
+    id: ID!
+    name: String!
+    image: String
+  }
+
+  type Comment implements Node {
+    id: ID!
+    documentId: String!
+    userId: String!
+    parentId: String
+    content: String!
+    createdAt: DateTime
+    updatedAt: DateTime
+    author: CommentAuthor!
+    replyCount: Int
+    replies(pagination: PaginationInput): CommentConnection!
+  }
+
+  type CommentEdge {
+    cursor: String!
+    node: Comment!
+  }
+
+  type CommentConnection {
+    edges: [CommentEdge!]!
+    nodes: [Comment!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+  }
+
+  # ============================================================================
+  # LIKE TYPES
+  # ============================================================================
+
+  type LikeStatus {
+    isLiked: Boolean!
+    likeCount: Int!
+  }
+
+  type ToggleLikeResult {
+    liked: Boolean!
+    likeCount: Int!
+  }
+
+  # ============================================================================
   # NEWSLETTER TYPES
   # ============================================================================
 
@@ -344,6 +393,17 @@ const typeDefs = /* GraphQL */ `
     contentType: String!
   }
 
+  input CreateCommentInput {
+    documentId: ID!
+    parentId: ID
+    content: String!
+  }
+
+  input UpdateCommentInput {
+    id: ID!
+    content: String!
+  }
+
   # ============================================================================
   # QUERY TYPE
   # ============================================================================
@@ -379,6 +439,13 @@ const typeDefs = /* GraphQL */ `
 
     # User
     me: User
+
+    # Comments (public)
+    comments(documentId: ID!, parentId: ID, pagination: PaginationInput): CommentConnection!
+    comment(id: ID!): Comment
+
+    # Likes (public)
+    likeStatus(documentId: ID!): LikeStatus!
   }
 
   # ============================================================================
@@ -405,6 +472,14 @@ const typeDefs = /* GraphQL */ `
 
     # Uploads
     generatePreSignedUrl(input: PreSignedUrlInput!): PreSignedUrlResult!
+
+    # Comments (authenticated)
+    createComment(input: CreateCommentInput!): Comment!
+    updateComment(input: UpdateCommentInput!): Comment!
+    deleteComment(id: ID!): Boolean!
+
+    # Likes (authenticated)
+    toggleLike(documentId: ID!): ToggleLikeResult!
   }
 `
 

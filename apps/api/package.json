@@ -3,7 +3,8 @@
   "main": "src/trpc/routers/_app.ts",
   "types": "src/trpc/routers/_app.ts",
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
+    "dev": "bun run --parallel api:dev worker:dev",
+    "api:dev": "bun run --watch src/index.ts",
     "worker": "bun run src/worker.ts",
     "worker:dev": "bun --watch run src/worker.ts",
     "generate-migration": "drizzle-kit generate",

@@ -2,8 +2,10 @@ import { createRouter } from '@api/lib/utils'
 
 import { protectedMiddleware, publicMiddleware } from '../middleware'
 import { campaignsRouter } from './campaigns'
+import { commentsRouter } from './comments'
 import { documentsRouter } from './documents'
 import { feedsRouter } from './feeds'
+import { likesRouter } from './likes'
 import { newsletterRouter } from './newsletter'
 import { oauthRouter } from './oauth'
 import { postsRouter } from './posts'
@@ -20,6 +22,8 @@ routers.route('/oauth', oauthRouter)
 routers.route('/posts', postsRouter)
 routers.route('/newsletter', newsletterRouter)
 routers.route('/feeds', feedsRouter)
+routers.route('/comments', commentsRouter) // Has both public and protected routes (per-route middleware)
+routers.route('/likes', likesRouter) // Has both public and protected routes (per-route middleware)
 
 // Authenticated routes
 

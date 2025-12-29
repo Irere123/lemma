@@ -218,6 +218,65 @@ export type DocumentTag = typeof documentTags.$inferSelect
 export type DocumentTagInsert = typeof documentTags.$inferInsert
 
 // ============================================================================
+// COMMENTS & LIKES
+// ============================================================================
+
+// Comments with nested reply support (adjacency list pattern)
+export const comments = createTable(
+  'comments',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    parentId: text('parent_id'), // Self-reference for nested replies
+    content: text('content').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('comments_document_id_idx').on(table.documentId),
+    index('comments_user_id_idx').on(table.userId),
+    index('comments_parent_id_idx').on(table.parentId),
+    index('comments_created_at_idx').on(table.createdAt),
+    foreignKey({
+      columns: [table.parentId],
+      foreignColumns: [table.id],
+      name: 'comments_parent_id_fkey',
+    }).onDelete('cascade'),
+  ]
+)
+
+export type Comment = typeof comments.$inferSelect
+export type CommentInsert = typeof comments.$inferInsert
+
+// Document likes (unique per user + document)
+export const documentLikes = createTable(
+  'document_likes',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => [
+    index('document_likes_document_id_idx').on(table.documentId),
+    index('document_likes_user_id_idx').on(table.userId),
+    unique('document_likes_unique').on(table.documentId, table.userId),
+  ]
+)
+
+export type DocumentLike = typeof documentLikes.$inferSelect
+export type DocumentLikeInsert = typeof documentLikes.$inferInsert
+
+// ============================================================================
 // NEWSLETTER & EMAIL
 // ============================================================================
 
