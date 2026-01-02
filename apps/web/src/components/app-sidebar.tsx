@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query'
 import { IconChevronDown, IconCirclePlus } from '@tabler/icons-react'
+import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 import {
@@ -11,9 +11,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { useTRPC } from '@/trpc/client'
-import { getDefaultEditorValue } from '@/components/editor'
 import { documentStore } from '@/stores/document-store'
+import { useTRPC } from '@/trpc/client'
 
 export function AppSidebar() {
   const trpc = useTRPC()
@@ -41,7 +40,7 @@ export function AppSidebar() {
               disabled={upsertLoading}
               onClick={async () => {
                 const resp = await upsertDocument({
-                  content: getDefaultEditorValue(),
+                  content: {},
                 })
 
                 if (resp) {
@@ -49,7 +48,7 @@ export function AppSidebar() {
                   documentStore.getState().upsertDocument(resp as any)
 
                   navigate({
-                    to: '/editor/$docId',
+                    to: '/write/$docId',
                     params: { docId: resp.id },
                   })
                 }

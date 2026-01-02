@@ -2,6 +2,10 @@ import { IconEdit, IconLogout, IconSettings, IconUser } from '@tabler/icons-reac
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 
+import { signOut, useSession } from '@/lib/auth-client'
+import { documentStore } from '@/stores/document-store'
+import { useTRPC } from '@/trpc/client'
+import { Button } from './ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,11 +14,6 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { SidebarTrigger, useSidebar } from './ui/sidebar'
-import { useTRPC } from '@/trpc/client'
-import { Button } from './ui/button'
-import { getDefaultEditorValue } from '@/components/editor'
-import { documentStore } from '@/stores/document-store'
-import { signOut, useSession } from '@/lib/auth-client'
 
 export function AppHeader() {
   const { open } = useSidebar()
@@ -45,12 +44,12 @@ export function AppHeader() {
             disabled={upsertLoading}
             onClick={async () => {
               const resp = await upsertDocument({
-                content: getDefaultEditorValue(),
+                content: {},
               })
 
               if (resp) {
                 documentStore.getState().upsertDocument(resp as any)
-                navigate({ to: '/editor/$docId', params: { docId: resp.id } })
+                navigate({ to: '/write/$docId', params: { docId: resp.id } })
               }
             }}
           >

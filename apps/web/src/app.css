@@ -1,5 +1,6 @@
 @import "tailwindcss" source(".");
 @import "tw-animate-css";
+@import "@lemma/editor/styles";
 
 @custom-variant dark (&:is(.dark *));
 

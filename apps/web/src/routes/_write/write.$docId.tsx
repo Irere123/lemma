@@ -1,11 +1,9 @@
+import { DocumentEditorWithRef, type EditorRefApi, type JSONContent } from '@lemma/editor'
 import { IconArrowLeft, IconCloud, IconCloudCheck, IconLoader2 } from '@tabler/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import axios from 'axios'
-import { useCallback, useEffect, useRef, useState } from 'react'
-
-import { Editor, migrateContent, type EditorHandle, type JSONContent } from '@lemma/editor'
-import '@lemma/editor/styles/editor.css'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getPreSignedUrl } from '@/lib/api/uploads'
 import { useTRPC } from '@/trpc/client'
@@ -52,7 +50,7 @@ function FocusedWritingPage() {
   const queryClient = useQueryClient()
   const { docId } = Route.useParams()
 
-  const editorRef = useRef<EditorHandle>(null)
+  const editorRef = useRef<EditorRefApi>(null)
   const titleRef = useRef<HTMLTextAreaElement>(null)
 
   const [title, setTitle] = useState('')
@@ -70,21 +68,6 @@ function FocusedWritingPage() {
   const { mutateAsync: saveDocument, isPending: isSaving } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
   )
-
-  // Initialize content when document loads
-  useEffect(() => {
-    if (document) {
-      setTitle(document.title || '')
-      setSubtitle(document.subtitle || '')
-
-      if (document.content) {
-        const migrated = migrateContent(document.content)
-        setContent(migrated)
-      } else {
-        setContent({ type: 'doc', content: [{ type: 'paragraph' }] })
-      }
-    }
-  }, [document])
 
   // Auto-resize title textarea
   useEffect(() => {
@@ -105,8 +88,8 @@ function FocusedWritingPage() {
     setIsSynced(false)
 
     saveTimeoutRef.current = setTimeout(async () => {
-      const currentContent = editorRef.current?.getContent()
-      const markdown = editorRef.current?.getMarkdown() || ''
+      const currentContent = editorRef.current?.getDocument().json
+      const markdown = editorRef.current?.getMarkDown() || ''
 
       try {
         await saveDocument({
@@ -130,12 +113,11 @@ function FocusedWritingPage() {
 
   // Handle content update from editor
   const handleEditorUpdate = useCallback(
-    ({ content: newContent }: { content: JSONContent; markdown: string }) => {
-      setContent(newContent)
+    (json: JSONContent, _html: string) => {
+      setContent(json)
 
       // Count words
-      const text = editorRef.current?.editor?.getText() || ''
-      const words = text.trim().split(/\s+/).filter(Boolean).length
+      const words = editorRef.current?.getDocumentInfo().words || 0
       setWordCount(words)
 
       triggerSave()
@@ -159,6 +141,28 @@ function FocusedWritingPage() {
     },
     [triggerSave]
   )
+
+  // File Handler
+  const fileHandler = useMemo(
+    () => ({
+      assetsUploadStatus: {},
+      cancel: () => {},
+      checkIfAssetExists: async () => true,
+      delete: async () => {},
+      getAssetDownloadSrc: async (src: string) => src,
+      getAssetSrc: async (src: string) => src,
+      restore: async () => {},
+      upload: async (_blockId: string, file: File) => {
+        const { url } = await uploadImage(file)
+        return url
+      },
+      duplicate: async () => '',
+      validation: { maxFileSize: 5242880 },
+    }),
+    []
+  )
+
+  const getEditorMetaData = useCallback(() => ({}), [])
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -268,14 +272,20 @@ function FocusedWritingPage() {
 
           {/* Editor */}
           <div className='prose prose-zinc dark:prose-invert prose-lg max-w-none'>
-            <Editor
+            <DocumentEditorWithRef
               ref={editorRef}
-              content={content}
+              value={content}
+              id={docId}
+              editable={true}
               placeholder='Start writing your story...'
               autofocus={true}
-              onUpdate={handleEditorUpdate}
-              onImageUpload={uploadImage}
-              className='min-h-[60vh] focus:outline-none'
+              onChange={handleEditorUpdate}
+              fileHandler={fileHandler}
+              getEditorMetaData={getEditorMetaData}
+              disabledExtensions={[]}
+              flaggedExtensions={[]}
+              extendedEditorProps={{}}
+              editorClassName='min-h-[60vh] focus:outline-none'
             />
           </div>
         </article>

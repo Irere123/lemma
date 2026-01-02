@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from 'clsx'
+import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
 import { documentStore } from '@/stores/document-store'
@@ -7,14 +7,25 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function caseInsensitiveStringCompare(str1: string, str2: string) {
+export function caseInsensitiveStringCompare(
+  str1: string | null | undefined,
+  str2: string | null | undefined
+) {
+  // Handle null/undefined cases
+  if (str1 == null && str2 == null) return 0
+  if (str1 == null) return -1
+  if (str2 == null) return 1
+
   return str1.localeCompare(str2, undefined, {
     sensitivity: 'base',
     numeric: true,
   })
 }
 
-export function caseInsensitiveStringEqual(str1: string, str2: string) {
+export function caseInsensitiveStringEqual(
+  str1: string | null | undefined,
+  str2: string | null | undefined
+) {
   return caseInsensitiveStringCompare(str1, str2) === 0
 }
 
@@ -28,7 +39,7 @@ export const getUntitledTitle = (documentId: string) => {
   const documentsArr = Object.values(documentStore.getState().documents)
   while (
     documentsArr.findIndex(
-      (doc) => doc.id !== documentId && caseInsensitiveStringEqual(doc.title as string, getResult())
+      (doc) => doc.id !== documentId && caseInsensitiveStringEqual(doc.title, getResult())
     ) > -1
   ) {
     suffix += 1

@@ -1,11 +1,8 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
-import { toast } from 'sonner'
 
-import { BrainReadOnlyEditor } from '@/components/editor'
-import { useTRPC } from '@/trpc/client'
-import { useCopyToClipboard } from '@/hooks/use-copy-clipboard'
 import { getPostBySlug } from '@/lib/api/posts'
+import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/posts/$slug')({
   component: RouteComponent,
@@ -49,18 +46,6 @@ function RouteComponent() {
     return null
   }
 
-  const [copiedText, copy] = useCopyToClipboard()
-
-  const handleCopy = (text: string) => () => {
-    copy(text)
-      .then(() => {
-        toast.success('Copied to clipboard')
-      })
-      .catch((error) => {
-        toast.error('Failed to copy!')
-      })
-  }
-
   return (
     <main className='container mx-auto max-w-3xl px-6 py-10'>
       <nav className='flex items-center justify-between mb-6'>
@@ -81,12 +66,12 @@ function RouteComponent() {
               strokeWidth='2.25'
               strokeLinecap='round'
               strokeLinejoin='round'
-            ></path>
+            />
           </svg>
         </Link>
         <button
           aria-label='Copy URL'
-          onClick={handleCopy(window.location.href)}
+          onClick={() => {}}
           className='group flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gray-100 transition-colors'
         >
           <div aria-hidden='true' style={{ opacity: 1, transform: 'none' }}>
@@ -103,7 +88,7 @@ function RouteComponent() {
                 strokeWidth='2.25'
                 strokeLinecap='round'
                 strokeLinejoin='round'
-              ></path>
+              />
             </svg>
           </div>
         </button>
@@ -124,7 +109,7 @@ function RouteComponent() {
         </header>
 
         <section className='prose prose-neutral max-w-none'>
-          <BrainReadOnlyEditor content={post.content || []} className='text-base leading-7' />
+          {/* <BrainReadOnlyEditor content={post.content || []} className='text-base leading-7' /> */}
         </section>
       </article>
     </main>

@@ -151,7 +151,7 @@ export const documentStore = createStore<Store>()(
             }
           } else {
             const existingdocument = Object.values(state.documents).find((n) =>
-              caseInsensitiveStringEqual(n.title!, document.title!)
+              caseInsensitiveStringEqual(n.title, document.title)
             )
             if (existingdocument) {
               // Update existing document
