@@ -1,10 +1,4 @@
-export type { BubbleMenuProps } from './BubbleMenu'
-export { BubbleMenu } from './BubbleMenu'
-export { slashMenuItems as menuItems } from './items'
-export type { SlashMenuItem, SlashMenuListProps, SlashMenuRef } from './SlashMenu'
-export {
-  filterSlashMenuItems,
-  SlashMenuExtension,
-  SlashMenuList,
-  slashMenuItems,
-} from './SlashMenu'
+export * from './block-menu'
+export * from './bubble-menu'
+export * from './menu-items'
+

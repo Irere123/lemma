@@ -9,7 +9,7 @@
   "scripts": {
     "clean": "rm -rf node_modules",
     "typecheck": "tsc --noEmit",
-    "dev": "email dev -p 3003",
+    "start:dev": "email dev -p 3003",
     "build": "email build",
     "start": "email start"
   },

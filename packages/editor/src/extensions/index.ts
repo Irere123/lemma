@@ -1,114 +1,188 @@
-import Highlight from '@tiptap/extension-highlight'
-import Image from '@tiptap/extension-image'
-import Link from '@tiptap/extension-link'
-import Placeholder from '@tiptap/extension-placeholder'
+import type { HocuspocusProvider } from '@hocuspocus/provider'
+import CharacterCount from '@tiptap/extension-character-count'
+import CodeBlockLowlight from '@tiptap/extension-code-block'
+import Collaboration from '@tiptap/extension-collaboration'
 import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
-import Typography from '@tiptap/extension-typography'
+import TextStyle from '@tiptap/extension-text-style'
 import Underline from '@tiptap/extension-underline'
-import StarterKit from '@tiptap/starter-kit'
-import { Markdown } from 'tiptap-markdown'
+import type { AnyExtension } from '@tiptap/core'
+// types
+import type { IEditorProps, IEditorPropsExtended, TExtensions, TFileHandler, TUserDetails } from '@/types'
+import type { TSlashCommandAdditionalOption } from './slash-commands/root'
+// extensions
+import { CalloutExtension } from './callout'
+import { CustomColorExtension } from './custom-color'
+import { CustomImageExtension } from './custom-image'
+import { CustomLinkExtension } from './custom-link'
+import { CustomEmojiExtension } from './emoji'
+import { HeadingListExtension } from './heading-list'
+import { HorizontalRuleExtension } from './horizontal-rule'
+import { CustomKeymap } from './keymap'
+import { CustomPlaceholderExtension } from './placeholder'
+import { SideMenuExtension } from './side-menu'
+import { SlashCommands } from './slash-commands/root'
+import { CustomStarterKitExtension } from './starter-kit'
+import { Table, TableCell, TableHeader, TableRow } from './table'
+import { CustomTextAlignExtension } from './text-align'
 
-import { SlashMenuExtension } from '../components/menus/SlashMenu'
-import { Callout } from './nodes/Callout'
-import { EnhancedCodeBlock } from './nodes/EnhancedCodeBlock'
-import { ImageBlock } from './nodes/ImageBlock'
-import { TableExtensions } from './nodes/TableExtension'
-import { Toggle } from './nodes/Toggle'
+// Custom extensions
+export * from './callout'
+export * from './code'
+export * from './custom-color'
+export * from './custom-image'
+export * from './custom-link'
+export * from './emoji'
+export * from './heading-list'
+export * from './horizontal-rule'
+export * from './keymap'
+export * from './placeholder'
+export * from './side-menu'
+export * from './slash-commands'
+export * from './starter-kit'
+export * from './table'
+export * from './text-align'
+export * from './title-extension'
 
-export interface ExtensionOptions {
-  placeholder?: string
-  onNoteLinkClick?: (noteId: string, noteTitle: string) => void
+type CoreEditorAdditionalSlashCommandOptionsArgs = {
+  disabledExtensions?: TExtensions[]
+  flaggedExtensions?: TExtensions[]
 }
 
-export function createExtensions(options: ExtensionOptions = {}) {
-  return [
-    StarterKit.configure({
-      heading: {
-        levels: [1, 2, 3],
-      },
-      codeBlock: false, // We use EnhancedCodeBlock instead
-      dropcursor: {
-        color: 'var(--editor-dropcursor-color, #3b82f6)',
-        width: 2,
-      },
-    }),
+/**
+ * Returns additional slash command options for the core editor.
+ * This can be extended to add more custom slash commands.
+ */
+export const coreEditorAdditionalSlashCommandOptions = (
+  _args: CoreEditorAdditionalSlashCommandOptionsArgs
+): TSlashCommandAdditionalOption[] => {
+  // Add any additional core editor slash commands here
+  // For now, returning an empty array
+  return []
+}
 
+export type TDocumentEditorAdditionalExtensionsProps = Pick<
+  IEditorProps,
+  'disabledExtensions' | 'flaggedExtensions' | 'fileHandler' | 'extendedEditorProps'
+> & {
+  isEditable: boolean
+  userDetails: TUserDetails
+}
+
+export type TDocumentEditorAdditionalExtensionsRegistry = {
+  isEnabled: (disabledExtensions: TExtensions[], flaggedExtensions: TExtensions[]) => boolean
+  getExtension: (props: TDocumentEditorAdditionalExtensionsProps) => AnyExtension
+}
+
+const extensionRegistry: TDocumentEditorAdditionalExtensionsRegistry[] = [
+  {
+    isEnabled: (disabledExtensions) => !disabledExtensions.includes('slash-commands'),
+    getExtension: ({ disabledExtensions, flaggedExtensions }) =>
+      SlashCommands({ disabledExtensions, flaggedExtensions }),
+  },
+]
+
+export function DocumentEditorAdditionalExtensions(
+  props: TDocumentEditorAdditionalExtensionsProps
+) {
+  const { disabledExtensions, flaggedExtensions } = props
+
+  const documentExtensions = extensionRegistry
+    .filter((config) => config.isEnabled(disabledExtensions, flaggedExtensions))
+    .map((config) => config.getExtension(props))
+
+  return documentExtensions
+}
+
+// Core Editor Extensions Props
+export type TCoreEditorExtensionsProps = {
+  disabledExtensions?: TExtensions[]
+  editable?: boolean
+  enableHistory?: boolean
+  extendedEditorProps?: IEditorPropsExtended
+  fileHandler?: TFileHandler
+  flaggedExtensions?: TExtensions[]
+  getEditorMetaData?: (htmlContent: string) => unknown
+  isTouchDevice?: boolean
+  placeholder?: string | ((isFocused: boolean, value: string) => string)
+  provider?: HocuspocusProvider
+  showPlaceholderOnEmpty?: boolean
+}
+
+/**
+ * Returns the core editor extensions.
+ */
+export const CoreEditorExtensions = (props: TCoreEditorExtensionsProps): AnyExtension[] => {
+  const {
+    disabledExtensions = [],
+    editable = true,
+    enableHistory = true,
+    fileHandler,
+    flaggedExtensions = [],
+    isTouchDevice = false,
+    placeholder,
+    provider,
+    showPlaceholderOnEmpty = true,
+  } = props
+
+  const extensions: AnyExtension[] = [
+    // StarterKit with history config
+    CustomStarterKitExtension({ enableHistory }) as AnyExtension,
+    // Text styling
+    TextStyle,
+    Underline,
+    // Custom extensions
+    CustomColorExtension,
+    CustomTextAlignExtension,
+    CalloutExtension,
+    CodeBlockLowlight,
+    HorizontalRuleExtension,
+    HeadingListExtension,
+    CustomKeymap,
+    // Table support
+    Table,
+    TableCell,
+    TableHeader,
+    TableRow,
+    // Image support
+    ...(fileHandler ? [CustomImageExtension({ fileHandler, isEditable: editable })] : []),
+    // Link support
+    CustomLinkExtension,
+    // Emoji support
+    CustomEmojiExtension(),
+    // Character count
+    CharacterCount,
     // Task lists
     TaskList,
     TaskItem.configure({
       nested: true,
-    }),
-
-    // Enhanced code block with syntax highlighting and UI
-    EnhancedCodeBlock,
-
-    // Table support
-    ...TableExtensions,
-
-    // Typography for elegant writing (smart quotes, dashes, etc.)
-    Typography,
-
-    // Inline marks
-    Underline,
-    Highlight.configure({
-      multicolor: true,
-    }),
-    Link.configure({
-      openOnClick: false,
-      autolink: true,
-      linkOnPaste: true,
       HTMLAttributes: {
-        rel: 'noopener noreferrer nofollow',
+        class: 'flex gap-2',
       },
     }),
-
-    // Basic image extension (for inline images, used alongside ImageBlock)
-    Image.configure({
-      inline: true,
-      allowBase64: true,
+    // Placeholder
+    CustomPlaceholderExtension({
+      placeholder,
+      showPlaceholderOnEmpty,
     }),
-
-    // Custom extensions
-    Callout,
-    Toggle,
-    ImageBlock,
-
-    // Placeholder with dynamic text based on node type
-    Placeholder.configure({
-      placeholder: ({ node }) => {
-        if (node.type.name === 'heading') {
-          const level = node.attrs.level
-          if (level === 1) return 'Heading 1'
-          if (level === 2) return 'Heading 2'
-          if (level === 3) return 'Heading 3'
-        }
-        return options.placeholder || "Start writing, or press '/' for commands..."
-      },
-      emptyEditorClass: 'is-editor-empty',
-      emptyNodeClass: 'is-empty',
-      showOnlyWhenEditable: true,
-      showOnlyCurrent: true,
-      includeChildren: true,
-    }),
-
-    // Markdown support for import/export
-    Markdown.configure({
-      html: true,
-      tightLists: true,
-      tightListClass: 'tight',
-      bulletListMarker: '-',
-      linkify: true,
-      breaks: false,
-      transformPastedText: true,
-      transformCopiedText: true,
-    }),
-
-    // Slash menu for block commands
-    SlashMenuExtension,
   ]
-}
 
-export type { CalloutOptions, ImageBlockOptions, ToggleOptions } from './nodes'
-// Re-export individual extensions for customization
-export { Callout, ImageBlock, Toggle } from './nodes'
+  // Add side menu for non-touch devices
+  if (!isTouchDevice && editable) {
+    extensions.push(SideMenuExtension({ dragDropEnabled: true }))
+  }
+
+  // Add collaboration support if provider is available
+  if (provider) {
+    extensions.push(
+      Collaboration.configure({
+        document: provider.document,
+      })
+    )
+  }
+
+  // Note: Slash commands are added in DocumentEditorAdditionalExtensions
+  // to avoid duplication. Do not add them here.
+
+  return extensions
+}
