@@ -1,4 +1,4 @@
-@import "tailwindcss" source(".");
+@import "tailwindcss" source(".") source("../../packages/editor/src");
 @import "tw-animate-css";
 @import "@lemma/editor/styles";
 

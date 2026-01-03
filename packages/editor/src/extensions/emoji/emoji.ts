@@ -1,7 +1,4 @@
-import { Extension } from "@tiptap/core";
 import Emoji from "@tiptap/extension-emoji";
-// constants
-import { CORE_EXTENSIONS } from "@/constants/extension";
 
 export interface ExtendedEmojiStorage {
   forceOpen: boolean;
@@ -20,10 +17,12 @@ export type CustomEmojiExtensionOptions = {
   enableEmoticons?: boolean;
 };
 
+/**
+ * Custom emoji extension that wraps @tiptap/extension-emoji
+ * with additional configuration and commands.
+ */
 export const CustomEmojiExtension = (options?: CustomEmojiExtensionOptions) => {
-  return Extension.create<CustomEmojiExtensionOptions, ExtendedEmojiStorage>({
-    name: CORE_EXTENSIONS.EMOJI,
-
+  return Emoji.extend<CustomEmojiExtensionOptions, ExtendedEmojiStorage>({
     addStorage() {
       return {
         forceOpen: false,
@@ -31,16 +30,9 @@ export const CustomEmojiExtension = (options?: CustomEmojiExtensionOptions) => {
       };
     },
 
-    addExtensions() {
-      return [
-        Emoji.configure({
-          enableEmoticons: options?.enableEmoticons ?? true,
-        }),
-      ];
-    },
-
     addCommands() {
       return {
+        ...this.parent?.(),
         setEmoji:
           (emoji: string) =>
           ({ commands }) => {
@@ -48,5 +40,7 @@ export const CustomEmojiExtension = (options?: CustomEmojiExtensionOptions) => {
           },
       };
     },
+  }).configure({
+    enableEmoticons: options?.enableEmoticons ?? true,
   });
 };

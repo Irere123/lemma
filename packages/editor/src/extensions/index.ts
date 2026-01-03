@@ -1,4 +1,5 @@
 import type { HocuspocusProvider } from '@hocuspocus/provider'
+import type { AnyExtension } from '@tiptap/core'
 import CharacterCount from '@tiptap/extension-character-count'
 import CodeBlockLowlight from '@tiptap/extension-code-block'
 import Collaboration from '@tiptap/extension-collaboration'
@@ -6,10 +7,14 @@ import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import TextStyle from '@tiptap/extension-text-style'
 import Underline from '@tiptap/extension-underline'
-import type { AnyExtension } from '@tiptap/core'
 // types
-import type { IEditorProps, IEditorPropsExtended, TExtensions, TFileHandler, TUserDetails } from '@/types'
-import type { TSlashCommandAdditionalOption } from './slash-commands/root'
+import type {
+  IEditorProps,
+  IEditorPropsExtended,
+  TExtensions,
+  TFileHandler,
+  TUserDetails,
+} from '@/types'
 // extensions
 import { CalloutExtension } from './callout'
 import { CustomColorExtension } from './custom-color'
@@ -21,6 +26,7 @@ import { HorizontalRuleExtension } from './horizontal-rule'
 import { CustomKeymap } from './keymap'
 import { CustomPlaceholderExtension } from './placeholder'
 import { SideMenuExtension } from './side-menu'
+import type { TSlashCommandAdditionalOption } from './slash-commands/root'
 import { SlashCommands } from './slash-commands/root'
 import { CustomStarterKitExtension } from './starter-kit'
 import { Table, TableCell, TableHeader, TableRow } from './table'
@@ -114,11 +120,11 @@ export type TCoreEditorExtensionsProps = {
  */
 export const CoreEditorExtensions = (props: TCoreEditorExtensionsProps): AnyExtension[] => {
   const {
-    disabledExtensions = [],
+    disabledExtensions: _disabledExtensions = [],
     editable = true,
     enableHistory = true,
     fileHandler,
-    flaggedExtensions = [],
+    flaggedExtensions: _flaggedExtensions = [],
     isTouchDevice = false,
     placeholder,
     provider,

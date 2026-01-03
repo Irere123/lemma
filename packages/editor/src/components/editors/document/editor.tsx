@@ -6,11 +6,7 @@ import { PageRenderer } from '@/components/editors'
 // constants
 import { DEFAULT_DISPLAY_CONFIG } from '@/constants/config'
 // extensions
-import {
-  DocumentEditorAdditionalExtensions,
-  HeadingListExtension,
-  SideMenuExtension,
-} from '@/extensions'
+import { DocumentEditorAdditionalExtensions } from '@/extensions'
 // helpers
 import { getEditorClassNames } from '@/helpers/common'
 // hooks
@@ -21,7 +17,7 @@ import type { EditorRefApi, IDocumentEditorProps, TUserDetails } from '@/types'
 
 function DocumentEditor(props: IDocumentEditorProps) {
   const {
-    bubbleMenuEnabled = false,
+    bubbleMenuEnabled = true,
     containerClassName,
     disabledExtensions,
     displayConfig = DEFAULT_DISPLAY_CONFIG,
@@ -39,29 +35,24 @@ function DocumentEditor(props: IDocumentEditorProps) {
     user,
     value,
   } = props
+
+  // Note: SideMenuExtension and HeadingListExtension are already included in CoreEditorExtensions
+  // Only add document-specific extensions here (like SlashCommands)
   const extensions: Extensions = useMemo(() => {
-    const additionalExtensions: Extensions = []
-    additionalExtensions.push(
-      SideMenuExtension({
-        dragDropEnabled: true,
-      }),
-      HeadingListExtension,
-      ...DocumentEditorAdditionalExtensions({
-        disabledExtensions,
-        extendedEditorProps,
-        flaggedExtensions,
-        isEditable: editable,
-        fileHandler,
-        userDetails:
-          user ??
-          ({
-            id: '',
-            email: '',
-            name: '',
-          } as TUserDetails),
-      })
-    )
-    return additionalExtensions
+    return DocumentEditorAdditionalExtensions({
+      disabledExtensions,
+      extendedEditorProps,
+      flaggedExtensions,
+      isEditable: editable,
+      fileHandler,
+      userDetails:
+        user ??
+        ({
+          id: '',
+          email: '',
+          name: '',
+        } as TUserDetails),
+    })
   }, [disabledExtensions, editable, extendedEditorProps, fileHandler, flaggedExtensions, user])
 
   const editor = useEditor({

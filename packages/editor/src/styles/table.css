@@ -1,19 +1,19 @@
 .table-wrapper {
     overflow-x: auto;
     padding-bottom: 26px;
-  
+
     table {
       border-collapse: collapse;
       table-layout: fixed;
       margin: 0.5rem 0 0 0;
       position: relative;
-      border: 1px solid hsl(var(--border) / 0.5);
+      border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
       width: 100%;
-  
+
       td,
       th {
         min-width: 1em;
-        border: 1px solid hsl(var(--border));
+        border: 1px solid var(--border);
         padding: 7px 10px;
         vertical-align: top;
         box-sizing: border-box;
@@ -88,12 +88,12 @@
       tr[background="none"],
       tr:not([background]) {
         th {
-          background-color: hsl(var(--muted) / 0.5);
+          background-color: color-mix(in srgb, var(--muted) 50%, transparent);
         }
       }
-  
+
       .table-drop-marker {
-        background-color: hsl(var(--primary));
+        background-color: var(--primary);
         position: absolute;
         z-index: 10;
   
@@ -156,9 +156,9 @@
     .table-column-insert-button,
     .table-row-insert-button {
       position: absolute;
-      background-color: hsl(var(--muted));
-      color: hsl(var(--muted-foreground));
-      border: 1px solid hsl(var(--border) / 0.3);
+      background-color: var(--muted);
+      color: var(--muted-foreground);
+      border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
       border-radius: 4px;
       display: grid;
       place-items: center;
@@ -167,17 +167,17 @@
       outline: none;
       z-index: 10;
       transition: all 0.2s ease;
-  
+
       &:hover {
-        background-color: hsl(var(--muted) / 0.8);
-        color: hsl(var(--foreground));
+        background-color: color-mix(in srgb, var(--muted) 80%, transparent);
+        color: var(--foreground);
       }
-  
+
       &.dragging {
         opacity: 1;
         pointer-events: auto;
-        background-color: hsl(var(--primary) / 0.2);
-        color: hsl(var(--foreground));
+        background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+        color: var(--foreground);
       }
   
       svg {

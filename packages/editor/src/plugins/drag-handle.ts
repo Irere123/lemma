@@ -7,8 +7,9 @@ import { CORE_EXTENSIONS } from "@/constants/extension";
 // extensions
 import type { SideMenuHandleOptions, SideMenuPluginProps } from "@/extensions/side-menu";
 
-const verticalEllipsisIcon =
-  '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+// Grip handle icon (6 dots in 2 columns)
+const gripIcon =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>';
 
 const generalSelectors = [
   "li",
@@ -41,18 +42,45 @@ const createDragHandleElement = (): HTMLElement => {
   dragHandleElement.id = "drag-handle";
   dragHandleElement.draggable = true;
   dragHandleElement.dataset.dragHandle = "";
-  dragHandleElement.classList.value =
-    "hidden sm:flex items-center size-5 aspect-square rounded-xs cursor-grab outline-none hover:bg-muted/80 active:bg-muted active:cursor-grabbing transition-[background-color,_opacity] duration-200 ease-linear";
+  // Use inline styles for reliable rendering across different Tailwind configs
+  dragHandleElement.style.cssText = `
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    cursor: grab;
+    outline: none;
+    border: none;
+    background: transparent;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    color: #71717a;
+  `;
+  // Show on larger screens
+  if (window.matchMedia("(min-width: 640px)").matches) {
+    dragHandleElement.style.display = "flex";
+  }
 
-  const iconElement1 = document.createElement("span");
-  iconElement1.classList.value = "pointer-events-none text-muted-foreground";
-  iconElement1.innerHTML = verticalEllipsisIcon;
-  const iconElement2 = document.createElement("span");
-  iconElement2.classList.value = "pointer-events-none text-tertiary -ml-2.5";
-  iconElement2.innerHTML = verticalEllipsisIcon;
+  dragHandleElement.onmouseenter = () => {
+    dragHandleElement.style.backgroundColor = "rgba(245, 245, 245, 0.8)";
+  };
+  dragHandleElement.onmouseleave = () => {
+    dragHandleElement.style.backgroundColor = "transparent";
+  };
+  dragHandleElement.onmousedown = () => {
+    dragHandleElement.style.cursor = "grabbing";
+    dragHandleElement.style.backgroundColor = "#f5f5f5";
+  };
+  dragHandleElement.onmouseup = () => {
+    dragHandleElement.style.cursor = "grab";
+  };
 
-  dragHandleElement.appendChild(iconElement1);
-  dragHandleElement.appendChild(iconElement2);
+  const iconElement = document.createElement("span");
+  iconElement.style.cssText = "pointer-events: none; display: flex;";
+  iconElement.innerHTML = gripIcon;
+
+  dragHandleElement.appendChild(iconElement);
 
   return dragHandleElement;
 };

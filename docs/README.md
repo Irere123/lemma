@@ -90,7 +90,7 @@ Template-based email system using React Email:
 - **Router**: TanStack Router (type-safe routing)
 - **Styling**: TailwindCSS + Shadcn UI
 - **State**: Zustand + TanStack Query
-- **Editor**: Slate.js for rich text editing
+- **Editor**: TipTap for rich text editing
 
 ### Email
 

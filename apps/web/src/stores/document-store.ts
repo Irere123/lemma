@@ -1,17 +1,16 @@
+import { caseInsensitiveStringEqual } from '@/lib/utils'
 import type { Draft } from 'immer'
 import localforage from 'localforage'
 import { createStore, useStore } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-
 import {
   deleteTreeItem,
   insertTreeItem,
   toggleDocumentTreeItemCollapsed,
 } from './document-store-utils'
-import { caseInsensitiveStringEqual } from '@/lib/utils'
 
-// Content can be Slate Descendant[] (legacy) or Tiptap JSONContent (new)
+// Content is Tiptap JSONContent
 type EditorContent = unknown
 
 type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
@@ -102,9 +101,9 @@ export type Store = {
   // Documents
   documents: Documents
   setDocuments: Setter<Documents>
-  upsertDocument: (docuemnt: Document) => void
+  upsertDocument: (document: Document) => void
   deleteDocument: (documentId: string) => void
-  updateDocument: (note: DocumentUpdate) => void
+  updateDocument: (document: DocumentUpdate) => void
 
   // DocumentTree
   documentTree: DocumentTreeItem[]

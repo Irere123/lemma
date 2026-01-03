@@ -1,4 +1,17 @@
-.ProseMirror {
+/* Editor container and frame styling */
+.frame-renderer {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .editor-container {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .ProseMirror {
     position: relative;
     word-wrap: break-word;
     white-space: pre-wrap;
@@ -9,6 +22,7 @@
     -ms-user-select: text;
     user-select: text;
     outline: none !important;
+    border: none !important;
     cursor: text;
     font-family: var(--font-style);
     font-size: var(--font-size-regular);
@@ -44,16 +58,33 @@
     padding-inline-start: 1em;
   }
   
-  /* block quotes */
+  /* block quotes - Substack-style */
   .ProseMirror blockquote {
-    font-style: normal;
+    font-style: italic;
     font-weight: 400;
-    border-left: 3px solid hsl(var(--border));
+    border-left: 3px solid color-mix(in srgb, var(--foreground) 20%, transparent);
+    padding-left: 1.25rem;
+    margin: 1.5rem 0;
+    color: var(--muted-foreground);
   }
-  
+
   .ProseMirror blockquote p::before,
   .ProseMirror blockquote p::after {
     display: none;
+  }
+
+  .ProseMirror blockquote p {
+    margin: 0;
+  }
+
+  /* Substack-style pull quote */
+  .ProseMirror blockquote.pull-quote {
+    border-left: none;
+    padding-left: 0;
+    text-align: center;
+    font-size: 1.5rem;
+    line-height: 1.4;
+    color: var(--foreground);
   }
   /* end block quotes */
   
@@ -84,7 +115,7 @@
   
   /* Custom gap cursor styles  */
   .ProseMirror-gapcursor::after {
-    border-top: 1px solid hsl(var(--border)) !important;
+    border-top: 1px solid var(--border) !important;
   }
   
   /* to-do list */
@@ -105,7 +136,7 @@
   }
   
   ul[data-type="taskList"] li > label input[type="checkbox"] {
-    border: 1px solid hsl(var(--border)) !important;
+    border: 1px solid var(--border) !important;
     outline: none;
     border-radius: 2px;
     transform: scale(1.05);
@@ -151,7 +182,7 @@
     width: 0.8rem;
     height: 0.8rem;
     position: relative;
-    border: 1px solid hsl(var(--border) / 0.3);
+    border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
     margin-right: 0.2rem;
     margin-top: 0.15rem;
   
@@ -250,14 +281,35 @@
   }
   /* end code block, inline code */
   
+  /* Horizontal rule - Substack-style divider */
   div[data-type="horizontalRule"] {
     line-height: 0;
-    padding: var(--divider-padding-top) 0 var(--divider-padding-bottom) 0;
+    padding: 2rem 0;
     margin-top: 0;
     margin-bottom: 0;
-  
+    text-align: center;
+
     & > div {
-      border-bottom: 1px solid hsl(var(--border) / 0.3);
+      border: none;
+      position: relative;
+    }
+
+    & > div::before {
+      content: "• • •";
+      font-size: 0.75rem;
+      letter-spacing: 0.75rem;
+      color: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+    }
+  }
+
+  /* Alternative line-style divider */
+  div[data-type="horizontalRule"].line-style {
+    & > div::before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      background: color-mix(in srgb, var(--border) 30%, transparent);
     }
   }
   
@@ -505,4 +557,64 @@
   .touch-select-none {
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  /* Callout styles */
+  .editor-callout-component {
+    margin: 0.75rem 0;
+  }
+
+  .editor-callout-component .callout-content {
+    min-height: 1.5rem;
+  }
+
+  .editor-callout-component .callout-content p {
+    margin: 0;
+  }
+
+  /* Selection styles */
+  .editor-callout-component.is-selected > div {
+    outline: 2px solid var(--border-color-accent-strong);
+    outline-offset: 2px;
+  }
+
+  /* Link styles - Substack-style */
+  .ProseMirror a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--primary) 40%, transparent);
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    cursor: pointer;
+    transition: text-decoration-color 0.2s ease;
+  }
+
+  .ProseMirror a:hover {
+    text-decoration-color: var(--primary);
+  }
+
+  /* Inline code styles */
+  .ProseMirror :not(pre) > code {
+    background-color: color-mix(in srgb, var(--muted) 80%, transparent);
+    border-radius: 4px;
+    padding: 0.2em 0.4em;
+    font-size: 0.875em;
+    font-family: JetBrainsMono, ui-monospace, monospace;
+  }
+
+  /* Code block styles */
+  .ProseMirror pre {
+    background-color: color-mix(in srgb, var(--muted) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0.75rem 0;
+    overflow-x: auto;
+  }
+
+  /* Blockquote styles */
+  .ProseMirror blockquote {
+    padding-left: 1rem;
+    margin: 0.75rem 0;
+    color: var(--muted-foreground);
   }

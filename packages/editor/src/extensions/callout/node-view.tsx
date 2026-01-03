@@ -26,7 +26,7 @@ export const CalloutNodeView = (props: NodeViewProps) => {
       className={`editor-callout-component ${selected ? 'is-selected' : ''}`}
       data-type='calloutComponent'
     >
-      <div className={`flex border gap-3 p-4 rounded-lg ${CALLOUT_STYLES[type]}`}>
+      <div className={`flex border gap-3 p-4 rounded-lg transition-colors ${CALLOUT_STYLES[type]}`}>
         <div className='mt-0.5 flex-shrink-0'>{CALLOUT_ICONS[type]}</div>
         <div className='min-w-0 flex-1'>
           <NodeViewContent className='callout-content' />

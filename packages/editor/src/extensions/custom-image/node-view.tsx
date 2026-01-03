@@ -74,7 +74,7 @@ export const ImageNodeView = (props: NodeViewProps) => {
       className={`image-component ${selected ? "is-selected" : ""}`}
       data-type="imageComponent"
     >
-      <div className="relative">
+      <div className="relative my-2">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
@@ -93,7 +93,7 @@ export const ImageNodeView = (props: NodeViewProps) => {
             alt=""
             width={width}
             height={height}
-            className={`max-w-full rounded ${isLoading ? "opacity-50" : ""}`}
+            className={`max-w-full rounded transition-opacity ${isLoading ? "opacity-50" : "opacity-100"} ${selected ? "ring-2 ring-offset-2 ring-blue-500" : ""}`}
             onLoad={handleImageLoad}
             onError={handleImageError}
             draggable={false}

@@ -64,6 +64,15 @@ function FocusedWritingPage() {
     trpc.documents.getDocumentById.queryOptions({ id: docId })
   )
 
+  // Initialize state from fetched document
+  useEffect(() => {
+    if (document) {
+      setTitle(document.title ?? '')
+      setSubtitle(document.subtitle ?? '')
+      setContent(document.content as JSONContent ?? { type: 'doc', content: [{ type: 'paragraph' }] })
+    }
+  }, [document])
+
   // Mutation for saving
   const { mutateAsync: saveDocument, isPending: isSaving } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
@@ -271,21 +280,25 @@ function FocusedWritingPage() {
           <div className='my-8 border-t border-zinc-100 dark:border-zinc-800' />
 
           {/* Editor */}
-          <div className='prose prose-zinc dark:prose-invert prose-lg max-w-none'>
+          <div id='page-content-container'>
             <DocumentEditorWithRef
               ref={editorRef}
               value={content}
               id={docId}
               editable={true}
-              placeholder='Start writing your story...'
-              autofocus={true}
+              bubbleMenuEnabled={true}
               onChange={handleEditorUpdate}
               fileHandler={fileHandler}
               getEditorMetaData={getEditorMetaData}
               disabledExtensions={[]}
               flaggedExtensions={[]}
               extendedEditorProps={{}}
-              editorClassName='min-h-[60vh] focus:outline-none'
+              editorClassName='min-h-[60vh] focus:outline-none prose prose-zinc dark:prose-invert prose-lg max-w-none [&_.frame-renderer]:border-none [&_.editor-container]:border-none'
+              displayConfig={{
+                fontSize: 'large-font',
+                fontStyle: 'sans-serif',
+                lineSpacing: 'regular',
+              }}
             />
           </div>
         </article>

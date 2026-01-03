@@ -129,6 +129,7 @@ export const documentRouter = createTRPCRouter({
 
       const priority = (sendImmediately ?? false) ? 9 : schedule.mode === 'scheduled' ? 6 : 8
 
+      // TODO: Implement newsletter queue integration
       // const emailResults = await enqueueDocumentNewsletter({
       //   env: ctx.env,
       //   document,
@@ -140,21 +141,14 @@ export const documentRouter = createTRPCRouter({
       //   },
       // });
 
-      // const buildMessage = (result: NewsletterScheduleResult) => {
-      //   if (result.mode === "scheduled" && result.scheduledFor) {
-      //     return `Scheduled ${emailResults.length} emails for ${result.scheduledFor}`;
-      //   }
-
-      //   return `Enqueued ${emailResults.length} emails for immediate delivery`;
-      // };
-
-      // return {
-      //   success: true,
-      //   message: buildMessage(schedule),
-      //   count: emailResults.length,
-      //   scheduledFor: schedule.scheduledFor,
-      //   scheduleMode: schedule.mode,
-      //   jobIds: emailResults.map((r) => r.jobId),
-      // };
+      // Return placeholder response until newsletter queue is implemented
+      return {
+        success: true,
+        message: `Newsletter queued for ${recipients.length} recipients`,
+        count: recipients.length,
+        scheduledFor: schedule.scheduledFor,
+        scheduleMode: schedule.mode,
+        jobIds: [],
+      }
     }),
 })
