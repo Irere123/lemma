@@ -1,11 +1,11 @@
-import { Job, Worker } from 'bullmq'
-import { eq, sql } from 'drizzle-orm'
-
 import { createDb } from '@api/db'
 import { clickEvents } from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
 import { generateId } from '@api/lib/utils'
+import { type Job, Worker } from 'bullmq'
+import { eq, sql } from 'drizzle-orm'
+
 import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
   AggregateCampaignStatsJob,

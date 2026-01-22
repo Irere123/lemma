@@ -14,6 +14,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as NewsletterRouteImport } from './routes/newsletter'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as WriteRouteRouteImport } from './routes/_write/route'
+import { Route as NewRouteRouteImport } from './routes/_new/route'
 import { Route as DevelopersRouteRouteImport } from './routes/_developers/route'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,7 @@ import { Route as DevelopersOauthAppsRouteImport } from './routes/_developers/oa
 import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/developers'
 import { Route as AppNewsletterSettingsRouteImport } from './routes/_app/newsletter-settings'
 import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
+import { Route as NewAppIndexRouteImport } from './routes/_new/app/index'
 import { Route as WriteWriteDocIdRouteImport } from './routes/_write/write.$docId'
 
 const VerifyRoute = VerifyRouteImport.update({
@@ -47,6 +49,10 @@ const LoginRoute = LoginRouteImport.update({
 } as any)
 const WriteRouteRoute = WriteRouteRouteImport.update({
   id: '/_write',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewRouteRoute = NewRouteRouteImport.update({
+  id: '/_new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevelopersRouteRoute = DevelopersRouteRouteImport.update({
@@ -92,6 +98,11 @@ const AppDocumentsRoute = AppDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const NewAppIndexRoute = NewAppIndexRouteImport.update({
+  id: '/app/',
+  path: '/app/',
+  getParentRoute: () => NewRouteRoute,
+} as any)
 const WriteWriteDocIdRoute = WriteWriteDocIdRouteImport.update({
   id: '/write/$docId',
   path: '/write/$docId',
@@ -111,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
   '/write/$docId': typeof WriteWriteDocIdRoute
+  '/app': typeof NewAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,12 +137,14 @@ export interface FileRoutesByTo {
   '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
   '/write/$docId': typeof WriteWriteDocIdRoute
+  '/app': typeof NewAppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteRouteWithChildren
   '/_developers': typeof DevelopersRouteRouteWithChildren
+  '/_new': typeof NewRouteRouteWithChildren
   '/_write': typeof WriteRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/newsletter': typeof NewsletterRoute
@@ -143,6 +157,7 @@ export interface FileRoutesById {
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/': typeof PostsIndexRoute
   '/_write/write/$docId': typeof WriteWriteDocIdRoute
+  '/_new/app/': typeof NewAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,6 +174,7 @@ export interface FileRouteTypes {
     | '/posts/$slug'
     | '/posts'
     | '/write/$docId'
+    | '/app'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,11 +189,13 @@ export interface FileRouteTypes {
     | '/posts/$slug'
     | '/posts'
     | '/write/$docId'
+    | '/app'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/_developers'
+    | '/_new'
     | '/_write'
     | '/login'
     | '/newsletter'
@@ -190,12 +208,14 @@ export interface FileRouteTypes {
     | '/posts/$slug'
     | '/posts/'
     | '/_write/write/$docId'
+    | '/_new/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   DevelopersRouteRoute: typeof DevelopersRouteRouteWithChildren
+  NewRouteRoute: typeof NewRouteRouteWithChildren
   WriteRouteRoute: typeof WriteRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   NewsletterRoute: typeof NewsletterRoute
@@ -240,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof WriteRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_new': {
+      id: '/_new'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof NewRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_developers': {
@@ -305,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_new/app/': {
+      id: '/_new/app/'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof NewAppIndexRouteImport
+      parentRoute: typeof NewRouteRoute
+    }
     '/_write/write/$docId': {
       id: '/_write/write/$docId'
       path: '/write/$docId'
@@ -343,6 +377,18 @@ const DevelopersRouteRouteWithChildren = DevelopersRouteRoute._addFileChildren(
   DevelopersRouteRouteChildren,
 )
 
+interface NewRouteRouteChildren {
+  NewAppIndexRoute: typeof NewAppIndexRoute
+}
+
+const NewRouteRouteChildren: NewRouteRouteChildren = {
+  NewAppIndexRoute: NewAppIndexRoute,
+}
+
+const NewRouteRouteWithChildren = NewRouteRoute._addFileChildren(
+  NewRouteRouteChildren,
+)
+
 interface WriteRouteRouteChildren {
   WriteWriteDocIdRoute: typeof WriteWriteDocIdRoute
 }
@@ -359,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   DevelopersRouteRoute: DevelopersRouteRouteWithChildren,
+  NewRouteRoute: NewRouteRouteWithChildren,
   WriteRouteRoute: WriteRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   NewsletterRoute: NewsletterRoute,
