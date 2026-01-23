@@ -1,25 +1,25 @@
 {
   "name": "lemma",
   "version": "1.0.0",
-  "description": "",
+  "author": "",
   "main": "index.js",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "concurrently": "^9.2.0",
+    "turbo": "^2.7.2"
+  },
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "packageManager": "bun@1.2.2",
   "scripts": {
     "dev": "turbo dev",
     "format": "biome format --write",
     "lint": "biome lint",
     "biome:check": "biome check"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "bun@1.2.2",
-  "devDependencies": {
-    "@biomejs/biome": "2.3.10",
-    "concurrently": "^9.2.0",
-    "turbo": "^2.7.2"
-  }
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
