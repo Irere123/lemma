@@ -1,8 +1,15 @@
-import { IconAlignJustified, IconAsterisk, IconSearch, IconSettings } from '@tabler/icons-react'
+import {
+  IconAlignJustified,
+  IconAsterisk,
+  IconSearch,
+  IconSettings,
+  IconUserCircle,
+} from '@tabler/icons-react'
 import { Link } from '@tanstack/react-router'
 
 import { cn } from '@/lib/utils'
 import { DocumentsHistoryList } from './documents-list'
+import { AccountDropdown } from './dropdowns/account'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 
 export function Sidebar() {
@@ -10,18 +17,13 @@ export function Sidebar() {
     <div className='flex flex-col gap-4 h-screen sticky border-r border-neutral-200 sm:w-72 w-16'>
       <div className='flex items-center justify-between p-4 border-b border-neutral-200'>
         <h2 className='text-xl font-bold'>Lemma</h2>
-        <Avatar className='rounded-md size-6'>
-          <AvatarImage
-            alt='User'
-            src='https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=128&h=128&dpr=2&q=80'
-          />
-          <AvatarFallback>AV</AvatarFallback>
-        </Avatar>
+        <AccountDropdown />
       </div>
       <div className='flex gap-2 px-2'>
         <SidebarLink href='/app' icon={<IconAlignJustified size={20} />} />
         <SidebarLink href='/app/search' icon={<IconSearch size={20} />} />
         <SidebarLink href='/app/documents' icon={<IconAsterisk size={20} />} />
+        <SidebarLink href='/u/profile' icon={<IconUserCircle size={20} />} />
         <SidebarLink href='/app/settings' icon={<IconSettings size={20} />} />
       </div>
       <div className='flex flex-1 px-2.5 flex-col gap-2'>
