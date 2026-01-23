@@ -5,5 +5,5 @@ export const Route = createFileRoute('/_new/app/')({
 })
 
 function RouteComponent() {
-  return <div>Hello "/_new/app/"!</div>
+  return <div className='p-4'>Home</div>
 }

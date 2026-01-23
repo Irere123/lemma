@@ -4,9 +4,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: "Open Runde";
+  src: url("/fonts/OpenRunde-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  src: url("/fonts/OpenRunde-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  src: url("/fonts/OpenRunde-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  src: url("/fonts/OpenRunde-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
 @theme {
   --font-sans:
-    "Figtree", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Open Runde", "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -46,28 +74,68 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --animate-skeleton:
+    skeleton 2s -1s infinite linear;
+  --color-warning-foreground:
+    var(--warning-foreground);
+  --color-warning:
+    var(--warning);
+  --color-success-foreground:
+    var(--success-foreground);
+  --color-success:
+    var(--success);
+  --color-info-foreground:
+    var(--info-foreground);
+  --color-info:
+    var(--info);
+  --color-destructive-foreground:
+    var(--destructive-foreground);
+  @keyframes skeleton {
+  to {
+    background-position:
+    -200% 0;
+    }
+  }
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background:
+    var(--color-white);
+  --foreground:
+    var(--color-neutral-800);
+  --card:
+    var(--color-white);
+  --card-foreground:
+    var(--color-neutral-800);
+  --popover:
+    var(--color-white);
+  --popover-foreground:
+    var(--color-neutral-800);
+  --primary:
+    var(--color-neutral-800);
+  --primary-foreground:
+    var(--color-neutral-50);
+  --secondary:
+    --alpha(var(--color-black) / 4%);
+  --secondary-foreground:
+    var(--color-neutral-800);
+  --muted:
+    --alpha(var(--color-black) / 4%);
+  --muted-foreground:
+    color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-black));
+  --accent:
+    --alpha(var(--color-black) / 4%);
+  --accent-foreground:
+    var(--color-neutral-800);
+  --destructive:
+    var(--color-red-500);
+  --border:
+    --alpha(var(--color-black) / 8%);
+  --input:
+    --alpha(var(--color-black) / 10%);
+  --ring:
+    var(--color-neutral-400);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -81,27 +149,59 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --destructive-foreground:
+    var(--color-red-700);
+  --info:
+    var(--color-blue-500);
+  --info-foreground:
+    var(--color-blue-700);
+  --success:
+    var(--color-emerald-500);
+  --success-foreground:
+    var(--color-emerald-700);
+  --warning:
+    var(--color-amber-500);
+  --warning-foreground:
+    var(--color-amber-700);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background:
+    color-mix(in srgb, var(--color-neutral-950) 95%, var(--color-white));
+  --foreground:
+    var(--color-neutral-100);
+  --card:
+    color-mix(in srgb, var(--background) 98%, var(--color-white));
+  --card-foreground:
+    var(--color-neutral-100);
+  --popover:
+    color-mix(in srgb, var(--background) 98%, var(--color-white));
+  --popover-foreground:
+    var(--color-neutral-100);
+  --primary:
+    var(--color-neutral-100);
+  --primary-foreground:
+    var(--color-neutral-800);
+  --secondary:
+    --alpha(var(--color-white) / 4%);
+  --secondary-foreground:
+    var(--color-neutral-100);
+  --muted:
+    --alpha(var(--color-white) / 4%);
+  --muted-foreground:
+    color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-white));
+  --accent:
+    --alpha(var(--color-white) / 4%);
+  --accent-foreground:
+    var(--color-neutral-100);
+  --destructive:
+    color-mix(in srgb, var(--color-red-500) 90%, var(--color-white));
+  --border:
+    --alpha(var(--color-white) / 6%);
+  --input:
+    --alpha(var(--color-white) / 8%);
+  --ring:
+    var(--color-neutral-500);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -115,6 +215,20 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --destructive-foreground:
+    var(--color-red-400);
+  --info:
+    var(--color-blue-500);
+  --info-foreground:
+    var(--color-blue-400);
+  --success:
+    var(--color-emerald-500);
+  --success-foreground:
+    var(--color-emerald-400);
+  --warning:
+    var(--color-amber-500);
+  --warning-foreground:
+    var(--color-amber-400);
 }
 
 @layer base {

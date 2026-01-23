@@ -13,6 +13,7 @@
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
   },
   "dependencies": {
+    "@base-ui/react": "1.1.0",
     "@hookform/resolvers": "^5.2.1",
     "@lemma/api": "workspace:*",
     "@lemma/common": "workspace:*",

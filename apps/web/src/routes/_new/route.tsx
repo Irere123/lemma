@@ -1,3 +1,4 @@
+import { Sidebar } from '@/components/sidebar'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_new')({
@@ -5,5 +6,12 @@ export const Route = createFileRoute('/_new')({
 })
 
 function RouteComponent() {
-  return <Outlet />
+  return (
+    <main className='flex flex-1'>
+      <Sidebar />
+      <div className='flex flex-col w-full'>
+        <Outlet />
+      </div>
+    </main>
+  )
 }

@@ -26,6 +26,9 @@ import { Route as AppNewsletterSettingsRouteImport } from './routes/_app/newslet
 import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
 import { Route as NewAppIndexRouteImport } from './routes/_new/app/index'
 import { Route as WriteWriteDocIdRouteImport } from './routes/_write/write.$docId'
+import { Route as NewAppSettingsRouteImport } from './routes/_new/app/settings'
+import { Route as NewAppSearchRouteImport } from './routes/_new/app/search'
+import { Route as NewAppDocumentsRouteImport } from './routes/_new/app/documents.'
 
 const VerifyRoute = VerifyRouteImport.update({
   id: '/verify',
@@ -108,6 +111,21 @@ const WriteWriteDocIdRoute = WriteWriteDocIdRouteImport.update({
   path: '/write/$docId',
   getParentRoute: () => WriteRouteRoute,
 } as any)
+const NewAppSettingsRoute = NewAppSettingsRouteImport.update({
+  id: '/app/settings',
+  path: '/app/settings',
+  getParentRoute: () => NewRouteRoute,
+} as any)
+const NewAppSearchRoute = NewAppSearchRouteImport.update({
+  id: '/app/search',
+  path: '/app/search',
+  getParentRoute: () => NewRouteRoute,
+} as any)
+const NewAppDocumentsRoute = NewAppDocumentsRouteImport.update({
+  id: '/app/documents/',
+  path: '/app/documents/',
+  getParentRoute: () => NewRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -121,8 +139,11 @@ export interface FileRoutesByFullPath {
   '/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
+  '/app/search': typeof NewAppSearchRoute
+  '/app/settings': typeof NewAppSettingsRoute
   '/write/$docId': typeof WriteWriteDocIdRoute
   '/app': typeof NewAppIndexRoute
+  '/app/documents': typeof NewAppDocumentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -136,8 +157,11 @@ export interface FileRoutesByTo {
   '/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts': typeof PostsIndexRoute
+  '/app/search': typeof NewAppSearchRoute
+  '/app/settings': typeof NewAppSettingsRoute
   '/write/$docId': typeof WriteWriteDocIdRoute
   '/app': typeof NewAppIndexRoute
+  '/app/documents': typeof NewAppDocumentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,8 +180,11 @@ export interface FileRoutesById {
   '/_developers/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/': typeof PostsIndexRoute
+  '/_new/app/search': typeof NewAppSearchRoute
+  '/_new/app/settings': typeof NewAppSettingsRoute
   '/_write/write/$docId': typeof WriteWriteDocIdRoute
   '/_new/app/': typeof NewAppIndexRoute
+  '/_new/app/documents/': typeof NewAppDocumentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -173,8 +200,11 @@ export interface FileRouteTypes {
     | '/oauth-apps'
     | '/posts/$slug'
     | '/posts'
+    | '/app/search'
+    | '/app/settings'
     | '/write/$docId'
     | '/app'
+    | '/app/documents'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,8 +218,11 @@ export interface FileRouteTypes {
     | '/oauth-apps'
     | '/posts/$slug'
     | '/posts'
+    | '/app/search'
+    | '/app/settings'
     | '/write/$docId'
     | '/app'
+    | '/app/documents'
   id:
     | '__root__'
     | '/'
@@ -207,8 +240,11 @@ export interface FileRouteTypes {
     | '/_developers/oauth-apps'
     | '/posts/$slug'
     | '/posts/'
+    | '/_new/app/search'
+    | '/_new/app/settings'
     | '/_write/write/$docId'
     | '/_new/app/'
+    | '/_new/app/documents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -346,6 +382,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WriteWriteDocIdRouteImport
       parentRoute: typeof WriteRouteRoute
     }
+    '/_new/app/settings': {
+      id: '/_new/app/settings'
+      path: '/app/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof NewAppSettingsRouteImport
+      parentRoute: typeof NewRouteRoute
+    }
+    '/_new/app/search': {
+      id: '/_new/app/search'
+      path: '/app/search'
+      fullPath: '/app/search'
+      preLoaderRoute: typeof NewAppSearchRouteImport
+      parentRoute: typeof NewRouteRoute
+    }
+    '/_new/app/documents/': {
+      id: '/_new/app/documents/'
+      path: '/app/documents'
+      fullPath: '/app/documents'
+      preLoaderRoute: typeof NewAppDocumentsRouteImport
+      parentRoute: typeof NewRouteRoute
+    }
   }
 }
 
@@ -378,11 +435,17 @@ const DevelopersRouteRouteWithChildren = DevelopersRouteRoute._addFileChildren(
 )
 
 interface NewRouteRouteChildren {
+  NewAppSearchRoute: typeof NewAppSearchRoute
+  NewAppSettingsRoute: typeof NewAppSettingsRoute
   NewAppIndexRoute: typeof NewAppIndexRoute
+  NewAppDocumentsRoute: typeof NewAppDocumentsRoute
 }
 
 const NewRouteRouteChildren: NewRouteRouteChildren = {
+  NewAppSearchRoute: NewAppSearchRoute,
+  NewAppSettingsRoute: NewAppSettingsRoute,
   NewAppIndexRoute: NewAppIndexRoute,
+  NewAppDocumentsRoute: NewAppDocumentsRoute,
 }
 
 const NewRouteRouteWithChildren = NewRouteRoute._addFileChildren(
