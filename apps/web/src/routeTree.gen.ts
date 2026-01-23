@@ -19,6 +19,7 @@ import { Route as DevelopersRouteRouteImport } from './routes/_developers/route'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsIndexRouteImport } from './routes/posts/index'
+import { Route as UUsernameRouteImport } from './routes/u/$username'
 import { Route as PostsSlugRouteImport } from './routes/posts/$slug'
 import { Route as DevelopersOauthAppsRouteImport } from './routes/_developers/oauth-apps'
 import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/developers'
@@ -74,6 +75,11 @@ const IndexRoute = IndexRouteImport.update({
 const PostsIndexRoute = PostsIndexRouteImport.update({
   id: '/posts/',
   path: '/posts/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UUsernameRoute = UUsernameRouteImport.update({
+  id: '/u/$username',
+  path: '/u/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PostsSlugRoute = PostsSlugRouteImport.update({
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/developers': typeof DevelopersDevelopersRoute
   '/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
+  '/u/$username': typeof UUsernameRoute
   '/posts': typeof PostsIndexRoute
   '/app/search': typeof NewAppSearchRoute
   '/app/settings': typeof NewAppSettingsRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/developers': typeof DevelopersDevelopersRoute
   '/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
+  '/u/$username': typeof UUsernameRoute
   '/posts': typeof PostsIndexRoute
   '/app/search': typeof NewAppSearchRoute
   '/app/settings': typeof NewAppSettingsRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/_developers/developers': typeof DevelopersDevelopersRoute
   '/_developers/oauth-apps': typeof DevelopersOauthAppsRoute
   '/posts/$slug': typeof PostsSlugRoute
+  '/u/$username': typeof UUsernameRoute
   '/posts/': typeof PostsIndexRoute
   '/_new/app/search': typeof NewAppSearchRoute
   '/_new/app/settings': typeof NewAppSettingsRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/developers'
     | '/oauth-apps'
     | '/posts/$slug'
+    | '/u/$username'
     | '/posts'
     | '/app/search'
     | '/app/settings'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/developers'
     | '/oauth-apps'
     | '/posts/$slug'
+    | '/u/$username'
     | '/posts'
     | '/app/search'
     | '/app/settings'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/_developers/developers'
     | '/_developers/oauth-apps'
     | '/posts/$slug'
+    | '/u/$username'
     | '/posts/'
     | '/_new/app/search'
     | '/_new/app/settings'
@@ -258,6 +270,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   VerifyRoute: typeof VerifyRoute
   PostsSlugRoute: typeof PostsSlugRoute
+  UUsernameRoute: typeof UUsernameRoute
   PostsIndexRoute: typeof PostsIndexRoute
 }
 
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/posts'
       fullPath: '/posts'
       preLoaderRoute: typeof PostsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$username': {
+      id: '/u/$username'
+      path: '/u/$username'
+      fullPath: '/u/$username'
+      preLoaderRoute: typeof UUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/posts/$slug': {
@@ -475,6 +495,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   VerifyRoute: VerifyRoute,
   PostsSlugRoute: PostsSlugRoute,
+  UUsernameRoute: UUsernameRoute,
   PostsIndexRoute: PostsIndexRoute,
 }
 export const routeTree = rootRouteImport

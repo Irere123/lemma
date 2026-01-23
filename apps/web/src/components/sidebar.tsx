@@ -1,6 +1,6 @@
 import {
   IconAlignJustified,
-  IconAsterisk,
+  IconPlus,
   IconSearch,
   IconSettings,
   IconUserCircle,
@@ -22,7 +22,7 @@ export function Sidebar() {
       <div className='flex gap-2 px-2'>
         <SidebarLink href='/app' icon={<IconAlignJustified size={20} />} />
         <SidebarLink href='/app/search' icon={<IconSearch size={20} />} />
-        <SidebarLink href='/app/documents' icon={<IconAsterisk size={20} />} />
+        <SidebarLink href='/app/new' icon={<IconPlus size={20} />} />
         <SidebarLink href='/u/profile' icon={<IconUserCircle size={20} />} />
         <SidebarLink href='/app/settings' icon={<IconSettings size={20} />} />
       </div>
