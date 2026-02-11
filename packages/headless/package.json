@@ -1,0 +1,73 @@
+{
+  "name": "@lemma/headless",
+  "version": "1.0.0",
+  "description": "Headless editor component for Lemma",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "lint": "biome lint ./src",
+    "format": "biome format ./src "
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "1.2.4",
+    "@tiptap/core": "3.19.0",
+    "@tiptap/extension-character-count": "3.19.0",
+    "@tiptap/extension-code-block-lowlight": "3.19.0",
+    "@tiptap/extension-color": "3.19.0",
+    "@tiptap/extension-highlight": "3.19.0",
+    "@tiptap/extension-horizontal-rule": "3.19.0",
+    "@tiptap/extension-image": "3.19.0",
+    "@tiptap/extension-link": "3.19.0",
+    "@tiptap/extension-placeholder": "3.19.0",
+    "@tiptap/extension-task-item": "3.19.0",
+    "@tiptap/extension-task-list": "3.19.0",
+    "@tiptap/extension-text-style": "3.19.0",
+    "@tiptap/extension-underline": "3.19.0",
+    "@tiptap/extension-youtube": "3.19.0",
+    "@tiptap/pm": "3.19.0",
+    "@tiptap/react": "3.19.0",
+    "@tiptap/starter-kit": "3.19.0",
+    "@tiptap/suggestion": "3.19.0",
+    "@types/node": "25.2.3",
+    "cmdk": "1.1.1",
+    "jotai": "2.17.1",
+    "katex": "0.16.28",
+    "react-markdown": "10.1.0",
+    "react-moveable": "0.56.0",
+    "react-tweet": "3.3.0",
+    "tippy.js": "6.3.7",
+    "tiptap-extension-global-drag-handle": "0.1.18",
+    "tiptap-markdown": "0.9.0",
+    "tunnel-rat": "0.1.2"
+  },
+  "devDependencies": {
+    "@types/katex": "0.16.8",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "tsdown": "0.20.3",
+    "typescript": "5.9.3"
+  },
+  "author": "Irere Emmanuel <hello@irere.dev>",
+  "homepage": "https://lemma.new",
+  "keywords": [
+    "ai",
+    "lemma",
+    "editor",
+    "markdown",
+    "nextjs",
+    "react"
+  ]
+}
