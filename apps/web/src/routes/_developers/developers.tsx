@@ -1,12 +1,9 @@
 import { IconPlus } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { CreateApiKeyModal } from '@/components/modals/create-api-key-modal'
-import { DeleteApiKeyModal } from '@/components/modals/delete-api-key-modal'
-import { EditApiKeyModal } from '@/components/modals/edit-api-key-modal'
+import { DataTable as ApiKeysTable } from '@/components/tables/api-keys'
 import { Button } from '@/components/ui/button'
 import { useApiKeysModalStore } from '@/stores/api-keys-modal'
-import { DataTable as ApiKeysTable } from '@/components/tables/api-keys'
 
 export const Route = createFileRoute('/_developers/developers')({
   component: RouteComponent,
@@ -41,9 +38,9 @@ function RouteComponent() {
           <ApiKeysTable />
         </div>
       </div>
-      <EditApiKeyModal />
+      {/* <EditApiKeyModal />
       <DeleteApiKeyModal />
-      <CreateApiKeyModal />
+      <CreateApiKeyModal /> */}
     </main>
   )
 }

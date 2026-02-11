@@ -24,6 +24,8 @@ export function getUrlFromString(str: string) {
 // Get the text before a given position in markdown format
 export const getPrevText = (editor: EditorInstance, position: number) => {
   const nodes: Node[] = []
+  // ProseMirror Node.forEach stops when callback returns false (not Array.forEach)
+  // biome-ignore lint/suspicious/useIterableCallbackReturn: ProseMirror API
   editor.state.doc.forEach((node, pos) => {
     if (pos >= position) return false
     nodes.push(node)
@@ -32,7 +34,10 @@ export const getPrevText = (editor: EditorInstance, position: number) => {
   const fragment = Fragment.fromArray(nodes)
   const doc = editor.state.doc.copy(fragment)
 
-  return editor.storage.markdown.serializer.serialize(doc) as string
+  const storage = editor.storage as unknown as {
+    markdown: { serializer: { serialize(doc: unknown): string } }
+  }
+  return storage.markdown.serializer.serialize(doc) as string
 }
 
 // Get all content from the editor in markdown format
@@ -40,5 +45,8 @@ export const getAllContent = (editor: EditorInstance) => {
   const fragment = editor.state.doc.content
   const doc = editor.state.doc.copy(fragment)
 
-  return editor.storage.markdown.serializer.serialize(doc) as string
+  const storage = editor.storage as unknown as {
+    markdown: { serializer: { serialize(doc: unknown): string } }
+  }
+  return storage.markdown.serializer.serialize(doc) as string
 }

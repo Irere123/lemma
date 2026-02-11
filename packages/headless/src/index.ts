@@ -38,6 +38,7 @@ export {
   TiptapLink,
   TiptapUnderline,
   Youtube,
+  type MathematicsOptions,
   type SuggestionItem,
 } from './extensions'
 

@@ -80,3 +80,4 @@ export {
   TiptapUnderline,
   Youtube,
 }
+export type { MathematicsOptions } from './mathematics'
