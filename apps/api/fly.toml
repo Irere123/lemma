@@ -6,7 +6,7 @@ primary_region = 'jnb'
 
 [processes]
   app = "bun start"
-  workers = "bun run workers"
+  worker = "bun run worker"
 
 [http_service]
   internal_port = 8080
@@ -30,4 +30,4 @@ primary_region = 'jnb'
   memory = '512mb'  
   cpu_kind = 'shared'
   cpus = 1
-  processes = ['workers']
+  processes = ['worker']

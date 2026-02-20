@@ -12,7 +12,7 @@ fi
 if [ "$FLY_PROCESS_GROUP" = "app" ]; then
   echo "RUNNING app"
   bun run start
-elif [ "$FLY_PROCESS_GROUP" = "workers" ]; then
+elif [ "$FLY_PROCESS_GROUP" = "worker" ]; then
   echo "RUNNING worker"
   bun run worker
 else
