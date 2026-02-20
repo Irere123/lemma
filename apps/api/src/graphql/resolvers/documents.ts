@@ -31,7 +31,6 @@ type CreateDocumentInput = {
   title?: string | null
   subtitle?: string | null
   status?: DocumentStatus | null
-  content?: any
   markdown?: string | null
   bannerImage?: string | null
   scheduledDate?: Date | null
@@ -43,7 +42,6 @@ type UpdateDocumentInput = {
   title?: string | null
   subtitle?: string | null
   status?: DocumentStatus | null
-  content?: any
   markdown?: string | null
   bannerImage?: string | null
   scheduledDate?: Date | null

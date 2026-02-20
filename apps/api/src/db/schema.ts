@@ -92,7 +92,6 @@ export const documents = createTable(
     subtitle: text('subtitle'),
     status: documentStatusEnum(),
     userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
-    content: jsonb('content').$type<any>(),
     markdown: text('markdown'),
     bannerImage: text('banner_image'),
     scheduledDate: timestamp('scheduled_date'),

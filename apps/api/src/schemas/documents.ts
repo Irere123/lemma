@@ -9,7 +9,6 @@ export const documentSchema = z.object({
   title: z.string().optional(),
   subtitle: z.string().optional().nullable(),
   status: z.enum(documentStatusEnum.enumValues).default('DRAFT'),
-  content: z.any(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
   scheduledDate: z.date().nullable().optional(),
@@ -22,8 +21,7 @@ export const upsertDocumentSchema = z.object({
   id: z.string().optional(),
   title: z.string().nullable().optional(),
   subtitle: z.string().nullable().optional(),
-  status: z.enum(documentStatusEnum.enumValues).optional().default('DRAFT'),
-  content: z.any().optional(),
+  status: z.enum(documentStatusEnum.enumValues).optional(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
   scheduledDate: z.coerce.date().nullable().optional(),
@@ -55,10 +53,7 @@ export const updateBannerImageSchema = z.object({
   bannerImage: z.string(),
 })
 
-// Lightweight document schema without heavy content fields
-export const documentListItemSchema = documentSchema.omit({
-  content: true,
-})
+export const documentListItemSchema = documentSchema
 
 export const documentsResponseSchema = z.object({
   nextCursor: z.nullable(z.string()),

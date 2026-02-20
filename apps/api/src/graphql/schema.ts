@@ -32,7 +32,6 @@ const typeDefs = /* GraphQL */ `
     title: String
     subtitle: String
     status: DocumentStatus
-    content: JSON
     markdown: String
     bannerImage: String
     scheduledDate: DateTime
@@ -335,7 +334,6 @@ const typeDefs = /* GraphQL */ `
     title: String
     subtitle: String
     status: DocumentStatus
-    content: JSON
     markdown: String
     bannerImage: String
     scheduledDate: DateTime
@@ -347,7 +345,6 @@ const typeDefs = /* GraphQL */ `
     title: String
     subtitle: String
     status: DocumentStatus
-    content: JSON
     markdown: String
     bannerImage: String
     scheduledDate: DateTime

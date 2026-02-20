@@ -11,6 +11,20 @@ import type { UpsertDocumentData } from '@api/schemas'
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 100
 
+const normalizeMarkdown = (markdown: string) => markdown.replaceAll('\r\n', '\n').trimEnd()
+
+const resolveMarkdownForSave = (data: UpsertDocumentData): string | null | undefined => {
+  if (typeof data.markdown === 'string') {
+    return normalizeMarkdown(data.markdown)
+  }
+
+  if (data.markdown === null) {
+    return null
+  }
+
+  return undefined
+}
+
 async function ensureUniqueSlug(db: DB, base: string, excludeId?: string): Promise<string> {
   let candidate = base || 'post'
   let suffix = 0
@@ -36,17 +50,50 @@ export const upsertDocument = async (
   data: UpsertDocumentData,
   userId: string
 ): Promise<Document | undefined> => {
+  const markdownForSave = resolveMarkdownForSave(data)
+
   if (data.id) {
-    const updateValues: any = { ...data, updatedAt: new Date() }
-    if (Object.prototype.hasOwnProperty.call(data, 'title')) {
+    const updateValues: any = { updatedAt: new Date() }
+
+    if (Object.hasOwn(data, 'title')) {
+      updateValues.title = data.title ?? null
+    }
+
+    if (Object.hasOwn(data, 'subtitle')) {
+      updateValues.subtitle = data.subtitle ?? null
+    }
+
+    if (Object.hasOwn(data, 'status')) {
+      updateValues.status = data.status
+    }
+
+    if (Object.hasOwn(data, 'bannerImage')) {
+      updateValues.bannerImage = data.bannerImage ?? null
+    }
+
+    if (Object.hasOwn(data, 'scheduledDate')) {
+      updateValues.scheduledDate = data.scheduledDate ?? null
+    }
+
+    if (Object.hasOwn(data, 'publishedDate')) {
+      updateValues.publishedDate = data.publishedDate ?? null
+    }
+
+    if (markdownForSave !== undefined) {
+      // Keep markdown as the canonical editor representation.
+      updateValues.markdown = markdownForSave
+    }
+
+    if (Object.hasOwn(data, 'title')) {
       const base = slugifyString(data.title ?? generateId())
       const safeBase = base || generateId()
       updateValues.slug = await ensureUniqueSlug(db, safeBase, data.id)
     }
+
     const [document] = await db
       .update(documents)
       .set(updateValues)
-      .where(eq(documents.id, data.id))
+      .where(and(eq(documents.id, data.id), eq(documents.userId, userId)))
       .returning()
     return document
   }
@@ -59,10 +106,16 @@ export const upsertDocument = async (
     const [document] = await db
       .insert(documents)
       .values({
-        ...data,
         slug,
         id: generateId(),
         userId,
+        title: data.title ?? null,
+        subtitle: data.subtitle ?? null,
+        status: data.status ?? 'DRAFT',
+        markdown: markdownForSave ?? null,
+        bannerImage: data.bannerImage ?? null,
+        scheduledDate: data.scheduledDate ?? null,
+        publishedDate: data.publishedDate ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -177,7 +230,7 @@ export const updateDocumentBannerImage = async (
 export const getPublishedArticles = async (
   db: DB,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Omit<Document, 'content' | 'markdown'>[]> => {
+): Promise<Omit<Document, 'markdown'>[]> => {
   const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
 
   const publishedArticles = await db
@@ -232,7 +285,7 @@ export const getDocumentsByTypeAndStatus = async (
   db: DB,
   data: GetDocumentsByTypeAndStatusData,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Omit<Document, 'content' | 'markdown'>[]> => {
+): Promise<Omit<Document, 'markdown'>[]> => {
   const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
 
   const results = await db
