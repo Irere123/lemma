@@ -103,7 +103,12 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
   return (
     <Popover modal={true} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger className='gap-2 rounded-none border-none hover:bg-accent focus:ring-0'>
-        <Button size='sm' variant='ghost' className='gap-2'>
+        <Button
+          size='sm'
+          variant='ghost'
+          className='gap-2'
+          onMouseDown={(event) => event.preventDefault()}
+        >
           <span className='whitespace-nowrap text-sm'>{activeItem.name}</span>
           <ChevronDown className='h-4 w-4' />
         </Button>

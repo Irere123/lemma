@@ -1,7 +1,8 @@
 import { EditorBubbleItem, useEditor } from '@lemma/headless'
 import { Check, ChevronDown } from 'lucide-react'
 
-import { Popover, PopoverContent, PopoverPopup, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverPopup, PopoverTrigger } from '@/components/ui/popover'
 
 export interface BubbleColorMenuItem {
   name: string
@@ -92,23 +93,34 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
 
   return (
     <Popover modal={true} open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger className='flex items-center gap-1 px-2 py-1 text-sm'>
-        <span
-          className='rounded-sm px-1'
-          style={{
-            color: activeColorItem?.color ?? 'inherit',
-            backgroundColor: activeHighlightItem?.color ?? 'transparent',
-          }}
+      <PopoverTrigger>
+        <Button
+          size='sm'
+          variant='ghost'
+          className='gap-1 rounded-none px-2'
+          onMouseDown={(event) => event.preventDefault()}
         >
-          A
-        </span>
-        <ChevronDown className='h-4 w-4' />
+          <span
+            className='rounded-sm px-1'
+            style={{
+              color: activeColorItem?.color ?? 'inherit',
+              backgroundColor: activeHighlightItem?.color ?? 'transparent',
+            }}
+          >
+            A
+          </span>
+          <ChevronDown className='h-4 w-4' />
+        </Button>
       </PopoverTrigger>
-      <PopoverPopup>
-        <PopoverContent>
-          <div className='flex flex-col'>
-            <div className='my-1 px-2 text-sm font-semibold text-muted-foreground'>Color</div>
-            {TEXT_COLORS.map(({ name, color }) => (
+      <PopoverPopup sideOffset={5} align='start' className='h-52 w-56 p-1'>
+        <div className='h-full overflow-y-auto pr-1'>
+          <div className='px-2 py-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase'>
+            Color
+          </div>
+          {TEXT_COLORS.map(({ name, color }) => {
+            const isActive = color ? editor.isActive('textStyle', { color }) : !activeTextColor
+
+            return (
               <EditorBubbleItem
                 key={name}
                 onSelect={() => {
@@ -118,23 +130,29 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                   }
                   onOpenChange(false)
                 }}
-                className='flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent'
+                className='flex cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-accent'
               >
                 <div className='flex items-center gap-2'>
-                  <div className='rounded-sm border px-2 py-px font-medium' style={{ color }}>
+                  <div
+                    className='rounded-sm border px-2 py-px font-medium'
+                    style={{ color: color ?? undefined }}
+                  >
                     A
                   </div>
                   <span>{name}</span>
                 </div>
-                {((!color && !activeTextColor) || editor.isActive('textStyle', { color })) && (
-                  <Check className='h-4 w-4' />
-                )}
+                {isActive && <Check className='h-4 w-4' />}
               </EditorBubbleItem>
-            ))}
+            )
+          })}
+          <div className='my-1 h-px bg-border' />
+          <div className='px-2 py-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase'>
+            Background
           </div>
-          <div>
-            <div className='my-1 px-2 text-sm font-semibold text-muted-foreground'>Background</div>
-            {HIGHLIGHT_COLORS.map(({ name, color }) => (
+          {HIGHLIGHT_COLORS.map(({ name, color }) => {
+            const isActive = color ? editor.isActive('highlight', { color }) : !activeHighlightColor
+
+            return (
               <EditorBubbleItem
                 key={name}
                 onSelect={() => {
@@ -144,24 +162,22 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                   }
                   onOpenChange(false)
                 }}
-                className='flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent'
+                className='flex cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-accent'
               >
                 <div className='flex items-center gap-2'>
                   <div
                     className='rounded-sm border px-2 py-px font-medium'
-                    style={{ backgroundColor: color ?? 'transparent' }}
+                    style={{ backgroundColor: color ?? undefined }}
                   >
                     A
                   </div>
                   <span>{name}</span>
                 </div>
-                {((!color && !activeHighlightColor) || editor.isActive('highlight', { color })) && (
-                  <Check className='h-4 w-4' />
-                )}
+                {isActive && <Check className='h-4 w-4' />}
               </EditorBubbleItem>
-            ))}
-          </div>
-        </PopoverContent>
+            )
+          })}
+        </div>
       </PopoverPopup>
     </Popover>
   )

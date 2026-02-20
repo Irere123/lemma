@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import AdvancedEditor, { type WriterEditorUpdate } from '@/components/editor'
-import { extractCustomBlocksFromMarkdown, type CustomBlockToken } from '@/lib/custom-blocks'
+import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
+import { type CustomBlockToken, extractCustomBlocksFromMarkdown } from '@/lib/custom-blocks'
 import { useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/write/$docId')({
 })
 
 type DraftState = {
+  bannerImage: string | null
   customBlocks: CustomBlockToken[]
   markdown: string
   subtitle: string
@@ -40,12 +42,15 @@ function RouteComponent() {
 
   const [title, setTitle] = useState('')
   const [subtitle, setSubtitle] = useState('')
+  const [bannerImage, setBannerImage] = useState<string | null>(null)
+  const [isBannerUploading, setIsBannerUploading] = useState(false)
   const [saveStatus, setSaveStatus] = useState('Saved')
 
   const hydratedDocumentRef = useRef<string | null>(null)
   const draftRef = useRef<DraftState>({
     title: '',
     subtitle: '',
+    bannerImage: null,
     markdown: '',
     customBlocks: [],
   })
@@ -60,6 +65,7 @@ function RouteComponent() {
         id: docId,
         title: draftRef.current.title.trim() || null,
         subtitle: draftRef.current.subtitle.trim() || null,
+        bannerImage: draftRef.current.bannerImage,
         markdown: draftRef.current.markdown,
         ...patch,
       }
@@ -121,9 +127,11 @@ function RouteComponent() {
       try {
         await persistDocument(patch)
         setSaveStatus('Saved')
+        return true
       } catch (error) {
         console.error(error)
         setSaveStatus('Save failed')
+        return false
       }
     },
     [persistDocument, persistDocumentDebounced]
@@ -143,16 +151,19 @@ function RouteComponent() {
 
     const nextTitle = document.title ?? ''
     const nextSubtitle = document.subtitle ?? ''
+    const nextBannerImage = document.bannerImage ?? null
     const nextMarkdown =
       typeof document.markdown === 'string' ? document.markdown : draftRef.current.markdown
 
     setTitle(nextTitle)
     setSubtitle(nextSubtitle)
+    setBannerImage(nextBannerImage)
     setSaveStatus('Saved')
 
     draftRef.current = {
       title: nextTitle,
       subtitle: nextSubtitle,
+      bannerImage: nextBannerImage,
       markdown: nextMarkdown,
       customBlocks: extractCustomBlocksFromMarkdown(nextMarkdown),
     }
@@ -202,8 +213,84 @@ function RouteComponent() {
   }
 
   const editorKey = `${docId}:${fetchedDocument ? 'server' : 'store'}`
-  const editorInitialContent =
-    typeof document.markdown === 'string' ? document.markdown : ''
+  const editorInitialContent = typeof document.markdown === 'string' ? document.markdown : ''
+
+  const handleBannerImageSelect = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        setSaveStatus('Save failed')
+        return
+      }
+
+      const previousBannerImage = draftRef.current.bannerImage
+      let uploadedImageUrl: null | string = null
+
+      setIsBannerUploading(true)
+      setSaveStatus('Saving...')
+      try {
+        const uploaded = await uploadFile(file)
+        const nextBannerImage = uploaded.url
+        uploadedImageUrl = nextBannerImage
+
+        setBannerImage(nextBannerImage)
+        draftRef.current = { ...draftRef.current, bannerImage: nextBannerImage }
+        const didPersist = await persistDocumentNow({ bannerImage: nextBannerImage })
+
+        if (!didPersist) {
+          setBannerImage(previousBannerImage)
+          draftRef.current = { ...draftRef.current, bannerImage: previousBannerImage }
+
+          if (uploadedImageUrl) {
+            try {
+              await deleteUploadedFile({ fileUrl: uploadedImageUrl })
+            } catch (cleanupError) {
+              console.error(
+                'Failed to cleanup uploaded cover image after save failure',
+                cleanupError
+              )
+            }
+          }
+          return
+        }
+
+        if (previousBannerImage && previousBannerImage !== nextBannerImage) {
+          try {
+            await deleteUploadedFile({ fileUrl: previousBannerImage })
+          } catch (cleanupError) {
+            console.error('Failed to delete previous cover image', cleanupError)
+          }
+        }
+      } catch (error) {
+        console.error(error)
+        setSaveStatus('Save failed')
+      } finally {
+        setIsBannerUploading(false)
+      }
+    },
+    [persistDocumentNow]
+  )
+
+  const handleBannerImageRemove = useCallback(async () => {
+    const previousBannerImage = draftRef.current.bannerImage
+
+    setBannerImage(null)
+    draftRef.current = { ...draftRef.current, bannerImage: null }
+
+    const didPersist = await persistDocumentNow({ bannerImage: null })
+    if (!didPersist) {
+      setBannerImage(previousBannerImage)
+      draftRef.current = { ...draftRef.current, bannerImage: previousBannerImage }
+      return
+    }
+
+    if (!previousBannerImage) return
+
+    try {
+      await deleteUploadedFile({ fileUrl: previousBannerImage })
+    } catch (cleanupError) {
+      console.error('Failed to delete removed cover image', cleanupError)
+    }
+  }, [persistDocumentNow])
 
   return (
     <div className='w-full pb-20'>
@@ -213,7 +300,13 @@ function RouteComponent() {
         initialContent={editorInitialContent}
         title={title}
         subtitle={subtitle}
+        bannerImage={bannerImage}
+        isBannerUploading={isBannerUploading}
         saveStatus={isUpsertLoading ? 'Saving...' : saveStatus}
+        onBannerImageSelect={handleBannerImageSelect}
+        onBannerImageRemove={() => {
+          void handleBannerImageRemove()
+        }}
         onTitleChange={(value) => {
           setTitle(value)
           queueDraftUpdate({ title: value })

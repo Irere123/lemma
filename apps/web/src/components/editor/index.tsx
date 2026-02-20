@@ -6,13 +6,16 @@ import {
   EditorCommandList,
   EditorContent,
   EditorRoot,
+  getAllContent,
   handleCommandNavigation,
   type JSONContent,
-  getAllContent,
 } from '@lemma/headless'
-import { useState } from 'react'
+import { ImagePlus, Loader2, Trash2, Upload } from 'lucide-react'
+import type { ChangeEvent } from 'react'
+import { useRef, useState } from 'react'
 
 import { cn } from '@/lib/utils'
+import { Button } from '../ui/button'
 import { Separator } from '../ui/separator'
 import { defaultExtensions } from './extensions'
 import { ColorSelector } from './selectors/color-selector'
@@ -31,11 +34,15 @@ type AdvancedEditorProps = {
   initialContent?: JSONContent | string
   title: string
   subtitle: string
+  bannerImage?: string | null
+  isBannerUploading?: boolean
   saveStatus?: string
   disabled?: boolean
   className?: string
   onTitleChange: (value: string) => void
   onSubtitleChange: (value: string) => void
+  onBannerImageSelect?: (file: File) => void
+  onBannerImageRemove?: () => void
   onContentChange?: (value: WriterEditorUpdate) => void
 }
 
@@ -43,17 +50,31 @@ const AdvancedEditor = ({
   className,
   disabled = false,
   initialContent,
+  isBannerUploading = false,
   onContentChange,
+  onBannerImageRemove,
+  onBannerImageSelect,
   onSubtitleChange,
   onTitleChange,
   saveStatus = 'Saved',
+  bannerImage,
   subtitle,
   title,
 }: AdvancedEditorProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [wordsCount, setWordsCount] = useState<number>(0)
   const [openNode, setOpenNode] = useState(false)
   const [openColor, setOpenColor] = useState(false)
   const [openLink, setOpenLink] = useState(false)
+
+  const openFilePicker = () => fileInputRef.current?.click()
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+    if (!file) return
+    onBannerImageSelect?.(file)
+    event.currentTarget.value = ''
+  }
 
   return (
     <section className={cn('writer-editor mx-auto w-full max-w-[860px] px-4 pb-24', className)}>
@@ -67,6 +88,65 @@ const AdvancedEditor = ({
           <span>{wordsCount.toLocaleString()} words</span>
         </div>
       </header>
+
+      <div className='mb-6'>
+        <input
+          ref={fileInputRef}
+          type='file'
+          accept='image/*'
+          className='hidden'
+          onChange={handleFileChange}
+        />
+        {bannerImage ? (
+          <div className='space-y-3'>
+            <img
+              src={bannerImage}
+              alt='Article cover'
+              className='h-52 w-full rounded-xl border border-border/70 object-cover'
+            />
+            <div className='flex items-center gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={openFilePicker}
+                disabled={disabled || isBannerUploading}
+              >
+                {isBannerUploading ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : (
+                  <Upload className='h-4 w-4' />
+                )}
+                Change cover
+              </Button>
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                onClick={onBannerImageRemove}
+                disabled={disabled || isBannerUploading}
+              >
+                <Trash2 className='h-4 w-4' />
+                Remove
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type='button'
+            onClick={openFilePicker}
+            disabled={disabled || isBannerUploading}
+            className='inline-flex items-center gap-2 text-lg text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60'
+          >
+            {isBannerUploading ? (
+              <Loader2 className='h-5 w-5 animate-spin' />
+            ) : (
+              <ImagePlus className='h-5 w-5' />
+            )}
+            <span>Add a cover...</span>
+          </button>
+        )}
+      </div>
 
       <input
         aria-label='Document title'
