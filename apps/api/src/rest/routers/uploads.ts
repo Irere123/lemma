@@ -1,19 +1,54 @@
 import { createRoute, z } from '@hono/zod-openapi'
 
+import { env } from '@api/env-runtime'
 import { storage } from '@api/lib/storage'
 import { createRouter, generateId } from '@api/lib/utils'
+import { validateResponse } from '@api/lib/validate-response'
 import {
+  deleteUploadResponseSchema,
+  deleteUploadSchema,
   directUploadResponseSchema,
   preSignedUrlErrorResponseSchema,
   preSignedUrlResponseSchema,
   preSignedUrlSchema,
 } from '@api/schemas'
-import { validateResponse } from '@api/lib/validate-response'
 import { getExtensionFromMimeType, isValidImageType } from '@api/utils/uploads'
 
 const uploadsRouter = createRouter()
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+const resolveDeleteKey = ({ key, fileUrl }: { key?: string; fileUrl?: string }): null | string => {
+  if (key) {
+    const normalized = key.replace(/^\/+/, '').trim()
+    return normalized || null
+  }
+
+  if (!fileUrl) return null
+
+  try {
+    const fileUrlObject = new URL(fileUrl)
+    const storageBaseUrlObject = new URL(env.R2_STORAGE_BASE_URL)
+
+    if (fileUrlObject.host !== storageBaseUrlObject.host) {
+      return null
+    }
+
+    const filePath = fileUrlObject.pathname.replace(/^\/+/, '')
+    if (!filePath) return null
+
+    const basePath = storageBaseUrlObject.pathname.replace(/^\/+|\/+$/g, '')
+    if (!basePath) return filePath
+
+    if (filePath === basePath) return null
+    if (!filePath.startsWith(`${basePath}/`)) return null
+
+    const relativePath = filePath.slice(basePath.length).replace(/^\/+/, '')
+    return relativePath || null
+  } catch (_error) {
+    return null
+  }
+}
 
 uploadsRouter.openapi(
   createRoute({
@@ -65,7 +100,7 @@ uploadsRouter.openapi(
     const session = c.get('session')
 
     const form = await c.req.parseBody()
-    const formFile = form['file']
+    const formFile = form.file
 
     const file = Array.isArray(formFile) ? formFile[0] : formFile
 
@@ -142,6 +177,92 @@ uploadsRouter.openapi(
           {
             success: false,
             error: 'Failed to upload file',
+          },
+          preSignedUrlErrorResponseSchema
+        ),
+        500
+      )
+    }
+  }
+)
+
+uploadsRouter.openapi(
+  createRoute({
+    method: 'post',
+    path: '/delete',
+    tags: ['Uploads'],
+    summary: 'Delete an uploaded file',
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: deleteUploadSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'File deleted successfully',
+        content: {
+          'application/json': {
+            schema: deleteUploadResponseSchema,
+          },
+        },
+      },
+      400: {
+        description: 'Bad request',
+        content: {
+          'application/json': {
+            schema: preSignedUrlErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: preSignedUrlErrorResponseSchema,
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const { key, fileUrl } = c.req.valid('json')
+    const resolvedKey = resolveDeleteKey({ key, fileUrl })
+
+    if (!resolvedKey) {
+      return c.json(
+        validateResponse(
+          {
+            success: false,
+            error: 'Invalid key or file URL',
+          },
+          preSignedUrlErrorResponseSchema
+        ),
+        400
+      )
+    }
+
+    try {
+      await storage.delete(resolvedKey)
+
+      return c.json(
+        validateResponse(
+          {
+            success: true,
+            key: resolvedKey,
+          },
+          deleteUploadResponseSchema
+        )
+      )
+    } catch (_error) {
+      return c.json(
+        validateResponse(
+          {
+            success: false,
+            error: 'Failed to delete file',
           },
           preSignedUrlErrorResponseSchema
         ),

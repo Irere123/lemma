@@ -94,3 +94,38 @@ export const directUploadResponseSchema = z.object({
     example: '2024-01-01T12:00:00.000Z',
   }),
 })
+
+export const deleteUploadSchema = z
+  .object({
+    key: z
+      .string()
+      .min(1)
+      .max(1024)
+      .optional()
+      .openapi({
+        description: 'The storage key to delete',
+        example: 'file_01HZYZJCH1VYH927TFXW3KQV5M.jpg',
+      }),
+    fileUrl: z
+      .string()
+      .url()
+      .optional()
+      .openapi({
+        description: 'The public file URL to delete',
+        example: 'https://static.example.com/file_01HZYZJCH1VYH927TFXW3KQV5M.jpg',
+      }),
+  })
+  .refine((value) => Boolean(value.key || value.fileUrl), {
+    message: 'Either key or fileUrl is required',
+  })
+
+export const deleteUploadResponseSchema = z.object({
+  success: z.boolean().openapi({
+    description: 'Whether the delete operation succeeded',
+    example: true,
+  }),
+  key: z.string().openapi({
+    description: 'The key that was deleted',
+    example: 'file_01HZYZJCH1VYH927TFXW3KQV5M.jpg',
+  }),
+})
