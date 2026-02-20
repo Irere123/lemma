@@ -13,11 +13,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DocRouteImport } from './routes/doc'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PostsIndexRouteImport } from './routes/posts/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as WriteDocIdRouteImport } from './routes/write/$docId'
 import { Route as UUsernameRouteImport } from './routes/u/$username'
-import { Route as PostsSlugRouteImport } from './routes/posts/$slug'
 import { Route as AppSearchRouteImport } from './routes/app/search'
 import { Route as AppSettingsRouteRouteImport } from './routes/app/settings/route'
 import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
@@ -46,11 +44,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PostsIndexRoute = PostsIndexRouteImport.update({
-  id: '/posts/',
-  path: '/posts/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -64,11 +57,6 @@ const WriteDocIdRoute = WriteDocIdRouteImport.update({
 const UUsernameRoute = UUsernameRouteImport.update({
   id: '/u/$username',
   path: '/u/$username',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PostsSlugRoute = PostsSlugRouteImport.update({
-  id: '/posts/$slug',
-  path: '/posts/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSearchRoute = AppSearchRouteImport.update({
@@ -114,11 +102,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
-  '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
-  '/posts': typeof PostsIndexRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -130,11 +116,9 @@ export interface FileRoutesByTo {
   '/doc': typeof DocRoute
   '/login': typeof LoginRoute
   '/app/search': typeof AppSearchRoute
-  '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app': typeof AppIndexRoute
-  '/posts': typeof PostsIndexRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -149,11 +133,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
-  '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
-  '/posts/': typeof PostsIndexRoute
   '/app/documents/': typeof AppDocumentsRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -169,11 +151,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/settings'
     | '/app/search'
-    | '/posts/$slug'
     | '/u/$username'
     | '/write/$docId'
     | '/app/'
-    | '/posts'
     | '/app/documents'
     | '/app/settings/account'
     | '/app/settings/api-keys'
@@ -185,11 +165,9 @@ export interface FileRouteTypes {
     | '/doc'
     | '/login'
     | '/app/search'
-    | '/posts/$slug'
     | '/u/$username'
     | '/write/$docId'
     | '/app'
-    | '/posts'
     | '/app/documents'
     | '/app/settings/account'
     | '/app/settings/api-keys'
@@ -203,11 +181,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/settings'
     | '/app/search'
-    | '/posts/$slug'
     | '/u/$username'
     | '/write/$docId'
     | '/app/'
-    | '/posts/'
     | '/app/documents/'
     | '/app/settings/account'
     | '/app/settings/api-keys'
@@ -220,10 +196,8 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   DocRoute: typeof DocRoute
   LoginRoute: typeof LoginRoute
-  PostsSlugRoute: typeof PostsSlugRoute
   UUsernameRoute: typeof UUsernameRoute
   WriteDocIdRoute: typeof WriteDocIdRoute
-  PostsIndexRoute: typeof PostsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -256,13 +230,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/posts/': {
-      id: '/posts/'
-      path: '/posts'
-      fullPath: '/posts'
-      preLoaderRoute: typeof PostsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -282,13 +249,6 @@ declare module '@tanstack/react-router' {
       path: '/u/$username'
       fullPath: '/u/$username'
       preLoaderRoute: typeof UUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/posts/$slug': {
-      id: '/posts/$slug'
-      path: '/posts/$slug'
-      fullPath: '/posts/$slug'
-      preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/search': {
@@ -383,10 +343,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   DocRoute: DocRoute,
   LoginRoute: LoginRoute,
-  PostsSlugRoute: PostsSlugRoute,
   UUsernameRoute: UUsernameRoute,
   WriteDocIdRoute: WriteDocIdRoute,
-  PostsIndexRoute: PostsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
