@@ -8,13 +8,12 @@ import {
 import { Link } from '@tanstack/react-router'
 
 import { cn } from '@/lib/utils'
-import { DocumentsHistoryList } from './documents-list'
 import { AccountDropdown } from './dropdowns/account'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 
 export function Sidebar() {
   return (
-    <div className='flex flex-col gap-4 h-screen sticky border-r border-neutral-200 sm:w-72 w-16'>
+    <div className='flex flex-col gap-4 h-screen sticky border-r border-neutral-200 sm:w-72 w-16 top-0 z-50'>
       <div className='flex items-center justify-between p-4 border-b border-neutral-200'>
         <h2 className='text-xl font-bold'>Lemma</h2>
         <AccountDropdown />
@@ -28,7 +27,7 @@ export function Sidebar() {
       </div>
       <div className='flex flex-1 px-2.5 flex-col gap-2'>
         <h2 className='text-md font-semibold'>Archive</h2>
-        <DocumentsHistoryList />
+        {/* <DocumentsHistoryList /> */}
       </div>
       <div className='flex items-center gap-2 p-2'>
         <Avatar className='rounded-full size-9'>

@@ -1,33 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useState } from 'react'
 
-import { AppHeader } from '@/components/app-header'
-import { AppSidebar } from '@/components/app-sidebar'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { Sidebar } from '@/components/sidebar'
 import { useSession } from '@/lib/auth-client'
 import { documentStore, useDocumentStore, type Document } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
-export const Route = createFileRoute('/_app')({
-  // Add beforeLoad for authentication check
-  beforeLoad: async ({ context }) => {
-    // This runs on both server and client
-    // You can add auth checks here
-    return {
-      // Pass any data you want to the loader
-    }
-  },
-  // Add loader for server-side data prefetching
+export const Route = createFileRoute('/app')({
   loader: async ({ context }) => {
-    // Import server-side tRPC only in the loader
     if (typeof window === 'undefined') {
       const { serverPrefetch } = await import('@/trpc/server')
-
-      // Get the request from context for cookie forwarding
       const request = (context as any)?.request as Request | undefined
 
-      // Prefetch user documents on the server with authentication
       await serverPrefetch({
         request,
         queryKey: [['documents', 'getUserDocuments'], { input: {}, type: 'query' }],
@@ -40,34 +25,30 @@ export const Route = createFileRoute('/_app')({
 
 function RouteComponent() {
   const trpc = useTRPC()
-  const [isPageLoaded, setIsPageLoaded] = useState(false)
+  const navigate = useNavigate()
   const { data: session, isPending } = useSession()
   const { data: documents, isLoading: documentsLoading } = useQuery(
     trpc.documents.getUserDocuments.queryOptions({})
   )
-  const navigate = useNavigate()
+  const setDocuments = useDocumentStore((state) => state.setDocuments)
+  const [isPageLoaded, setIsPageLoaded] = useState(false)
 
   const setupStore = useCallback(async () => {
     if (!isPageLoaded && !isPending && session?.user) {
-      // Use user's specific store and rehydrate data
       documentStore.persist.clearStorage()
       documentStore.persist.setOptions({
         name: `documents-storage-${session.user.id}`,
       })
       await documentStore.persist.rehydrate()
     }
-  }, [isPageLoaded, session, isPending])
+  }, [isPageLoaded, isPending, session])
 
   useEffect(() => {
     setupStore()
   }, [setupStore])
 
-  const setDocuments = useDocumentStore((state) => state.setDocuments)
-
   const initData = useCallback(async () => {
-    if (!session && !isPending) {
-      return
-    }
+    if (!session && !isPending) return
 
     if (!documents && !documentsLoading) {
       setIsPageLoaded(true)
@@ -75,7 +56,6 @@ function RouteComponent() {
     }
 
     if (!documentsLoading) {
-      // Set documents
       const docsAsObj = documents?.documents.reduce<
         Record<Document['id'], Omit<Document, 'content' | 'markdown'>>
       >((acc, doc) => {
@@ -83,26 +63,39 @@ function RouteComponent() {
         return acc
       }, {})
       setDocuments(docsAsObj ?? {})
+      setIsPageLoaded(true)
     }
-  }, [session, documents, documentsLoading, setDocuments, isPending])
+  }, [documents, documentsLoading, isPending, session, setDocuments])
 
   useEffect(() => {
     if (!session?.user && !isPending) {
-      // Redirect to login page if there is no user logged in
-      navigate({ to: '/login' })
-    } else if (!isPageLoaded && session?.user) {
-      // Initialize data if there is a user and the data has not been initialized yet
+      navigate({ to: '/login', replace: true })
+      return
+    }
+
+    if (!isPageLoaded && session?.user) {
       initData()
     }
-  }, [navigate, isPageLoaded, initData, isPending])
+  }, [initData, isPageLoaded, isPending, navigate, session])
+
+  if (!session?.user && isPending) {
+    return null
+  }
+  if (!session?.user) {
+    return null
+  }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <div className='w-full'>
-        <AppHeader />
+    <main className='flex min-h-screen flex-1 flex-col bg-background md:flex-row'>
+      <Sidebar />
+      <div className='flex w-full flex-col'>
+        <header className='flex items-center justify-between border-b border-border/70 px-4 py-3 md:hidden'>
+          <Link to='/app' className='text-base font-semibold tracking-tight'>
+            Lemma
+          </Link>
+        </header>
         <Outlet />
       </div>
-    </SidebarProvider>
+    </main>
   )
 }

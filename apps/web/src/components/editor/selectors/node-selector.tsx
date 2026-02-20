@@ -7,6 +7,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  List,
   ListOrdered,
   type LucideIcon,
   TextIcon,
@@ -28,12 +29,15 @@ const items: SelectorItem[] = [
     name: 'Text',
     icon: TextIcon,
     command: (editor) => editor?.chain().focus().clearNodes().run(),
-    // I feel like there has to be a more efficient way to do this – feel free to PR if you know how!
     isActive: (editor) =>
-      editor?.isActive('paragraph') ??
-      (false && !editor?.isActive('bulletList')) ??
-      (false && !editor?.isActive('orderedList')) ??
-      false,
+      Boolean(
+        editor?.isActive('paragraph') &&
+          !editor?.isActive('bulletList') &&
+          !editor?.isActive('orderedList') &&
+          !editor?.isActive('blockquote') &&
+          !editor?.isActive('codeBlock') &&
+          !editor?.isActive('taskList')
+      ),
   },
   {
     name: 'Heading 1',
@@ -61,7 +65,7 @@ const items: SelectorItem[] = [
   },
   {
     name: 'Bullet List',
-    icon: ListOrdered,
+    icon: List,
     command: (editor) => editor?.chain().focus().clearNodes().toggleBulletList().run(),
     isActive: (editor) => editor?.isActive('bulletList') ?? false,
   },

@@ -51,7 +51,7 @@ function findPlaceholder(state: EditorState, id: {}) {
 }
 
 export interface ImageUploadOptions {
-  validateFn?: (file: File) => void
+  validateFn?: (file: File) => boolean
   onUpload: (file: File) => Promise<unknown>
 }
 
@@ -59,8 +59,7 @@ export const createImageUpload =
   ({ validateFn, onUpload }: ImageUploadOptions): UploadFn =>
   (file, view, pos) => {
     // check if the file is an image
-    const validated = validateFn?.(file)
-    if (!validated) return
+    if (validateFn && !validateFn(file)) return
     // A fresh object to act as the ID for this upload
     const id = {}
 
@@ -107,8 +106,11 @@ export const createImageUpload =
         view.dispatch(transaction)
       },
       () => {
-        // Deletes the image placeholder on error
-        const transaction = view.state.tr.delete(pos, pos).setMeta(uploadKey, { remove: { id } })
+        // Deletes the image placeholder on error.
+        const placeholderPos = findPlaceholder(view.state, id)
+        if (placeholderPos == null) return
+
+        const transaction = view.state.tr.setMeta(uploadKey, { remove: { id } })
         view.dispatch(transaction)
       }
     )
@@ -141,8 +143,11 @@ export const handleImageDrop = (
       left: event.clientX,
       top: event.clientY,
     })
-    // here we deduct 1 from the pos or else the image will create an extra node
-    if (file) uploadFn(file, view, coordinates?.pos ?? 0 - 1)
+    // Deduct one so the drop inserts at the expected block boundary.
+    if (file) {
+      const dropPos = Math.max((coordinates?.pos ?? 0) - 1, 0)
+      uploadFn(file, view, dropPos)
+    }
     return true
   }
   return false

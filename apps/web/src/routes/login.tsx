@@ -26,7 +26,7 @@ function RouteComponent() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: `${import.meta.env.VITE_PUBLIC_APP_URL}/documents`,
+        callbackURL: `${import.meta.env.VITE_PUBLIC_APP_URL}/app`,
       })
     } catch {
       toast.error('Failed to sign in with Google')

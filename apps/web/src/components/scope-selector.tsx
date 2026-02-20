@@ -1,8 +1,7 @@
-import { RESOURCES } from '@/utils/scopes'
-import type { Scope } from '@lemma/common/scopes'
-import { FormDescription } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { RESOURCES } from '@/utils/scopes'
+import type { Scope } from '@lemma/common/scopes'
 
 type Props = {
   selectedScopes: Scope[]
@@ -35,7 +34,7 @@ export function ScopeSelector({
 
   return (
     <div className='space-y-4'>
-      <FormDescription>{description}</FormDescription>
+      <p className='text-sm font-medium text-[#878787]'>{description}</p>
 
       <ScrollArea className={`flex flex-col text-sm ${height}`}>
         {RESOURCES.map((resource) => (

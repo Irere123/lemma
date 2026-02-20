@@ -5,84 +5,68 @@ import { Popover, PopoverContent, PopoverPopup, PopoverTrigger } from '@/compone
 
 export interface BubbleColorMenuItem {
   name: string
-  color: string
+  color: null | string
 }
 
 const TEXT_COLORS: BubbleColorMenuItem[] = [
   {
     name: 'Default',
-    color: 'var(--novel-black)',
+    color: null,
   },
   {
-    name: 'Purple',
-    color: '#9333EA',
+    name: 'Slate',
+    color: '#334155',
   },
   {
     name: 'Red',
-    color: '#E00000',
+    color: '#b91c1c',
   },
   {
-    name: 'Yellow',
-    color: '#EAB308',
+    name: 'Amber',
+    color: '#b45309',
   },
   {
     name: 'Blue',
-    color: '#2563EB',
+    color: '#1d4ed8',
   },
   {
     name: 'Green',
-    color: '#008A00',
+    color: '#166534',
   },
   {
-    name: 'Orange',
-    color: '#FFA500',
-  },
-  {
-    name: 'Pink',
-    color: '#BA4081',
+    name: 'Rose',
+    color: '#be185d',
   },
   {
     name: 'Gray',
-    color: '#A8A29E',
+    color: '#64748b',
   },
 ]
 
 const HIGHLIGHT_COLORS: BubbleColorMenuItem[] = [
   {
     name: 'Default',
-    color: 'var(--novel-highlight-default)',
+    color: null,
   },
   {
-    name: 'Purple',
-    color: 'var(--novel-highlight-purple)',
-  },
-  {
-    name: 'Red',
-    color: 'var(--novel-highlight-red)',
-  },
-  {
-    name: 'Yellow',
-    color: 'var(--novel-highlight-yellow)',
-  },
-  {
-    name: 'Blue',
-    color: 'var(--novel-highlight-blue)',
+    name: 'Amber',
+    color: '#fef08a',
   },
   {
     name: 'Green',
-    color: 'var(--novel-highlight-green)',
+    color: '#bbf7d0',
   },
   {
-    name: 'Orange',
-    color: 'var(--novel-highlight-orange)',
+    name: 'Blue',
+    color: '#bfdbfe',
   },
   {
-    name: 'Pink',
-    color: 'var(--novel-highlight-pink)',
+    name: 'Rose',
+    color: '#fecdd3',
   },
   {
     name: 'Gray',
-    color: 'var(--novel-highlight-gray)',
+    color: '#e2e8f0',
   },
 ]
 
@@ -95,20 +79,25 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
   const { editor } = useEditor()
 
   if (!editor) return null
-  const activeColorItem = TEXT_COLORS.find(({ color }) => editor.isActive('textStyle', { color }))
+  const activeTextColor = editor.getAttributes('textStyle').color as string | undefined
+  const activeHighlightColor = editor.getAttributes('highlight').color as string | undefined
 
-  const activeHighlightItem = HIGHLIGHT_COLORS.find(({ color }) =>
-    editor.isActive('highlight', { color })
-  )
+  const activeColorItem =
+    TEXT_COLORS.find(({ color }) => color && editor.isActive('textStyle', { color })) ??
+    (activeTextColor ? null : TEXT_COLORS[0])
+
+  const activeHighlightItem =
+    HIGHLIGHT_COLORS.find(({ color }) => color && editor.isActive('highlight', { color })) ??
+    (activeHighlightColor ? null : HIGHLIGHT_COLORS[0])
 
   return (
     <Popover modal={true} open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger>
+      <PopoverTrigger className='flex items-center gap-1 px-2 py-1 text-sm'>
         <span
           className='rounded-sm px-1'
           style={{
-            color: activeColorItem?.color,
-            backgroundColor: activeHighlightItem?.color,
+            color: activeColorItem?.color ?? 'inherit',
+            backgroundColor: activeHighlightItem?.color ?? 'transparent',
           }}
         >
           A
@@ -124,12 +113,9 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                 key={name}
                 onSelect={() => {
                   editor.commands.unsetColor()
-                  name !== 'Default' &&
-                    editor
-                      .chain()
-                      .focus()
-                      .setColor(color || '')
-                      .run()
+                  if (color) {
+                    editor.chain().focus().setColor(color).run()
+                  }
                   onOpenChange(false)
                 }}
                 className='flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent'
@@ -140,6 +126,9 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                   </div>
                   <span>{name}</span>
                 </div>
+                {((!color && !activeTextColor) || editor.isActive('textStyle', { color })) && (
+                  <Check className='h-4 w-4' />
+                )}
               </EditorBubbleItem>
             ))}
           </div>
@@ -150,7 +139,9 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                 key={name}
                 onSelect={() => {
                   editor.commands.unsetHighlight()
-                  name !== 'Default' && editor.chain().focus().setHighlight({ color }).run()
+                  if (color) {
+                    editor.chain().focus().setHighlight({ color }).run()
+                  }
                   onOpenChange(false)
                 }}
                 className='flex cursor-pointer items-center justify-between px-2 py-1 text-sm hover:bg-accent'
@@ -158,13 +149,15 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                 <div className='flex items-center gap-2'>
                   <div
                     className='rounded-sm border px-2 py-px font-medium'
-                    style={{ backgroundColor: color }}
+                    style={{ backgroundColor: color ?? 'transparent' }}
                   >
                     A
                   </div>
                   <span>{name}</span>
                 </div>
-                {editor.isActive('highlight', { color }) && <Check className='h-4 w-4' />}
+                {((!color && !activeHighlightColor) || editor.isActive('highlight', { color })) && (
+                  <Check className='h-4 w-4' />
+                )}
               </EditorBubbleItem>
             ))}
           </div>

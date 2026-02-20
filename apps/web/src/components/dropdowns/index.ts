@@ -1,1 +1,1 @@
-export * from './document-more-dropdown'
+export * from './account'

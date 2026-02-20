@@ -27,9 +27,12 @@ import { common, createLowlight } from 'lowlight'
 //You can overwrite the placeholder with your own configuration
 const placeholder = Placeholder
 const tiptapLink = TiptapLink.configure({
+  openOnClick: false,
+  autolink: true,
+  linkOnPaste: true,
   HTMLAttributes: {
     class: cx(
-      'text-muted-foreground underline underline-offset-[3px] hover:text-primary transition-colors cursor-pointer'
+      'text-foreground underline decoration-muted-foreground underline-offset-[3px] transition-colors hover:decoration-foreground'
     ),
   },
 })
@@ -38,64 +41,66 @@ const tiptapImage = TiptapImage.extend({
   addProseMirrorPlugins() {
     return [
       UploadImagesPlugin({
-        imageClass: cx('opacity-40 rounded-lg border border-stone-200'),
+        imageClass: cx('opacity-40 rounded-lg border border-border'),
       }),
     ]
   },
 }).configure({
   allowBase64: true,
   HTMLAttributes: {
-    class: cx('rounded-lg border border-muted'),
+    class: cx('my-6 rounded-xl border border-border'),
   },
 })
 
 const taskList = TaskList.configure({
   HTMLAttributes: {
-    class: cx('not-prose pl-2 '),
+    class: cx('not-prose my-4 pl-2'),
   },
 })
 const taskItem = TaskItem.configure({
   HTMLAttributes: {
-    class: cx('flex gap-2 items-start my-4'),
+    class: cx('my-2 flex items-start gap-2'),
   },
   nested: true,
 })
 
 const horizontalRule = HorizontalRule.configure({
   HTMLAttributes: {
-    class: cx('mt-4 mb-6 border-t border-muted-foreground'),
+    class: cx('my-8 border-t border-border'),
   },
 })
 
 const starterKit = StarterKit.configure({
   bulletList: {
     HTMLAttributes: {
-      class: cx('list-disc list-outside leading-3 -mt-2'),
+      class: cx('my-4 ml-6 list-disc'),
     },
   },
   orderedList: {
     HTMLAttributes: {
-      class: cx('list-decimal list-outside leading-3 -mt-2'),
+      class: cx('my-4 ml-6 list-decimal'),
     },
   },
   listItem: {
     HTMLAttributes: {
-      class: cx('leading-normal -mb-2'),
+      class: cx('my-1 leading-7'),
     },
   },
   blockquote: {
     HTMLAttributes: {
-      class: cx('border-l-4 border-primary'),
+      class: cx('my-6 border-l-2 border-border pl-5 text-muted-foreground italic'),
     },
   },
   codeBlock: {
     HTMLAttributes: {
-      class: cx('rounded-md bg-muted text-muted-foreground border p-5 font-mono font-medium'),
+      class: cx(
+        'my-6 overflow-x-auto rounded-xl border border-border bg-muted/60 p-4 font-mono text-sm'
+      ),
     },
   },
   code: {
     HTMLAttributes: {
-      class: cx('rounded-md bg-muted  px-1.5 py-1 font-mono font-medium'),
+      class: cx('rounded-md border border-border/70 bg-muted/70 px-1 py-0.5 font-mono text-sm'),
       spellcheck: 'false',
     },
   },
@@ -115,14 +120,14 @@ const codeBlockLowlight = CodeBlockLowlight.configure({
 
 const youtube = Youtube.configure({
   HTMLAttributes: {
-    class: cx('rounded-lg border border-muted'),
+    class: cx('my-6 rounded-xl border border-border'),
   },
   inline: false,
 })
 
 const mathematics = Mathematics.configure({
   HTMLAttributes: {
-    class: cx('text-foreground rounded p-1 hover:bg-accent cursor-pointer'),
+    class: cx('cursor-pointer rounded px-1 text-foreground hover:bg-accent'),
   },
   katexOptions: {
     throwOnError: false,

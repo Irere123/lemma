@@ -34,8 +34,10 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
 
   // Autofocus on input by default
   useEffect(() => {
-    inputRef.current?.focus()
-  })
+    if (open) {
+      inputRef.current?.focus()
+    }
+  }, [open])
   if (!editor) return null
 
   return (

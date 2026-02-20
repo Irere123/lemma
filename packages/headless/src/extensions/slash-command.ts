@@ -33,7 +33,7 @@ const renderItems = (elementRef?: RefObject<Element> | null) => {
   let popup: Instance<Props>[] | null = null
 
   return {
-    onStart: (props: { editor: Editor; clientRect: DOMRect }) => {
+    onStart: (props: { editor: Editor; clientRect?: GetReferenceClientRect | null }) => {
       component = new ReactRenderer(EditorCommandOut, {
         props,
         editor: props.editor,
@@ -48,7 +48,10 @@ const renderItems = (elementRef?: RefObject<Element> | null) => {
         return false
       }
 
-      // @ts-expect-error
+      if (!props.clientRect) {
+        return false
+      }
+
       popup = tippy('body', {
         getReferenceClientRect: props.clientRect,
         appendTo: () => (elementRef ? elementRef.current : document.body),
@@ -59,8 +62,12 @@ const renderItems = (elementRef?: RefObject<Element> | null) => {
         placement: 'bottom-start',
       })
     },
-    onUpdate: (props: { editor: Editor; clientRect: GetReferenceClientRect }) => {
+    onUpdate: (props: { editor: Editor; clientRect?: GetReferenceClientRect | null }) => {
       component?.updateProps(props)
+
+      if (!props.clientRect) {
+        return
+      }
 
       popup?.[0]?.setProps({
         getReferenceClientRect: props.clientRect,
@@ -80,6 +87,8 @@ const renderItems = (elementRef?: RefObject<Element> | null) => {
     onExit: () => {
       popup?.[0]?.destroy()
       component?.destroy()
+      popup = null
+      component = null
     },
   }
 }

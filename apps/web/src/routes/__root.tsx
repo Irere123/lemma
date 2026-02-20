@@ -38,6 +38,7 @@ export const Route = createRootRoute({
   }),
   component: RootComponent,
   notFoundComponent: NotFound,
+  errorComponent: RootErrorComponent,
 })
 
 function RootComponent() {
@@ -61,5 +62,16 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function RootErrorComponent({ error }: { error: Error }) {
+  return (
+    <RootDocument>
+      <div className='mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center px-6 text-center'>
+        <h1 className='text-xl font-semibold tracking-tight'>Something went wrong</h1>
+        <p className='mt-3 text-sm text-muted-foreground'>{error?.message ?? 'Unexpected error'}</p>
+      </div>
+    </RootDocument>
   )
 }

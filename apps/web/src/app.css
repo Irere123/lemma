@@ -1,6 +1,7 @@
-@import "tailwindcss" source(".") source("../../packages/editor/src");
+@import "tailwindcss";
 @import "tw-animate-css";
-@import "@lemma/editor/styles";
+@source "./";
+@source "../../../packages/headless/src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -248,4 +249,76 @@
   box-shadow:
     0 0 10px lightgreen,
     0 0 5px lightgreen !important;
+}
+
+@layer components {
+  .writer-prose {
+    min-height: 55vh;
+    color: var(--foreground);
+    font-family:
+      "Iowan Old Style",
+      "Palatino Linotype",
+      "URW Palladio L",
+      P052,
+      ui-serif,
+      serif;
+    font-size: clamp(1.05rem, 0.94rem + 0.4vw, 1.22rem);
+    line-height: 1.8;
+    text-wrap: pretty;
+  }
+
+  .writer-prose > * + * {
+    margin-top: 1em;
+  }
+
+  .writer-prose h1,
+  .writer-prose h2,
+  .writer-prose h3 {
+    font-family:
+      "Open Runde",
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+    color: var(--foreground);
+  }
+
+  .writer-prose h1 {
+    margin-top: 2rem;
+    font-size: clamp(1.8rem, 1.4rem + 1.2vw, 2.45rem);
+    font-weight: 600;
+  }
+
+  .writer-prose h2 {
+    margin-top: 1.75rem;
+    font-size: clamp(1.45rem, 1.2rem + 0.7vw, 1.95rem);
+    font-weight: 600;
+  }
+
+  .writer-prose h3 {
+    margin-top: 1.35rem;
+    font-size: clamp(1.2rem, 1.06rem + 0.35vw, 1.5rem);
+    font-weight: 600;
+  }
+
+  .writer-prose p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    pointer-events: none;
+    float: left;
+    height: 0;
+    color: var(--muted-foreground);
+    opacity: 0.8;
+  }
+
+  .writer-prose a {
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.16em;
+  }
+
+  .writer-prose img {
+    margin-inline: auto;
+    max-width: 100%;
+    height: auto;
+  }
 }

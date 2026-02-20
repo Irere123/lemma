@@ -110,10 +110,15 @@ export const suggestionItems = createSuggestionItems([
   },
   {
     title: 'Image',
-    description: 'Upload an image from your computer.',
+    description: 'Insert an image from a URL.',
     searchTerms: ['photo', 'picture', 'media'],
     icon: <ImageIcon size={18} />,
-    command: ({ editor, range }) => {},
+    command: ({ editor, range }) => {
+      const src = window.prompt('Enter image URL')
+      if (!src) return
+
+      editor.chain().focus().deleteRange(range).setImage({ src }).run()
+    },
   },
 ])
 

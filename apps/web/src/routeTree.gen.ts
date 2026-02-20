@@ -10,38 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyRouteImport } from './routes/verify'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as NewsletterRouteImport } from './routes/newsletter'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DocRouteImport } from './routes/doc'
-import { Route as NewRouteRouteImport } from './routes/_new/route'
+import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as DevelopersRouteRouteImport } from './routes/_developers/route'
-import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsIndexRouteImport } from './routes/posts/index'
+import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as WriteDocIdRouteImport } from './routes/write/$docId'
 import { Route as UUsernameRouteImport } from './routes/u/$username'
 import { Route as PostsSlugRouteImport } from './routes/posts/$slug'
+import { Route as AppSettingsRouteImport } from './routes/app/settings'
+import { Route as AppSearchRouteImport } from './routes/app/search'
 import { Route as DevelopersOauthAppsRouteImport } from './routes/_developers/oauth-apps'
 import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/developers'
-import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
-import { Route as NewAppIndexRouteImport } from './routes/_new/app/index'
-import { Route as NewAppSettingsRouteImport } from './routes/_new/app/settings'
-import { Route as NewAppSearchRouteImport } from './routes/_new/app/search'
-import { Route as NewAppDocumentsRouteImport } from './routes/_new/app/documents.'
+import { Route as AppDocumentsRouteImport } from './routes/app/documents.'
 
 const VerifyRoute = VerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UnsubscribeRoute = UnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewsletterRoute = NewsletterRouteImport.update({
-  id: '/newsletter',
-  path: '/newsletter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -54,16 +41,13 @@ const DocRoute = DocRouteImport.update({
   path: '/doc',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NewRouteRoute = NewRouteRouteImport.update({
-  id: '/_new',
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevelopersRouteRoute = DevelopersRouteRouteImport.update({
   id: '/_developers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRouteRoute = AppRouteRouteImport.update({
-  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -76,6 +60,16 @@ const PostsIndexRoute = PostsIndexRouteImport.update({
   path: '/posts/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const WriteDocIdRoute = WriteDocIdRouteImport.update({
+  id: '/write/$docId',
+  path: '/write/$docId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UUsernameRoute = UUsernameRouteImport.update({
   id: '/u/$username',
   path: '/u/$username',
@@ -85,6 +79,16 @@ const PostsSlugRoute = PostsSlugRouteImport.update({
   id: '/posts/$slug',
   path: '/posts/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppSearchRoute = AppSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const DevelopersOauthAppsRoute = DevelopersOauthAppsRouteImport.update({
   id: '/oauth-apps',
@@ -97,161 +101,127 @@ const DevelopersDevelopersRoute = DevelopersDevelopersRouteImport.update({
   getParentRoute: () => DevelopersRouteRoute,
 } as any)
 const AppDocumentsRoute = AppDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
+  id: '/documents/',
+  path: '/documents/',
   getParentRoute: () => AppRouteRoute,
-} as any)
-const NewAppIndexRoute = NewAppIndexRouteImport.update({
-  id: '/app/',
-  path: '/app/',
-  getParentRoute: () => NewRouteRoute,
-} as any)
-const NewAppSettingsRoute = NewAppSettingsRouteImport.update({
-  id: '/app/settings',
-  path: '/app/settings',
-  getParentRoute: () => NewRouteRoute,
-} as any)
-const NewAppSearchRoute = NewAppSearchRouteImport.update({
-  id: '/app/search',
-  path: '/app/search',
-  getParentRoute: () => NewRouteRoute,
-} as any)
-const NewAppDocumentsRoute = NewAppDocumentsRouteImport.update({
-  id: '/app/documents/',
-  path: '/app/documents/',
-  getParentRoute: () => NewRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteRouteWithChildren
   '/doc': typeof DocRoute
   '/login': typeof LoginRoute
-  '/newsletter': typeof NewsletterRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/verify': typeof VerifyRoute
-  '/documents': typeof AppDocumentsRoute
   '/developers': typeof DevelopersDevelopersRoute
   '/oauth-apps': typeof DevelopersOauthAppsRoute
+  '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
+  '/write/$docId': typeof WriteDocIdRoute
+  '/app/': typeof AppIndexRoute
   '/posts': typeof PostsIndexRoute
-  '/app/search': typeof NewAppSearchRoute
-  '/app/settings': typeof NewAppSettingsRoute
-  '/app': typeof NewAppIndexRoute
-  '/app/documents': typeof NewAppDocumentsRoute
+  '/app/documents': typeof AppDocumentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/doc': typeof DocRoute
   '/login': typeof LoginRoute
-  '/newsletter': typeof NewsletterRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/verify': typeof VerifyRoute
-  '/documents': typeof AppDocumentsRoute
   '/developers': typeof DevelopersDevelopersRoute
   '/oauth-apps': typeof DevelopersOauthAppsRoute
+  '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
+  '/write/$docId': typeof WriteDocIdRoute
+  '/app': typeof AppIndexRoute
   '/posts': typeof PostsIndexRoute
-  '/app/search': typeof NewAppSearchRoute
-  '/app/settings': typeof NewAppSettingsRoute
-  '/app': typeof NewAppIndexRoute
-  '/app/documents': typeof NewAppDocumentsRoute
+  '/app/documents': typeof AppDocumentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_app': typeof AppRouteRouteWithChildren
   '/_developers': typeof DevelopersRouteRouteWithChildren
-  '/_new': typeof NewRouteRouteWithChildren
+  '/app': typeof AppRouteRouteWithChildren
   '/doc': typeof DocRoute
   '/login': typeof LoginRoute
-  '/newsletter': typeof NewsletterRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/verify': typeof VerifyRoute
-  '/_app/documents': typeof AppDocumentsRoute
   '/_developers/developers': typeof DevelopersDevelopersRoute
   '/_developers/oauth-apps': typeof DevelopersOauthAppsRoute
+  '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
+  '/write/$docId': typeof WriteDocIdRoute
+  '/app/': typeof AppIndexRoute
   '/posts/': typeof PostsIndexRoute
-  '/_new/app/search': typeof NewAppSearchRoute
-  '/_new/app/settings': typeof NewAppSettingsRoute
-  '/_new/app/': typeof NewAppIndexRoute
-  '/_new/app/documents/': typeof NewAppDocumentsRoute
+  '/app/documents/': typeof AppDocumentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/doc'
     | '/login'
-    | '/newsletter'
-    | '/unsubscribe'
     | '/verify'
-    | '/documents'
     | '/developers'
     | '/oauth-apps'
-    | '/posts/$slug'
-    | '/u/$username'
-    | '/posts'
     | '/app/search'
     | '/app/settings'
-    | '/app'
+    | '/posts/$slug'
+    | '/u/$username'
+    | '/write/$docId'
+    | '/app/'
+    | '/posts'
     | '/app/documents'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/doc'
     | '/login'
-    | '/newsletter'
-    | '/unsubscribe'
     | '/verify'
-    | '/documents'
     | '/developers'
     | '/oauth-apps'
-    | '/posts/$slug'
-    | '/u/$username'
-    | '/posts'
     | '/app/search'
     | '/app/settings'
+    | '/posts/$slug'
+    | '/u/$username'
+    | '/write/$docId'
     | '/app'
+    | '/posts'
     | '/app/documents'
   id:
     | '__root__'
     | '/'
-    | '/_app'
     | '/_developers'
-    | '/_new'
+    | '/app'
     | '/doc'
     | '/login'
-    | '/newsletter'
-    | '/unsubscribe'
     | '/verify'
-    | '/_app/documents'
     | '/_developers/developers'
     | '/_developers/oauth-apps'
+    | '/app/search'
+    | '/app/settings'
     | '/posts/$slug'
     | '/u/$username'
+    | '/write/$docId'
+    | '/app/'
     | '/posts/'
-    | '/_new/app/search'
-    | '/_new/app/settings'
-    | '/_new/app/'
-    | '/_new/app/documents/'
+    | '/app/documents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRouteRoute: typeof AppRouteRouteWithChildren
   DevelopersRouteRoute: typeof DevelopersRouteRouteWithChildren
-  NewRouteRoute: typeof NewRouteRouteWithChildren
+  AppRouteRoute: typeof AppRouteRouteWithChildren
   DocRoute: typeof DocRoute
   LoginRoute: typeof LoginRoute
-  NewsletterRoute: typeof NewsletterRoute
-  UnsubscribeRoute: typeof UnsubscribeRoute
   VerifyRoute: typeof VerifyRoute
   PostsSlugRoute: typeof PostsSlugRoute
   UUsernameRoute: typeof UUsernameRoute
+  WriteDocIdRoute: typeof WriteDocIdRoute
   PostsIndexRoute: typeof PostsIndexRoute
 }
 
@@ -262,20 +232,6 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof VerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/unsubscribe': {
-      id: '/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof UnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/newsletter': {
-      id: '/newsletter'
-      path: '/newsletter'
-      fullPath: '/newsletter'
-      preLoaderRoute: typeof NewsletterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -292,11 +248,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_new': {
-      id: '/_new'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof NewRouteRouteImport
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_developers': {
@@ -304,13 +260,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof DevelopersRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -327,6 +276,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/write/$docId': {
+      id: '/write/$docId'
+      path: '/write/$docId'
+      fullPath: '/write/$docId'
+      preLoaderRoute: typeof WriteDocIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/u/$username': {
       id: '/u/$username'
       path: '/u/$username'
@@ -340,6 +303,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/posts/$slug'
       preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/search': {
+      id: '/app/search'
+      path: '/search'
+      fullPath: '/app/search'
+      preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_developers/oauth-apps': {
       id: '/_developers/oauth-apps'
@@ -355,55 +332,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevelopersDevelopersRouteImport
       parentRoute: typeof DevelopersRouteRoute
     }
-    '/_app/documents': {
-      id: '/_app/documents'
+    '/app/documents/': {
+      id: '/app/documents/'
       path: '/documents'
-      fullPath: '/documents'
+      fullPath: '/app/documents'
       preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_new/app/': {
-      id: '/_new/app/'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof NewAppIndexRouteImport
-      parentRoute: typeof NewRouteRoute
-    }
-    '/_new/app/settings': {
-      id: '/_new/app/settings'
-      path: '/app/settings'
-      fullPath: '/app/settings'
-      preLoaderRoute: typeof NewAppSettingsRouteImport
-      parentRoute: typeof NewRouteRoute
-    }
-    '/_new/app/search': {
-      id: '/_new/app/search'
-      path: '/app/search'
-      fullPath: '/app/search'
-      preLoaderRoute: typeof NewAppSearchRouteImport
-      parentRoute: typeof NewRouteRoute
-    }
-    '/_new/app/documents/': {
-      id: '/_new/app/documents/'
-      path: '/app/documents'
-      fullPath: '/app/documents'
-      preLoaderRoute: typeof NewAppDocumentsRouteImport
-      parentRoute: typeof NewRouteRoute
-    }
   }
 }
-
-interface AppRouteRouteChildren {
-  AppDocumentsRoute: typeof AppDocumentsRoute
-}
-
-const AppRouteRouteChildren: AppRouteRouteChildren = {
-  AppDocumentsRoute: AppDocumentsRoute,
-}
-
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
-  AppRouteRouteChildren,
-)
 
 interface DevelopersRouteRouteChildren {
   DevelopersDevelopersRoute: typeof DevelopersDevelopersRoute
@@ -419,36 +356,34 @@ const DevelopersRouteRouteWithChildren = DevelopersRouteRoute._addFileChildren(
   DevelopersRouteRouteChildren,
 )
 
-interface NewRouteRouteChildren {
-  NewAppSearchRoute: typeof NewAppSearchRoute
-  NewAppSettingsRoute: typeof NewAppSettingsRoute
-  NewAppIndexRoute: typeof NewAppIndexRoute
-  NewAppDocumentsRoute: typeof NewAppDocumentsRoute
+interface AppRouteRouteChildren {
+  AppSearchRoute: typeof AppSearchRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppDocumentsRoute: typeof AppDocumentsRoute
 }
 
-const NewRouteRouteChildren: NewRouteRouteChildren = {
-  NewAppSearchRoute: NewAppSearchRoute,
-  NewAppSettingsRoute: NewAppSettingsRoute,
-  NewAppIndexRoute: NewAppIndexRoute,
-  NewAppDocumentsRoute: NewAppDocumentsRoute,
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppSearchRoute: AppSearchRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppDocumentsRoute: AppDocumentsRoute,
 }
 
-const NewRouteRouteWithChildren = NewRouteRoute._addFileChildren(
-  NewRouteRouteChildren,
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRouteRoute: AppRouteRouteWithChildren,
   DevelopersRouteRoute: DevelopersRouteRouteWithChildren,
-  NewRouteRoute: NewRouteRouteWithChildren,
+  AppRouteRoute: AppRouteRouteWithChildren,
   DocRoute: DocRoute,
   LoginRoute: LoginRoute,
-  NewsletterRoute: NewsletterRoute,
-  UnsubscribeRoute: UnsubscribeRoute,
   VerifyRoute: VerifyRoute,
   PostsSlugRoute: PostsSlugRoute,
   UUsernameRoute: UUsernameRoute,
+  WriteDocIdRoute: WriteDocIdRoute,
   PostsIndexRoute: PostsIndexRoute,
 }
 export const routeTree = rootRouteImport

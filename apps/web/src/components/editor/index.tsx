@@ -7,14 +7,14 @@ import {
   EditorContent,
   type EditorInstance,
   EditorRoot,
-  getAllContent,
   handleCommandNavigation,
   type JSONContent,
+  getAllContent,
 } from '@lemma/headless'
-import hljs from 'highlight.js'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
+import { cn } from '@/lib/utils'
 import { Separator } from '../ui/separator'
 import { defaultExtensions } from './extensions'
 import { ColorSelector } from './selectors/color-selector'
@@ -24,110 +24,136 @@ import { slashCommand, suggestionItems } from './slash-command'
 
 const extensions = [...defaultExtensions, slashCommand]
 
-const AdvancedEditor = () => {
-  const [initialContent, setInitialContent] = useState<null | JSONContent>(null)
-  const [saveStatus, setSaveStatus] = useState('Saved')
-  const [charsCount, setCharsCount] = useState<number | undefined>()
+export type WriterEditorUpdate = {
+  html: string
+  json: JSONContent
+  markdown: string
+  words: number
+}
 
+type AdvancedEditorProps = {
+  initialContent?: JSONContent
+  title: string
+  subtitle: string
+  saveStatus?: string
+  disabled?: boolean
+  className?: string
+  onTitleChange: (value: string) => void
+  onSubtitleChange: (value: string) => void
+  onContentChange?: (value: WriterEditorUpdate) => void
+}
+
+const AdvancedEditor = ({
+  className,
+  disabled = false,
+  initialContent,
+  onContentChange,
+  onSubtitleChange,
+  onTitleChange,
+  saveStatus = 'Saved',
+  subtitle,
+  title,
+}: AdvancedEditorProps) => {
+  const [wordsCount, setWordsCount] = useState<number>(0)
   const [openNode, setOpenNode] = useState(false)
   const [openColor, setOpenColor] = useState(false)
   const [openLink, setOpenLink] = useState(false)
 
-  //Apply Codeblock Highlighting on the HTML from editor.getHTML()
-  const highlightCodeblocks = (content: string) => {
-    const doc = new DOMParser().parseFromString(content, 'text/html')
-    doc.querySelectorAll('pre code').forEach((el) => {
-      // https://highlightjs.readthedocs.io/en/latest/api.html?highlight=highlightElement#highlightelement
-      // @ts-expect-error - hljs.highlightElement expects an HTMLElement, but el is an Element
-      hljs.highlightElement(el)
-    })
-    return new XMLSerializer().serializeToString(doc)
-  }
-
   const debouncedUpdates = useDebouncedCallback(async (editor: EditorInstance) => {
-    const json = editor.getJSON()
-    setCharsCount(editor.storage.characterCount.words())
-    window.localStorage.setItem('html-content', highlightCodeblocks(editor.getHTML()))
-    window.localStorage.setItem('novel-content', JSON.stringify(json))
-    window.localStorage.setItem('markdown', getAllContent(editor))
-    setSaveStatus('Saved')
+    onContentChange?.({
+      json: editor.getJSON(),
+      html: editor.getHTML(),
+      markdown: getAllContent(editor),
+      words: editor.storage.characterCount.words(),
+    })
   }, 500)
 
-  useEffect(() => {
-    const content = window.localStorage.getItem('novel-content')
-    if (content) setInitialContent(JSON.parse(content))
-    else setInitialContent([])
-  }, [])
-
-  if (!initialContent) return null
-
   return (
-    <div className='relative w-full max-w-5xl h-full'>
-      <div className='flex absolute right-5 top-5 z-10 mb-5 gap-2'>
-        <div className='rounded-lg bg-accent px-2 py-1 text-sm text-muted-foreground'>
-          {saveStatus}
+    <section className={cn('writer-editor mx-auto w-full max-w-[860px] px-4 pb-24', className)}>
+      <header className='mb-8 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-4 pt-6'>
+        <p className='text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground'>
+          Draft
+        </p>
+        <div className='flex items-center gap-3 text-xs text-muted-foreground'>
+          <span>{saveStatus}</span>
+          <span aria-hidden='true'>·</span>
+          <span>{wordsCount.toLocaleString()} words</span>
         </div>
-        <div
-          className={
-            charsCount ? 'rounded-lg bg-accent px-2 py-1 text-sm text-muted-foreground' : 'hidden'
-          }
-        >
-          {charsCount} Words
-        </div>
-      </div>
-      <EditorRoot>
-        <EditorContent
-          initialContent={initialContent}
-          extensions={extensions as any}
-          className='relative h-full w-full'
-          editorProps={{
-            handleDOMEvents: {
-              keydown: (_view, event) => handleCommandNavigation(event),
-            },
-            attributes: {
-              class:
-                'prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full',
-            },
-          }}
-          onUpdate={({ editor }) => {
-            debouncedUpdates(editor)
-            setSaveStatus('Unsaved')
-          }}
-        >
-          <EditorCommand className='z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all'>
-            <EditorCommandEmpty className='px-2 text-muted-foreground'>
-              No results
-            </EditorCommandEmpty>
-            <EditorCommandList>
-              {suggestionItems.map((item) => (
-                <EditorCommandItem
-                  value={item.title}
-                  onCommand={(val) => item?.command?.(val)}
-                  className='flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent'
-                  key={item.title}
-                >
-                  <div className='flex h-10 w-10 items-center justify-center rounded-md border border-muted bg-background'>
-                    {item.icon}
-                  </div>
-                  <div>
-                    <p className='font-medium'>{item.title}</p>
-                    <p className='text-xs text-muted-foreground'>{item.description}</p>
-                  </div>
-                </EditorCommandItem>
-              ))}
-            </EditorCommandList>
-          </EditorCommand>
-          <EditorBubble className='flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl'>
-            <NodeSelector open={openNode} onOpenChange={setOpenNode} />
-            <Separator orientation='vertical' />
+      </header>
 
-            <LinkSelector open={openLink} onOpenChange={setOpenLink} />
-            <Separator orientation='vertical' />
-            <ColorSelector open={openColor} onOpenChange={setOpenColor} />
-          </EditorBubble>
-        </EditorContent>
+      <input
+        aria-label='Document title'
+        className='mb-3 w-full border-0 bg-transparent p-0 text-4xl leading-[1.1] font-semibold tracking-tight text-foreground placeholder:text-muted-foreground/70 focus:outline-none md:text-5xl'
+        placeholder='Title'
+        value={title}
+        onChange={(event) => onTitleChange(event.currentTarget.value)}
+      />
+      <textarea
+        aria-label='Document subtitle'
+        className='mb-6 min-h-12 w-full resize-none border-0 bg-transparent p-0 text-lg leading-7 text-muted-foreground placeholder:text-muted-foreground/75 focus:outline-none'
+        placeholder='Write a subtitle that pulls readers in'
+        value={subtitle}
+        onChange={(event) => onSubtitleChange(event.currentTarget.value)}
+      />
+
+      <EditorRoot>
+        <div className='rounded-2xl border border-border/70 bg-card/50 px-5 py-6 md:px-10 md:py-8'>
+          <EditorContent
+            initialContent={initialContent ?? []}
+            extensions={extensions as any}
+            className='relative h-full w-full'
+            immediatelyRender={false}
+            editable={!disabled}
+            editorProps={{
+              handleDOMEvents: {
+                keydown: (_view, event) => handleCommandNavigation(event),
+              },
+              attributes: {
+                class: 'writer-prose focus:outline-none',
+              },
+            }}
+            onCreate={({ editor }) => {
+              setWordsCount(editor.storage.characterCount.words())
+            }}
+            onUpdate={({ editor }) => {
+              setWordsCount(editor.storage.characterCount.words())
+              debouncedUpdates(editor)
+            }}
+          >
+            <EditorCommand className='z-50 h-auto max-h-[360px] overflow-y-auto rounded-xl border border-border/80 bg-popover p-1 shadow-xl transition-all'>
+              <EditorCommandEmpty className='px-3 py-2 text-sm text-muted-foreground'>
+                No commands found
+              </EditorCommandEmpty>
+              <EditorCommandList>
+                {suggestionItems.map((item) => (
+                  <EditorCommandItem
+                    value={item.title}
+                    onCommand={(val) => item?.command?.(val)}
+                    className='flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent aria-selected:bg-accent'
+                    key={item.title}
+                  >
+                    <div className='flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background'>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className='font-medium'>{item.title}</p>
+                      <p className='text-xs text-muted-foreground'>{item.description}</p>
+                    </div>
+                  </EditorCommandItem>
+                ))}
+              </EditorCommandList>
+            </EditorCommand>
+            <EditorBubble className='flex w-fit max-w-[90vw] overflow-hidden rounded-xl border border-border/80 bg-popover shadow-xl'>
+              <NodeSelector open={openNode} onOpenChange={setOpenNode} />
+              <Separator orientation='vertical' />
+              <LinkSelector open={openLink} onOpenChange={setOpenLink} />
+              <Separator orientation='vertical' />
+              <ColorSelector open={openColor} onOpenChange={setOpenColor} />
+            </EditorBubble>
+          </EditorContent>
+        </div>
       </EditorRoot>
-    </div>
+    </section>
   )
 }
 

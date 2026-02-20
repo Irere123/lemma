@@ -28,7 +28,7 @@ function RouteComponent() {
                 code.
               </p>
             </div>
-            <div className='flex-shrink-0'>
+            <div className='shrink-0'>
               <Button onClick={() => setData(undefined, 'create')}>
                 <IconPlus />
                 Create API Key
