@@ -9,28 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DocRouteImport } from './routes/doc'
 import { Route as AppRouteRouteImport } from './routes/app/route'
-import { Route as DevelopersRouteRouteImport } from './routes/_developers/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsIndexRouteImport } from './routes/posts/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as WriteDocIdRouteImport } from './routes/write/$docId'
 import { Route as UUsernameRouteImport } from './routes/u/$username'
 import { Route as PostsSlugRouteImport } from './routes/posts/$slug'
-import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppSearchRouteImport } from './routes/app/search'
-import { Route as DevelopersOauthAppsRouteImport } from './routes/_developers/oauth-apps'
-import { Route as DevelopersDevelopersRouteImport } from './routes/_developers/developers'
+import { Route as AppSettingsRouteRouteImport } from './routes/app/settings/route'
+import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
+import { Route as AppSettingsAppsRouteImport } from './routes/app/settings/apps'
+import { Route as AppSettingsApiKeysRouteImport } from './routes/app/settings/api-keys'
+import { Route as AppSettingsAccountRouteImport } from './routes/app/settings/account'
 import { Route as AppDocumentsRouteImport } from './routes/app/documents.'
 
-const VerifyRoute = VerifyRouteImport.update({
-  id: '/verify',
-  path: '/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -44,10 +39,6 @@ const DocRoute = DocRouteImport.update({
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/app',
   path: '/app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevelopersRouteRoute = DevelopersRouteRouteImport.update({
-  id: '/_developers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -80,25 +71,35 @@ const PostsSlugRoute = PostsSlugRouteImport.update({
   path: '/posts/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppSearchRoute = AppSearchRouteImport.update({
   id: '/search',
   path: '/search',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const DevelopersOauthAppsRoute = DevelopersOauthAppsRouteImport.update({
-  id: '/oauth-apps',
-  path: '/oauth-apps',
-  getParentRoute: () => DevelopersRouteRoute,
+const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const DevelopersDevelopersRoute = DevelopersDevelopersRouteImport.update({
-  id: '/developers',
-  path: '/developers',
-  getParentRoute: () => DevelopersRouteRoute,
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSettingsRouteRoute,
+} as any)
+const AppSettingsAppsRoute = AppSettingsAppsRouteImport.update({
+  id: '/apps',
+  path: '/apps',
+  getParentRoute: () => AppSettingsRouteRoute,
+} as any)
+const AppSettingsApiKeysRoute = AppSettingsApiKeysRouteImport.update({
+  id: '/api-keys',
+  path: '/api-keys',
+  getParentRoute: () => AppSettingsRouteRoute,
+} as any)
+const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppSettingsRouteRoute,
 } as any)
 const AppDocumentsRoute = AppDocumentsRouteImport.update({
   id: '/documents/',
@@ -111,52 +112,53 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteRouteWithChildren
   '/doc': typeof DocRoute
   '/login': typeof LoginRoute
-  '/verify': typeof VerifyRoute
-  '/developers': typeof DevelopersDevelopersRoute
-  '/oauth-apps': typeof DevelopersOauthAppsRoute
+  '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
-  '/app/settings': typeof AppSettingsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/posts': typeof PostsIndexRoute
   '/app/documents': typeof AppDocumentsRoute
+  '/app/settings/account': typeof AppSettingsAccountRoute
+  '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
+  '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/doc': typeof DocRoute
   '/login': typeof LoginRoute
-  '/verify': typeof VerifyRoute
-  '/developers': typeof DevelopersDevelopersRoute
-  '/oauth-apps': typeof DevelopersOauthAppsRoute
   '/app/search': typeof AppSearchRoute
-  '/app/settings': typeof AppSettingsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app': typeof AppIndexRoute
   '/posts': typeof PostsIndexRoute
   '/app/documents': typeof AppDocumentsRoute
+  '/app/settings/account': typeof AppSettingsAccountRoute
+  '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
+  '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_developers': typeof DevelopersRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/doc': typeof DocRoute
   '/login': typeof LoginRoute
-  '/verify': typeof VerifyRoute
-  '/_developers/developers': typeof DevelopersDevelopersRoute
-  '/_developers/oauth-apps': typeof DevelopersOauthAppsRoute
+  '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
-  '/app/settings': typeof AppSettingsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/posts/': typeof PostsIndexRoute
   '/app/documents/': typeof AppDocumentsRoute
+  '/app/settings/account': typeof AppSettingsAccountRoute
+  '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
+  '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -165,60 +167,59 @@ export interface FileRouteTypes {
     | '/app'
     | '/doc'
     | '/login'
-    | '/verify'
-    | '/developers'
-    | '/oauth-apps'
-    | '/app/search'
     | '/app/settings'
+    | '/app/search'
     | '/posts/$slug'
     | '/u/$username'
     | '/write/$docId'
     | '/app/'
     | '/posts'
     | '/app/documents'
+    | '/app/settings/account'
+    | '/app/settings/api-keys'
+    | '/app/settings/apps'
+    | '/app/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/doc'
     | '/login'
-    | '/verify'
-    | '/developers'
-    | '/oauth-apps'
     | '/app/search'
-    | '/app/settings'
     | '/posts/$slug'
     | '/u/$username'
     | '/write/$docId'
     | '/app'
     | '/posts'
     | '/app/documents'
+    | '/app/settings/account'
+    | '/app/settings/api-keys'
+    | '/app/settings/apps'
+    | '/app/settings'
   id:
     | '__root__'
     | '/'
-    | '/_developers'
     | '/app'
     | '/doc'
     | '/login'
-    | '/verify'
-    | '/_developers/developers'
-    | '/_developers/oauth-apps'
-    | '/app/search'
     | '/app/settings'
+    | '/app/search'
     | '/posts/$slug'
     | '/u/$username'
     | '/write/$docId'
     | '/app/'
     | '/posts/'
     | '/app/documents/'
+    | '/app/settings/account'
+    | '/app/settings/api-keys'
+    | '/app/settings/apps'
+    | '/app/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DevelopersRouteRoute: typeof DevelopersRouteRouteWithChildren
   AppRouteRoute: typeof AppRouteRouteWithChildren
   DocRoute: typeof DocRoute
   LoginRoute: typeof LoginRoute
-  VerifyRoute: typeof VerifyRoute
   PostsSlugRoute: typeof PostsSlugRoute
   UUsernameRoute: typeof UUsernameRoute
   WriteDocIdRoute: typeof WriteDocIdRoute
@@ -227,13 +228,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/verify': {
-      id: '/verify'
-      path: '/verify'
-      fullPath: '/verify'
-      preLoaderRoute: typeof VerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -253,13 +247,6 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_developers': {
-      id: '/_developers'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof DevelopersRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -304,13 +291,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/settings': {
-      id: '/app/settings'
-      path: '/settings'
-      fullPath: '/app/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/app/search': {
       id: '/app/search'
       path: '/search'
@@ -318,19 +298,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSearchRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_developers/oauth-apps': {
-      id: '/_developers/oauth-apps'
-      path: '/oauth-apps'
-      fullPath: '/oauth-apps'
-      preLoaderRoute: typeof DevelopersOauthAppsRouteImport
-      parentRoute: typeof DevelopersRouteRoute
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/_developers/developers': {
-      id: '/_developers/developers'
-      path: '/developers'
-      fullPath: '/developers'
-      preLoaderRoute: typeof DevelopersDevelopersRouteImport
-      parentRoute: typeof DevelopersRouteRoute
+    '/app/settings/': {
+      id: '/app/settings/'
+      path: '/'
+      fullPath: '/app/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
+    }
+    '/app/settings/apps': {
+      id: '/app/settings/apps'
+      path: '/apps'
+      fullPath: '/app/settings/apps'
+      preLoaderRoute: typeof AppSettingsAppsRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
+    }
+    '/app/settings/api-keys': {
+      id: '/app/settings/api-keys'
+      path: '/api-keys'
+      fullPath: '/app/settings/api-keys'
+      preLoaderRoute: typeof AppSettingsApiKeysRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
+    }
+    '/app/settings/account': {
+      id: '/app/settings/account'
+      path: '/account'
+      fullPath: '/app/settings/account'
+      preLoaderRoute: typeof AppSettingsAccountRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
     }
     '/app/documents/': {
       id: '/app/documents/'
@@ -342,30 +343,33 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface DevelopersRouteRouteChildren {
-  DevelopersDevelopersRoute: typeof DevelopersDevelopersRoute
-  DevelopersOauthAppsRoute: typeof DevelopersOauthAppsRoute
+interface AppSettingsRouteRouteChildren {
+  AppSettingsAccountRoute: typeof AppSettingsAccountRoute
+  AppSettingsApiKeysRoute: typeof AppSettingsApiKeysRoute
+  AppSettingsAppsRoute: typeof AppSettingsAppsRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
-const DevelopersRouteRouteChildren: DevelopersRouteRouteChildren = {
-  DevelopersDevelopersRoute: DevelopersDevelopersRoute,
-  DevelopersOauthAppsRoute: DevelopersOauthAppsRoute,
+const AppSettingsRouteRouteChildren: AppSettingsRouteRouteChildren = {
+  AppSettingsAccountRoute: AppSettingsAccountRoute,
+  AppSettingsApiKeysRoute: AppSettingsApiKeysRoute,
+  AppSettingsAppsRoute: AppSettingsAppsRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 
-const DevelopersRouteRouteWithChildren = DevelopersRouteRoute._addFileChildren(
-  DevelopersRouteRouteChildren,
-)
+const AppSettingsRouteRouteWithChildren =
+  AppSettingsRouteRoute._addFileChildren(AppSettingsRouteRouteChildren)
 
 interface AppRouteRouteChildren {
+  AppSettingsRouteRoute: typeof AppSettingsRouteRouteWithChildren
   AppSearchRoute: typeof AppSearchRoute
-  AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppSettingsRouteRoute: AppSettingsRouteRouteWithChildren,
   AppSearchRoute: AppSearchRoute,
-  AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppDocumentsRoute: AppDocumentsRoute,
 }
@@ -376,11 +380,9 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DevelopersRouteRoute: DevelopersRouteRouteWithChildren,
   AppRouteRoute: AppRouteRouteWithChildren,
   DocRoute: DocRoute,
   LoginRoute: LoginRoute,
-  VerifyRoute: VerifyRoute,
   PostsSlugRoute: PostsSlugRoute,
   UUsernameRoute: UUsernameRoute,
   WriteDocIdRoute: WriteDocIdRoute,

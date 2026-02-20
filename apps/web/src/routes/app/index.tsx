@@ -1,5 +1,6 @@
-import { DocumentLibraryList } from '@/components/home/document-library-list'
 import { createFileRoute } from '@tanstack/react-router'
+
+import { DocumentLibraryList } from '@/components/home/document-library-list'
 
 export const Route = createFileRoute('/app/')({
   component: RouteComponent,

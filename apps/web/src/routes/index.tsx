@@ -1,5 +1,6 @@
-import { Callout, ProfileHeader, Section } from '@/components/landing'
 import { createFileRoute } from '@tanstack/react-router'
+
+import { Callout, ProfileHeader, Section } from '@/components/landing'
 
 export const Route = createFileRoute('/')({
   component: Home,

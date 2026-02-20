@@ -1,6 +1,7 @@
-import AdvancedEditor from '@/components/editor'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+
+import AdvancedEditor from '@/components/editor'
 
 export const Route = createFileRoute('/doc')({
   component: RouteComponent,

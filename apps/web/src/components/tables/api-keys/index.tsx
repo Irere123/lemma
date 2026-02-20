@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 
-import { useApiKeysModalStore } from '@/stores/api-keys-modal'
-import { useTRPC } from '@/trpc/client'
+import { ApiKeysSkeleton } from '@/components/skeletons'
 import {
   Table,
   TableBody,
@@ -12,7 +11,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-import { ApiKeysSkeleton } from '@/components/skeletons'
+import { useApiKeysModalStore } from '@/stores/api-keys-modal'
+import { useTRPC } from '@/trpc/client'
 import { columns } from './columns'
 import { EmptyState } from './empty-state'
 
@@ -68,7 +68,7 @@ export function DataTable() {
                         setData(row.original, 'edit')
                       }
                     }}
-                    className={cn('border-r-[0px] py-4 cursor-pointer text-right')}
+                    className={cn('border-r-0 py-4 cursor-pointer text-right')}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>

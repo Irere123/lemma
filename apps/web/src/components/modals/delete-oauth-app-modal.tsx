@@ -5,10 +5,10 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPopup,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useOAuthAppsModalStore } from '@/stores/oauth-apps-modal'
@@ -18,6 +18,7 @@ export function DeleteOAuthAppModal() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const { isOpen, modalType, selectedApp, close } = useOAuthAppsModalStore()
+  const hasSelection = typeof selectedApp?.id === 'string'
 
   const deleteMutation = useMutation(
     trpc.oauthApplications.delete.mutationOptions({
@@ -33,33 +34,33 @@ export function DeleteOAuthAppModal() {
   )
 
   const handleDelete = () => {
-    if (selectedApp) {
+    if (hasSelection && selectedApp?.id) {
       deleteMutation.mutate({ id: selectedApp.id })
     }
   }
 
   return (
     <Dialog open={isOpen && modalType === 'delete'} onOpenChange={(open) => !open && close()}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogPopup>
         <DialogHeader>
           <DialogTitle>Delete OAuth Application</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete{' '}
-            <span className='font-semibold'>{selectedApp?.name}</span>? This action cannot be
-            undone. All tokens associated with this application will be revoked.
+            This will permanently delete <span className='text-primary'>{selectedApp?.name}</span>{' '}
+            and revoke all tokens associated with this application. This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
-
-        <DialogFooter className='gap-2'>
-          <Button variant='outline' onClick={close}>
-            Cancel
-          </Button>
-          <Button variant='destructive' onClick={handleDelete} disabled={deleteMutation.isPending}>
+        <DialogFooter>
+          <Button
+            className='w-full mt-4'
+            variant='destructive'
+            onClick={handleDelete}
+            disabled={!hasSelection || deleteMutation.isPending}
+          >
             {deleteMutation.isPending && <IconLoader2 className='animate-spin' size={16} />}
             Delete Application
           </Button>
         </DialogFooter>
-      </DialogContent>
+      </DialogPopup>
     </Dialog>
   )
 }

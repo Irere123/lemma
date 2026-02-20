@@ -1,7 +1,3 @@
-import { useEffect, useState } from 'react'
-import { z } from 'zod'
-import { IconLoader } from '@tabler/icons-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   SCOPES,
   type Scope,
@@ -9,21 +5,19 @@ import {
   scopePresets,
   scopesToName,
 } from '@lemma/common/scopes'
+import { IconLoader } from '@tabler/icons-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
 
+import { Form } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useZodForm } from '@/hooks/use-zod-form'
 import { useApiKeysModalStore } from '@/stores/api-keys-modal'
 import { useTRPC } from '@/trpc/client'
 import { RESOURCES } from '@/utils/scopes'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScopeSelector } from '../scope-selector'
 import { AnimatedSizeContainer } from '../ui/animated-size-container'
 import { Button } from '../ui/button'
@@ -144,74 +138,67 @@ export function ApiKeyForm({ onSuccess }: Props) {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name='name'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input
-                  autoFocus
-                  className='mt-2'
-                  autoComplete='off'
-                  autoCapitalize='none'
-                  autoCorrect='off'
-                  spellCheck='false'
-                  {...field}
-                />
-              </FormControl>
-
-              <FormMessage />
-            </FormItem>
-          )}
+    <Form onSubmit={form.handleSubmit(onSubmit)}>
+      <div className='space-y-2'>
+        <Label htmlFor='api-key-name'>Name</Label>
+        <Input
+          id='api-key-name'
+          nativeInput
+          autoFocus
+          className='mt-2'
+          autoComplete='off'
+          autoCapitalize='none'
+          autoCorrect='off'
+          spellCheck='false'
+          {...form.register('name')}
         />
+        {form.formState.errors.name?.message && (
+          <p className='text-destructive text-xs'>{form.formState.errors.name.message}</p>
+        )}
+      </div>
 
-        <Tabs value={preset} className='mt-4 w-full' onValueChange={handlePresetChange}>
-          <TabsList className='w-full flex'>
-            {scopePresets.map((scope) => (
-              <TabsTrigger value={scope.value} className='flex-1' key={scope.value}>
-                {scope.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+      <Tabs value={preset} className='mt-4 w-full' onValueChange={handlePresetChange}>
+        <TabsList className='w-full flex'>
+          {scopePresets.map((scope) => (
+            <TabsTrigger value={scope.value} className='flex-1' key={scope.value}>
+              {scope.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
-        <p className='text-sm text-[#878787] mt-4'>
-          This API key will have{' '}
-          <span className='font-semibold'>
-            {scopePresets.find((scope) => scope.value === preset)?.description}
-          </span>
-          .
-        </p>
+      <p className='text-sm text-[#878787] mt-4'>
+        This API key will have{' '}
+        <span className='font-semibold'>
+          {scopePresets.find((scope) => scope.value === preset)?.description}
+        </span>
+        .
+      </p>
 
-        <AnimatedSizeContainer height className='mt-4'>
-          {preset === 'restricted' && (
-            <ScopeSelector
-              selectedScopes={form.watch('scopes')}
-              onResourceScopeChange={handleResourceScopeChange}
-              description='Select which scopes this API key can access.'
-              height='max-h-[300px]'
-            />
-          )}
-        </AnimatedSizeContainer>
+      <AnimatedSizeContainer height className='mt-4'>
+        {preset === 'restricted' && (
+          <ScopeSelector
+            selectedScopes={form.watch('scopes')}
+            onResourceScopeChange={handleResourceScopeChange}
+            description='Select which scopes this API key can access.'
+            height='max-h-[300px]'
+          />
+        )}
+      </AnimatedSizeContainer>
 
-        <Button
-          className='mt-6 w-full'
-          type='submit'
-          disabled={!form.formState.isDirty || upsertApiKeyMutation.isPending}
-        >
-          {upsertApiKeyMutation.isPending ? (
-            <IconLoader className='animate-spin' />
-          ) : data?.id ? (
-            'Update'
-          ) : (
-            'Create'
-          )}
-        </Button>
-      </form>
+      <Button
+        className='mt-6 w-full'
+        type='submit'
+        disabled={!form.formState.isDirty || upsertApiKeyMutation.isPending}
+      >
+        {upsertApiKeyMutation.isPending ? (
+          <IconLoader className='animate-spin' />
+        ) : data?.id ? (
+          'Update'
+        ) : (
+          'Create'
+        )}
+      </Button>
     </Form>
   )
 }

@@ -1,15 +1,16 @@
 import { ApiKeyForm } from '@/components/forms/api-key-form'
 import { useApiKeysModalStore } from '@/stores/api-keys-modal'
+import { CopyInput } from '../copy-input'
 import { Button } from '../ui/button'
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPanel,
+  DialogPopup,
   DialogTitle,
 } from '../ui/dialog'
-import { CopyInput } from '../copy-input'
 
 export function CreateApiKeyModal() {
   const { setData, createdKey, type, setCreatedKey } = useApiKeysModalStore()
@@ -18,7 +19,7 @@ export function CreateApiKeyModal() {
 
   if (createdKey) {
     content = (
-      <div className='p-4 space-y-4'>
+      <>
         <DialogHeader>
           <DialogTitle>API Key Created</DialogTitle>
           <DialogDescription>
@@ -26,30 +27,32 @@ export function CreateApiKeyModal() {
             secure location.
           </DialogDescription>
         </DialogHeader>
-
-        <CopyInput value={createdKey} />
-
+        <DialogPanel>
+          <CopyInput value={createdKey} />
+        </DialogPanel>
         <DialogFooter>
           <Button onClick={() => setData(undefined)}>Done</Button>
         </DialogFooter>
-      </div>
+      </>
     )
   } else {
     content = (
-      <div className='p-4 space-y-4'>
+      <>
         <DialogHeader>
           <DialogTitle>Create New API Key</DialogTitle>
           <DialogDescription>Create a new API key for your team.</DialogDescription>
         </DialogHeader>
 
-        <ApiKeyForm
-          onSuccess={(key) => {
-            if (key) {
-              setCreatedKey(key)
-            }
-          }}
-        />
-      </div>
+        <DialogPanel>
+          <ApiKeyForm
+            onSuccess={(key) => {
+              if (key) {
+                setCreatedKey(key)
+              }
+            }}
+          />
+        </DialogPanel>
+      </>
     )
   }
 
@@ -63,7 +66,7 @@ export function CreateApiKeyModal() {
         }, 500)
       }}
     >
-      <DialogContent className='max-w-[455px]'>{content}</DialogContent>
+      <DialogPopup>{content}</DialogPopup>
     </Dialog>
   )
 }

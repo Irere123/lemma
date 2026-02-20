@@ -29,7 +29,7 @@ interface OAuthAppFormProps {
 export function OAuthAppForm({ app, onSuccess }: OAuthAppFormProps) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const { close, setClientSecret, setData } = useOAuthAppsModalStore()
+  const { setClientSecret, setData, close } = useOAuthAppsModalStore()
   const [redirectUris, setRedirectUris] = useState<string[]>(app?.redirectUris || [''])
 
   const {
@@ -122,14 +122,18 @@ export function OAuthAppForm({ app, onSuccess }: OAuthAppFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+    <form onSubmit={handleSubmit(onSubmit)} className='space-y-5'>
       <div className='space-y-2'>
         <Label htmlFor='name'>Application Name *</Label>
         <Input
           id='name'
+          nativeInput
           placeholder='My Awesome App'
           {...register('name', { required: 'Application name is required' })}
         />
+        <p className='text-muted-foreground text-xs'>
+          The public name shown to users during authorization.
+        </p>
         {errors.name && <p className='text-destructive text-sm'>{errors.name.message}</p>}
       </div>
 
@@ -137,6 +141,7 @@ export function OAuthAppForm({ app, onSuccess }: OAuthAppFormProps) {
         <Label htmlFor='description'>Short Description</Label>
         <Input
           id='description'
+          nativeInput
           placeholder='A brief description of your app'
           {...register('description')}
         />
@@ -146,17 +151,18 @@ export function OAuthAppForm({ app, onSuccess }: OAuthAppFormProps) {
         <Label htmlFor='overview'>Overview</Label>
         <textarea
           id='overview'
-          className='flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+          className='flex min-h-[96px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
           placeholder='Detailed description of what your app does'
           {...register('overview')}
         />
       </div>
 
-      <div className='grid grid-cols-2 gap-4'>
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
         <div className='space-y-2'>
           <Label htmlFor='website'>Website URL</Label>
           <Input
             id='website'
+            nativeInput
             type='url'
             placeholder='https://yourapp.com'
             {...register('website')}
@@ -167,6 +173,7 @@ export function OAuthAppForm({ app, onSuccess }: OAuthAppFormProps) {
           <Label htmlFor='logoUrl'>Logo URL</Label>
           <Input
             id='logoUrl'
+            nativeInput
             type='url'
             placeholder='https://yourapp.com/logo.png'
             {...register('logoUrl')}
@@ -178,6 +185,7 @@ export function OAuthAppForm({ app, onSuccess }: OAuthAppFormProps) {
         <Label htmlFor='installUrl'>Install URL</Label>
         <Input
           id='installUrl'
+          nativeInput
           type='url'
           placeholder='https://yourapp.com/install'
           {...register('installUrl')}
@@ -185,54 +193,64 @@ export function OAuthAppForm({ app, onSuccess }: OAuthAppFormProps) {
       </div>
 
       <div className='space-y-2'>
-        <div className='flex items-center justify-between'>
-          <Label>Redirect URIs *</Label>
-          <Button type='button' variant='ghost' size='sm' onClick={addRedirectUri}>
-            <IconPlus size={14} />
-            Add URI
-          </Button>
-        </div>
-        <p className='text-muted-foreground text-xs'>
-          The URIs where users will be redirected after authorization
-        </p>
-        {redirectUris.map((uri, index) => (
-          <div key={index} className='flex gap-2'>
-            <Input
-              value={uri}
-              onChange={(e) => updateRedirectUri(index, e.target.value)}
-              placeholder='https://yourapp.com/callback'
-              type='url'
-            />
-            {redirectUris.length > 1 && (
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon'
-                onClick={() => removeRedirectUri(index)}
-              >
-                <IconTrash size={14} />
-              </Button>
-            )}
+        <div className='rounded-lg border bg-muted/20 p-3 space-y-3'>
+          <div className='flex items-center justify-between'>
+            <Label>Redirect URIs *</Label>
+            <Button type='button' variant='ghost' size='sm' onClick={addRedirectUri}>
+              <IconPlus size={14} />
+              Add URI
+            </Button>
           </div>
-        ))}
+          <p className='text-muted-foreground text-xs'>
+            Authorized callback URLs where users are redirected after login.
+          </p>
+          {redirectUris.map((uri, index) => (
+            <div key={index} className='flex gap-2'>
+              <Input
+                nativeInput
+                value={uri}
+                onChange={(e) => updateRedirectUri(index, e.target.value)}
+                placeholder='https://yourapp.com/callback'
+                type='url'
+              />
+              {redirectUris.length > 1 && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  onClick={() => removeRedirectUri(index)}
+                >
+                  <IconTrash size={14} />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className='flex items-center gap-2'>
-        <input type='checkbox' id='isPublic' {...register('isPublic')} className='rounded' />
-        <Label htmlFor='isPublic' className='font-normal'>
-          Public client (no client secret required)
-        </Label>
+      <div className='rounded-lg border bg-muted/20 p-3'>
+        <div className='flex items-start gap-2'>
+          <input
+            type='checkbox'
+            id='isPublic'
+            {...register('isPublic')}
+            className='rounded mt-0.5'
+          />
+          <div className='space-y-1'>
+            <Label htmlFor='isPublic' className='font-normal'>
+              Public client (no client secret required)
+            </Label>
+            <p className='text-muted-foreground text-xs'>
+              Enable this for native/browser apps that cannot store secrets securely.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className='flex justify-end gap-2 pt-4'>
-        <Button type='button' variant='outline' onClick={close}>
-          Cancel
-        </Button>
-        <Button type='submit' disabled={isLoading}>
-          {isLoading && <IconLoader2 className='animate-spin' size={16} />}
-          {app ? 'Update Application' : 'Create Application'}
-        </Button>
-      </div>
+      <Button type='submit' className='w-full mt-2' disabled={isLoading}>
+        {isLoading && <IconLoader2 className='animate-spin' size={16} />}
+        {app ? 'Update Application' : 'Create Application'}
+      </Button>
     </form>
   )
 }

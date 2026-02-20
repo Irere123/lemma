@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Sidebar } from '@/components/sidebar'
 import { useSession } from '@/lib/auth-client'
-import { documentStore, useDocumentStore, type Document } from '@/stores/document-store'
+import { type Document, documentStore, useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/app')({
