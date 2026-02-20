@@ -1,4 +1,4 @@
-app = 'postalon'
+app = 'lemma-api-main'
 primary_region = 'jnb'
 
 [build]
