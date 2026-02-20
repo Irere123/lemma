@@ -6,6 +6,7 @@
     "dev": "bun run --parallel api:dev worker:dev",
     "api:dev": "bun run --watch src/index.ts",
     "worker": "bun run src/worker.ts",
+    "start": "bun run src/index.ts",
     "worker:dev": "bun --watch run src/worker.ts",
     "generate-migration": "drizzle-kit generate",
     "typecheck": "tsc --noEmit",

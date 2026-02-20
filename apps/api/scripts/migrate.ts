@@ -6,11 +6,10 @@ import postgres from 'postgres'
 
 config()
 
-const isProd = process.env.NODE_ENV === 'production'
-const connectionString = isProd ? process.env.PROD_DATABASE_URL : process.env.DATABASE_URL
+const connectionString = process.env.DATABASE_URL ?? process.env.PROD_DATABASE_URL
 
 if (!connectionString) {
-  throw new Error(`${isProd ? 'PROD_DATABASE_URL' : 'DATABASE_URL'} is not set`)
+  throw new Error('DATABASE_URL (or fallback PROD_DATABASE_URL) is not set')
 }
 
 console.log('Connecting to:', connectionString.replace(/:[^:@]+@/, ':****@')) // Log sanitized connection string
@@ -26,6 +25,7 @@ async function main() {
     console.log('Migrations completed!')
   } catch (error) {
     console.error('Migrations failed:', error)
+    throw error
   } finally {
     await migrationClient.end()
   }

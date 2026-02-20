@@ -1,0 +1,33 @@
+app = 'postalon'
+primary_region = 'jnb'
+
+[build]
+  dockerfile = "Dockerfile"
+
+[processes]
+  app = "bun start"
+  workers = "bun run workers"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+
+[[vm]]
+  memory = '1gb'  
+  cpu_kind = 'shared'
+  cpus = 1
+  processes = ['app']
+
+[[vm]]
+  memory = '512mb'  
+  cpu_kind = 'shared'
+  cpus = 1
+  processes = ['workers']

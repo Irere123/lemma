@@ -1,6 +1,7 @@
+import { AwsClient } from 'aws4fetch'
+
 import { env } from '@api/env-runtime'
 import { fetchWithTimeout } from '@api/utils'
-import { AwsClient } from 'aws4fetch'
 
 interface imageOptions {
   contentType?: string
@@ -216,7 +217,7 @@ class StorageClient {
       byteArray[i] = binaryString.charCodeAt(i)
     }
     const blobProps: { type?: string } = {}
-    if (opts?.contentType) blobProps['type'] = opts.contentType
+    if (opts?.contentType) blobProps.type = opts.contentType
     return new Blob([byteArray], blobProps)
   }
 

@@ -1,95 +1,22 @@
-name: Deploy API
-
+name: Fly Deploy
+permissions:
+  contents: read
 on:
   push:
     branches:
-      - staging
-      - main
+      - master
     paths:
       - apps/api/**
       - packages/**
-      - infra/docker/**
-      - package.json
-      - bun.lock
-
-env:
-  REGISTRY: ghcr.io
-  API_IMAGE_NAME: ${{ github.repository }}/api
-  WORKER_IMAGE_NAME: ${{ github.repository }}/worker
-
+      
 jobs:
-  build-and-push:
-    name: Build and Push Images
+  deploy:
+    name: 🚀 Deploy to Fly Production
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      api_image: ${{ steps.meta-api.outputs.tags }}
-      worker_image: ${{ steps.meta-worker.outputs.tags }}
-      version: ${{ steps.version.outputs.version }}
-
+    concurrency: fly-production
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Generate version
-        id: version
-        run: echo "version=$(date +'%Y%m%d%H%M%S')-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for API
-        id: meta-api
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Extract metadata for Worker
-        id: meta-worker
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.WORKER_IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build and push API image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./infra/docker/api.Dockerfile
-          push: true
-          tags: ${{ steps.meta-api.outputs.tags }}
-          labels: ${{ steps.meta-api.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-
-      - name: Build and push Worker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./infra/docker/worker.Dockerfile
-          push: true
-          tags: ${{ steps.meta-worker.outputs.tags }}
-          labels: ${{ steps.meta-worker.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64  
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only --dockerfile apps/api/Dockerfile --config apps/api/fly.toml
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
