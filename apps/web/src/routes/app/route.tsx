@@ -4,10 +4,20 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Sidebar } from '@/components/sidebar'
 import { useSession } from '@/lib/auth-client'
+import { buildSeoHead } from '@/lib/seo'
 import { type Document, documentStore, useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/app')({
+  head: () =>
+    buildSeoHead({
+      canonicalPath: '/app',
+      description:
+        'Your Lemma workspace for drafting, editing, and organizing structured knowledge.',
+      noIndex: true,
+      title: 'Workspace',
+      type: 'website',
+    }),
   loader: async ({ context }) => {
     if (typeof window === 'undefined') {
       const { serverPrefetch } = await import('@/trpc/server')

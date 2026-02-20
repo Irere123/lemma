@@ -6,36 +6,29 @@ import type { ReactNode } from 'react'
 
 import appCss from '@/app.css?url'
 import NotFound from '@/components/not-found'
+import { buildRootSeoHead } from '@/lib/seo'
 import { Providers } from '@/providers'
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'Irere Emmanuel',
-      },
-    ],
-    links: [
-      { rel: 'stylesheet', href: appCss },
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      {
-        rel: 'preconnect',
-        href: 'https://fonts.gstatic.com',
-        crossOrigin: 'anonymous',
-      },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Betania+Patmos+In+GDL&display=swap',
-      },
-    ],
-  }),
+  head: () => {
+    const seo = buildRootSeoHead()
+    return {
+      meta: seo.meta,
+      links: [
+        { rel: 'stylesheet', href: appCss },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        {
+          rel: 'preconnect',
+          href: 'https://fonts.gstatic.com',
+          crossOrigin: 'anonymous',
+        },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Betania+Patmos+In+GDL&display=swap',
+        },
+      ],
+    }
+  },
   component: RootComponent,
   notFoundComponent: NotFound,
   errorComponent: RootErrorComponent,

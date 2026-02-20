@@ -6,12 +6,18 @@ import { toast } from 'sonner'
 import { Google } from '@/components/svgs'
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth-client'
+import { buildSeoHead } from '@/lib/seo'
 
 export const Route = createFileRoute('/login')({
   component: RouteComponent,
-  head: () => {
-    return { meta: [{ title: 'Login - Lemma' }] }
-  },
+  head: () =>
+    buildSeoHead({
+      canonicalPath: '/login',
+      description: 'Sign in to Lemma to continue writing and publishing programmable knowledge.',
+      noIndex: true,
+      title: 'Login',
+      type: 'website',
+    }),
 })
 
 interface OTPFormData {

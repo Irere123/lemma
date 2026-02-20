@@ -2,17 +2,17 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
+import { buildSeoHead } from '@/lib/seo'
 
 export const Route = createFileRoute('/')({
-  head: () => ({
-    meta: [
-      { title: 'Lemma | Writing' },
-      {
-        name: 'description',
-        content: 'A calm writing app for drafting, editing, and publishing.',
-      },
-    ],
-  }),
+  head: () =>
+    buildSeoHead({
+      canonicalPath: '/',
+      description:
+        'Your ideas. Your building blocks. Your API. Lemma is an open-source, developer-first, API-first platform for knowledge publishing and structured thought.',
+      title: 'Your ideas. Your building blocks. Your API.',
+      type: 'website',
+    }),
   component: Home,
 })
 

@@ -6,18 +6,20 @@ import { useDebouncedCallback } from 'use-debounce'
 import AdvancedEditor, { type WriterEditorUpdate } from '@/components/editor'
 import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
 import { type CustomBlockToken, extractCustomBlocksFromMarkdown } from '@/lib/custom-blocks'
+import { buildSeoHead } from '@/lib/seo'
 import { useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/write/$docId')({
   component: RouteComponent,
-  head: () => ({
-    meta: [
-      {
-        title: `Write | Lemma`,
-      },
-    ],
-  }),
+  head: ({ params }) =>
+    buildSeoHead({
+      canonicalPath: `/write/${params.docId}`,
+      description: 'Write, refine, and publish your document in Lemma.',
+      noIndex: true,
+      title: 'Write',
+      type: 'article',
+    }),
 })
 
 type DraftState = {
