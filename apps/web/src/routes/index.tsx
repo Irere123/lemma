@@ -24,7 +24,7 @@ function Home() {
         <div className='hero-orb hero-orb-right' />
       </div>
 
-      <div className='relative z-10 mx-auto flex w-full max-w-2xl flex-col px-6 pb-40 pt-10'>
+      <div className='relative z-10 mx-auto flex w-full max-w-2xl flex-col px-4 pb-40 pt-8 sm:px-6 sm:pt-10'>
         <header className='flex items-center justify-between'>
           <p className='text-lg font-bold'>Lemma</p>
           <Button variant='link' size='sm'>
@@ -34,7 +34,7 @@ function Home() {
           </Button>
         </header>
 
-        <section className='hero-stage mt-16 leading-8'>
+        <section className='hero-stage mt-14 leading-8 sm:mt-16'>
           <div className='hero-stack group/hero relative'>
             <a
               href='https://github.com/Irere123/lemma'
@@ -58,7 +58,7 @@ function Home() {
               target='_blank'
               rel='noopener'
               aria-label='View Lemma on GitHub'
-              className='hero-sticker hero-sticker-left'
+              className='hero-sticker hero-sticker-left hidden sm:block'
             >
               <img
                 src='/sunny.svg'
@@ -71,7 +71,7 @@ function Home() {
               />
             </a>
 
-            <article className='hero-note w-full rounded-xl border-8 border-stone-50 bg-[#EEE7D7] p-5 font-hand-writing md:p-6'>
+            <article className='hero-note w-full rounded-xl border-8 border-stone-50 bg-[#EEE7D7] p-4 font-hand-writing sm:p-5 md:p-6'>
               <div className='space-y-2'>
                 <h1 className='text-2xl font-medium tracking-tight'>
                   make thoughts actionable and reusable
@@ -97,7 +97,7 @@ function Home() {
         </section>
       </div>
 
-      <div className='hero-tree pointer-events-none absolute -bottom-5 -left-2 hidden w-80 md:block'>
+      <div className='hero-tree pointer-events-none absolute -bottom-3 -left-4 w-56 sm:w-64 md:-bottom-5 md:-left-2 md:w-80 hidden sm:block'>
         <img src='/images/treeWithLeaves/tree1.png' alt='' />
         <img
           src='/images/treeWithLeaves/leaves1.png'
