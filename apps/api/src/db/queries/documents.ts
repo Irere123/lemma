@@ -1,7 +1,7 @@
 import { and, desc, eq, lt, ne } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
-import { documents, type Document, type DocumentStatus } from '@api/db/schema'
+import { type Document, type DocumentStatus, documents } from '@api/db/schema'
 import { slugifyString } from '@api/db/utils/slugify'
 import { env } from '@api/env-runtime'
 import { generateId } from '@api/lib/utils'
@@ -13,13 +13,14 @@ const MAX_PAGE_SIZE = 100
 
 const normalizeMarkdown = (markdown: string) => markdown.replaceAll('\r\n', '\n').trimEnd()
 
-const resolveMarkdownForSave = (data: UpsertDocumentData): string | null | undefined => {
+const resolveMarkdownForSave = (data: UpsertDocumentData): string | undefined => {
   if (typeof data.markdown === 'string') {
     return normalizeMarkdown(data.markdown)
   }
 
   if (data.markdown === null) {
-    return null
+    // Database column is non-nullable in production, so treat null as empty content.
+    return ''
   }
 
   return undefined
@@ -112,7 +113,7 @@ export const upsertDocument = async (
         title: data.title ?? null,
         subtitle: data.subtitle ?? null,
         status: data.status ?? 'DRAFT',
-        markdown: markdownForSave ?? null,
+        markdown: markdownForSave ?? '',
         bannerImage: data.bannerImage ?? null,
         scheduledDate: data.scheduledDate ?? null,
         publishedDate: data.publishedDate ?? null,

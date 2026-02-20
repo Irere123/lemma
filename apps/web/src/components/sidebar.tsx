@@ -1,14 +1,19 @@
 import {
   IconAlignJustified,
+  IconLoader2,
   IconPlus,
   IconSearch,
   IconSettings,
   IconUserCircle,
 } from '@tabler/icons-react'
-import { Link } from '@tanstack/react-router'
+import { useMutation } from '@tanstack/react-query'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
 
 import { useSession } from '@/lib/auth-client'
-import { cn } from '@/lib/utils'
+import { cn, getUntitledTitle } from '@/lib/utils'
+import { useDocumentStore } from '@/stores/document-store'
+import { useTRPC } from '@/trpc/client'
 import { AccountDropdown } from './dropdowns/account'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Skeleton } from './ui/skeleton'
@@ -24,7 +29,7 @@ export function Sidebar() {
       <div className='flex flex-col gap-2 flex-1 items-center'>
         <SidebarLink href='/app' icon={<IconAlignJustified size={20} />} />
         <SidebarLink href='/app/search' icon={<IconSearch size={20} />} />
-        <SidebarLink href='/app/new' icon={<IconPlus size={20} />} />
+        <SidebarCreateDocumentButton />
         <SidebarLink href='/u/profile' icon={<IconUserCircle size={20} />} />
         <SidebarLink href='/app/settings' icon={<IconSettings size={20} />} />
       </div>
@@ -39,6 +44,63 @@ export function Sidebar() {
         )}
       </div>
     </div>
+  )
+}
+
+function SidebarCreateDocumentButton() {
+  const navigate = useNavigate()
+  const trpc = useTRPC()
+  const upsertDocumentInStore = useDocumentStore((state) => state.upsertDocument)
+
+  const createDocumentMutation = useMutation(
+    trpc.documents.upsertDocument.mutationOptions({
+      onSuccess: async (document) => {
+        if (!document?.id) {
+          toast.error('Failed to create document')
+          return
+        }
+
+        upsertDocumentInStore(document as any)
+
+        await navigate({
+          to: '/write/$docId',
+          params: {
+            docId: document.id,
+          },
+        })
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Failed to create document')
+      },
+    })
+  )
+
+  const handleCreateDocument = () => {
+    if (createDocumentMutation.isPending) {
+      return
+    }
+
+    createDocumentMutation.mutate({
+      title: getUntitledTitle(''),
+      markdown: '',
+    })
+  }
+
+  return (
+    <button
+      type='button'
+      className={cn('rounded-full p-2 transition-colors hover:bg-muted')}
+      onClick={handleCreateDocument}
+      disabled={createDocumentMutation.isPending}
+      aria-label='Create new document'
+      title='Create new document'
+    >
+      {createDocumentMutation.isPending ? (
+        <IconLoader2 size={20} className='animate-spin' />
+      ) : (
+        <IconPlus size={20} />
+      )}
+    </button>
   )
 }
 
