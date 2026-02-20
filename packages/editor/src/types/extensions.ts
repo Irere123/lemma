@@ -1,1 +1,0 @@
-export type TExtensions =  "slash-commands" | "enter-key" | "image";
