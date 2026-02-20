@@ -1,4 +1,4 @@
-## Getting Started
+## Lemma Dashboard
 
 ### Installation
 
