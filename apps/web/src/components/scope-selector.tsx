@@ -1,7 +1,8 @@
+import type { Scope } from '@lemma/common/scopes'
+
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { RESOURCES } from '@/utils/scopes'
-import type { Scope } from '@lemma/common/scopes'
 
 type Props = {
   selectedScopes: Scope[]

@@ -1,10 +1,10 @@
-import type { JSONContent } from '@lemma/headless'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import AdvancedEditor, { type WriterEditorUpdate } from '@/components/editor'
+import { extractCustomBlocksFromMarkdown, type CustomBlockToken } from '@/lib/custom-blocks'
 import { useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
@@ -20,8 +20,8 @@ export const Route = createFileRoute('/write/$docId')({
 })
 
 type DraftState = {
-  content: JSONContent
-  markdown: null | string
+  customBlocks: CustomBlockToken[]
+  markdown: string
   subtitle: string
   title: string
 }
@@ -40,15 +40,14 @@ function RouteComponent() {
 
   const [title, setTitle] = useState('')
   const [subtitle, setSubtitle] = useState('')
-  const [initialContent, setInitialContent] = useState<JSONContent>([])
   const [saveStatus, setSaveStatus] = useState('Saved')
 
   const hydratedDocumentRef = useRef<string | null>(null)
   const draftRef = useRef<DraftState>({
     title: '',
     subtitle: '',
-    content: [],
-    markdown: null,
+    markdown: '',
+    customBlocks: [],
   })
 
   const { mutateAsync: upsertDocument, isPending: isUpsertLoading } = useMutation(
@@ -61,7 +60,6 @@ function RouteComponent() {
         id: docId,
         title: draftRef.current.title.trim() || null,
         subtitle: draftRef.current.subtitle.trim() || null,
-        content: draftRef.current.content,
         markdown: draftRef.current.markdown,
         ...patch,
       }
@@ -99,10 +97,19 @@ function RouteComponent() {
   }, 900)
 
   const queueDraftUpdate = (patch: Partial<DraftState>) => {
-    draftRef.current = {
-      ...draftRef.current,
-      ...patch,
+    let changed = false
+
+    for (const [key, value] of Object.entries(patch)) {
+      const typedKey = key as keyof DraftState
+      if (!Object.is(draftRef.current[typedKey], value)) {
+        changed = true
+        break
+      }
     }
+
+    if (!changed) return
+
+    draftRef.current = { ...draftRef.current, ...patch }
     setSaveStatus('Unsaved')
     persistDocumentDebounced()
   }
@@ -136,18 +143,18 @@ function RouteComponent() {
 
     const nextTitle = document.title ?? ''
     const nextSubtitle = document.subtitle ?? ''
-    const nextContent = (document.content as JSONContent | undefined) ?? []
+    const nextMarkdown =
+      typeof document.markdown === 'string' ? document.markdown : draftRef.current.markdown
 
     setTitle(nextTitle)
     setSubtitle(nextSubtitle)
-    setInitialContent(nextContent)
     setSaveStatus('Saved')
 
     draftRef.current = {
       title: nextTitle,
       subtitle: nextSubtitle,
-      content: nextContent,
-      markdown: document.markdown ?? null,
+      markdown: nextMarkdown,
+      customBlocks: extractCustomBlocksFromMarkdown(nextMarkdown),
     }
   }, [docId, document, fetchedDocument])
 
@@ -194,12 +201,16 @@ function RouteComponent() {
     )
   }
 
+  const editorKey = `${docId}:${fetchedDocument ? 'server' : 'store'}`
+  const editorInitialContent =
+    typeof document.markdown === 'string' ? document.markdown : ''
+
   return (
     <div className='w-full pb-20'>
       <AdvancedEditor
-        key={docId}
+        key={editorKey}
         className='pt-2'
-        initialContent={initialContent}
+        initialContent={editorInitialContent}
         title={title}
         subtitle={subtitle}
         saveStatus={isUpsertLoading ? 'Saving...' : saveStatus}
@@ -212,9 +223,21 @@ function RouteComponent() {
           queueDraftUpdate({ subtitle: value })
         }}
         onContentChange={(value: WriterEditorUpdate) => {
+          const markdown = value.markdown
+          const customBlocks = extractCustomBlocksFromMarkdown(markdown)
+
+          if (!hydratedDocumentRef.current) {
+            draftRef.current = {
+              ...draftRef.current,
+              markdown,
+              customBlocks,
+            }
+            return
+          }
+
           queueDraftUpdate({
-            content: value.json,
-            markdown: value.markdown,
+            markdown,
+            customBlocks,
           })
         }}
       />

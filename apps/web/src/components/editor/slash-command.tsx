@@ -1,5 +1,6 @@
 import { Command, createSuggestionItems, renderItems } from '@lemma/headless'
 import {
+  Blocks,
   CheckSquare,
   Code,
   Heading1,
@@ -12,6 +13,8 @@ import {
   Text,
   TextQuote,
 } from 'lucide-react'
+
+import { createCustomBlockToken } from '@/lib/custom-blocks'
 
 export const suggestionItems = createSuggestionItems([
   {
@@ -118,6 +121,40 @@ export const suggestionItems = createSuggestionItems([
       if (!src) return
 
       editor.chain().focus().deleteRange(range).setImage({ src }).run()
+    },
+  },
+  {
+    title: 'Custom Block',
+    description: 'Insert a markdown token for a future custom block.',
+    searchTerms: ['block', 'embed', 'cta', 'button', 'substack'],
+    icon: <Blocks size={18} />,
+    command: ({ editor, range }) => {
+      const type = window.prompt('Block type (button, embed, callout)', 'button')?.trim()
+      if (!type) return
+
+      const rawAttrs = window.prompt(
+        'Block attributes JSON (optional)',
+        type === 'button'
+          ? '{"label":"Subscribe","url":"https://example.com"}'
+          : '{"url":"https://example.com"}'
+      )
+      if (rawAttrs == null) return
+
+      let attrs: Record<string, unknown> = {}
+      if (rawAttrs.trim().length > 0) {
+        try {
+          attrs = JSON.parse(rawAttrs) as Record<string, unknown>
+        } catch {
+          window.alert('Invalid JSON. Block attributes were ignored.')
+        }
+      }
+
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent(`${createCustomBlockToken(type, attrs)}\n`)
+        .run()
     },
   },
 ])

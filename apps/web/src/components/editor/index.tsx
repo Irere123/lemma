@@ -5,14 +5,12 @@ import {
   EditorCommandItem,
   EditorCommandList,
   EditorContent,
-  type EditorInstance,
   EditorRoot,
   handleCommandNavigation,
   type JSONContent,
   getAllContent,
 } from '@lemma/headless'
 import { useState } from 'react'
-import { useDebouncedCallback } from 'use-debounce'
 
 import { cn } from '@/lib/utils'
 import { Separator } from '../ui/separator'
@@ -25,14 +23,12 @@ import { slashCommand, suggestionItems } from './slash-command'
 const extensions = [...defaultExtensions, slashCommand]
 
 export type WriterEditorUpdate = {
-  html: string
-  json: JSONContent
   markdown: string
   words: number
 }
 
 type AdvancedEditorProps = {
-  initialContent?: JSONContent
+  initialContent?: JSONContent | string
   title: string
   subtitle: string
   saveStatus?: string
@@ -58,15 +54,6 @@ const AdvancedEditor = ({
   const [openNode, setOpenNode] = useState(false)
   const [openColor, setOpenColor] = useState(false)
   const [openLink, setOpenLink] = useState(false)
-
-  const debouncedUpdates = useDebouncedCallback(async (editor: EditorInstance) => {
-    onContentChange?.({
-      json: editor.getJSON(),
-      html: editor.getHTML(),
-      markdown: getAllContent(editor),
-      words: editor.storage.characterCount.words(),
-    })
-  }, 500)
 
   return (
     <section className={cn('writer-editor mx-auto w-full max-w-[860px] px-4 pb-24', className)}>
@@ -99,7 +86,7 @@ const AdvancedEditor = ({
       <EditorRoot>
         <div className='rounded-2xl border border-border/70 bg-card/50 px-5 py-6 md:px-10 md:py-8'>
           <EditorContent
-            initialContent={initialContent ?? []}
+            initialContent={initialContent ?? ''}
             extensions={extensions as any}
             className='relative h-full w-full'
             immediatelyRender={false}
@@ -113,11 +100,20 @@ const AdvancedEditor = ({
               },
             }}
             onCreate={({ editor }) => {
-              setWordsCount(editor.storage.characterCount.words())
+              const words = editor.storage.characterCount.words()
+              setWordsCount(words)
+              onContentChange?.({
+                markdown: getAllContent(editor),
+                words,
+              })
             }}
             onUpdate={({ editor }) => {
-              setWordsCount(editor.storage.characterCount.words())
-              debouncedUpdates(editor)
+              const words = editor.storage.characterCount.words()
+              setWordsCount(words)
+              onContentChange?.({
+                markdown: getAllContent(editor),
+                words,
+              })
             }}
           >
             <EditorCommand className='z-50 h-auto max-h-[360px] overflow-y-auto rounded-xl border border-border/80 bg-popover p-1 shadow-xl transition-all'>

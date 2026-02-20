@@ -57,7 +57,7 @@ function RouteComponent() {
 
     if (!documentsLoading) {
       const docsAsObj = documents?.documents.reduce<
-        Record<Document['id'], Omit<Document, 'content' | 'markdown'>>
+        Record<Document['id'], Omit<Document, 'markdown'>>
       >((acc, doc) => {
         acc[doc.id] = doc
         return acc

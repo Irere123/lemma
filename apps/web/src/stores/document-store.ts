@@ -10,9 +10,6 @@ import {
   toggleDocumentTreeItemCollapsed,
 } from './document-store-utils'
 
-// Content is Tiptap JSONContent
-type EditorContent = unknown
-
 type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
 localforage.config({
@@ -34,7 +31,7 @@ const storage: StateStorage = {
 }
 
 type FunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? K : never
+  [K in keyof T]: T[K] extends (...args: never[]) => unknown ? K : never
 }[keyof T]
 type StoreWithoutFunctions = Omit<Store, FunctionPropertyNames<Store>>
 
@@ -66,7 +63,6 @@ export type Document = {
   updatedAt: Date | null
   userId: string | null
   title: string | null
-  content?: EditorContent
   subtitle: string | null
   markdown?: string | null
   bannerImage?: string | null
@@ -86,7 +82,6 @@ export type DocumentTreeItem = {
 export type DocumentUpdate = PickPartial<
   Document,
   | 'userId'
-  | 'content'
   | 'title'
   | 'createdAt'
   | 'updatedAt'

@@ -9,7 +9,7 @@
     "**/routeTree.gen.ts": true
   },
   "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit",
+    "source.fixAll.biome": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
   },

@@ -163,6 +163,21 @@
     }
   },
   "assist": {
-    "enabled": false
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [":BUN:", ":NODE:", ":PACKAGE:", "!@api/**", "!@/**"],
+              ":BLANK_LINE:",
+              ["@api", "@api/**", "@/", "@/**"],
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
   }
 }

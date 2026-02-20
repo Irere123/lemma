@@ -3,7 +3,7 @@ export interface IPost {
   title: string
   slug: string
   subtitle: string
-  content: any
+  markdown?: string | null
   createdAt: string
   publishedDate: string
   updatedAt: string
