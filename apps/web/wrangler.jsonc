@@ -13,11 +13,7 @@
   },
   "routes": [
     {
-      "pattern": "irere.dev",
-      "custom_domain": true
-    },
-    {
-      "pattern": "www.irere.dev",
+      "pattern": "lemma.irere.dev",
       "custom_domain": true
     }
   ],
