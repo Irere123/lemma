@@ -1,46 +1,122 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 
-import { Callout, ProfileHeader, Section } from '@/components/landing'
+import { Footer } from '@/components/footer'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: 'Lemma | Writing' },
+      {
+        name: 'description',
+        content: 'A calm writing app for drafting, editing, and publishing.',
+      },
+    ],
+  }),
   component: Home,
 })
 
 function Home() {
   return (
-    <main className='mx-auto max-w-3xl px-6 py-10'>
-      <ProfileHeader
-        title='Irere Emmanuel'
-        current='About'
-        links={[
-          { label: 'About', to: '/' },
-          { label: 'Blog', to: '/posts' },
-          { label: 'Newsletter', to: '/newsletter' },
-          { label: 'GitHub', href: 'https://github.com/irere123' },
-        ]}
-      />
+    <main className='relative min-h-screen overflow-hidden bg-[#f7f8fa] text-neutral-700'>
+      <div aria-hidden className='hero-ambient pointer-events-none absolute inset-0'>
+        <div className='hero-orb hero-orb-left' />
+        <div className='hero-orb hero-orb-right' />
+      </div>
 
-      <section className='space-y-6'>
-        <p className='text-[15px] leading-7'>
-          I’m a software engineer based in Kigali, working on platform and product experiences with
-          <span className='underline underline-offset-4'> TypeScript</span>, React, and edge
-          runtimes. I enjoy building DX-focused systems and reliable infrastructure that feels
-          simple.
-        </p>
+      <div className='relative z-10 mx-auto flex w-full max-w-2xl flex-col px-6 pb-40 pt-10'>
+        <header className='flex items-center justify-between'>
+          <p className='text-lg font-bold'>Lemma</p>
+          <Button variant='link' size='sm'>
+            <Link to='/login' className='text-sm underline underline-offset-4'>
+              Login
+            </Link>
+          </Button>
+        </header>
 
-        <Callout tone='green'>
-          On nights & weekends, I’m exploring AI and Web services, using an opinionated stack:
-          Typescript and Elixir. I’m also writing about practical engineering.
-        </Callout>
+        <section className='hero-stage mt-16 leading-8'>
+          <div className='hero-stack group/hero relative'>
+            <a
+              href='https://github.com/Irere123/lemma'
+              target='_blank'
+              rel='noopener'
+              aria-label='View Lemma on GitHub'
+              className='hero-sticker hero-sticker-right'
+            >
+              <img
+                src='/ramen_noun.svg'
+                alt='Ramen sticker'
+                loading='lazy'
+                width={112}
+                height={100}
+                decoding='async'
+                className='h-20 w-20 drop-shadow-sm md:h-24 md:w-24'
+              />
+            </a>
+            <a
+              href='https://github.com/Irere123/lemma'
+              target='_blank'
+              rel='noopener'
+              aria-label='View Lemma on GitHub'
+              className='hero-sticker hero-sticker-left'
+            >
+              <img
+                src='/sunny.svg'
+                alt='Sun sticker'
+                loading='lazy'
+                width={56}
+                height={56}
+                decoding='async'
+                className='h-14 w-14 drop-shadow-sm md:h-16 md:w-16'
+              />
+            </a>
 
-        <Section title='Previously, I’ve worked with:'>
-          <ul className='list-disc pl-5 space-y-2 text-[15px] leading-7'>
-            <li>Platform engineering on CI/CD and observability for large-scale deployments</li>
-            <li>Web performance and SSR at the edge</li>
-            <li>Design systems, documentation, and developer tooling</li>
-          </ul>
-        </Section>
-      </section>
+            <article className='hero-note w-full rounded-xl border-8 border-stone-50 bg-[#EEE7D7] p-5 font-hand-writing md:p-6'>
+              <div className='space-y-2'>
+                <h1 className='text-2xl font-medium tracking-tight'>
+                  make thoughts actionable and reusable
+                </h1>
+                <p>
+                  A simple home for drafting, refining, and publishing your writing. Built for focus
+                  and speed.
+                </p>
+              </div>
+
+              <div className='mt-5 space-y-2'>
+                <h2 className='font-bold'>About</h2>
+                <p>
+                  Built for personal usage, designed with personal preferences. Clean interface.
+                  API-first design. Drafts stay organized, edits stay calm, and publishing stays
+                  clear.
+                </p>
+
+                <p>Designed for writers who want less noise and more momentum.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <div className='hero-tree pointer-events-none absolute -bottom-5 -left-2 hidden w-80 md:block'>
+        <img src='/images/treeWithLeaves/tree1.png' alt='' />
+        <img
+          src='/images/treeWithLeaves/leaves1.png'
+          alt=''
+          className='hero-tree-leaf-1 animate-sweep absolute'
+        />
+        <img
+          src='/images/treeWithLeaves/leaves2.png'
+          alt=''
+          className='hero-tree-leaf-2 animate-sweepLarge absolute'
+        />
+        <img
+          src='/images/treeWithLeaves/leaves3.png'
+          alt=''
+          className='hero-tree-leaf-3 animate-sweepFast absolute'
+        />
+      </div>
+
+      <Footer />
     </main>
   )
 }
