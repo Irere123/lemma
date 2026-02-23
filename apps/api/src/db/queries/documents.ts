@@ -170,7 +170,7 @@ export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
     })
     .from(documents)
     .where(and(...filters))
-    .orderBy(desc(documents.createdAt))
+    .orderBy(desc(documents.publishedDate))
     .limit(limit + 1) // Fetch one extra to determine if there's a next page
 
   return userDocuments
