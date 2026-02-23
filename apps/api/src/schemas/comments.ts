@@ -32,13 +32,13 @@ export const deleteCommentSchema = z.object({
 export const getCommentsSchema = z.object({
   documentId: z.string(),
   parentId: z.string().optional(),
-  limit: z.number().min(1).max(100).optional().default(20),
+  limit: z.coerce.number().min(1).max(100).optional().default(20),
   cursor: z.string().optional(),
 })
 
 export const getCommentRepliesSchema = z.object({
   commentId: z.string(),
-  limit: z.number().min(1).max(100).optional().default(20),
+  limit: z.coerce.number().min(1).max(100).optional().default(20),
   cursor: z.string().optional(),
 })
 
