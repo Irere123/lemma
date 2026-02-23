@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DocRouteImport } from './routes/doc'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
@@ -27,11 +26,6 @@ import { Route as AppDocumentsRouteImport } from './routes/app/documents.'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DocRoute = DocRouteImport.update({
-  id: '/doc',
-  path: '/doc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRouteRoute = AppRouteRouteImport.update({
@@ -98,7 +92,6 @@ const AppDocumentsRoute = AppDocumentsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
-  '/doc': typeof DocRoute
   '/login': typeof LoginRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
@@ -113,7 +106,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/doc': typeof DocRoute
   '/login': typeof LoginRoute
   '/app/search': typeof AppSearchRoute
   '/u/$username': typeof UUsernameRoute
@@ -129,7 +121,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
-  '/doc': typeof DocRoute
   '/login': typeof LoginRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
@@ -147,7 +138,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
-    | '/doc'
     | '/login'
     | '/app/settings'
     | '/app/search'
@@ -162,7 +152,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/doc'
     | '/login'
     | '/app/search'
     | '/u/$username'
@@ -177,7 +166,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
-    | '/doc'
     | '/login'
     | '/app/settings'
     | '/app/search'
@@ -194,7 +182,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
-  DocRoute: typeof DocRoute
   LoginRoute: typeof LoginRoute
   UUsernameRoute: typeof UUsernameRoute
   WriteDocIdRoute: typeof WriteDocIdRoute
@@ -207,13 +194,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/doc': {
-      id: '/doc'
-      path: '/doc'
-      fullPath: '/doc'
-      preLoaderRoute: typeof DocRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -341,7 +321,6 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
-  DocRoute: DocRoute,
   LoginRoute: LoginRoute,
   UUsernameRoute: UUsernameRoute,
   WriteDocIdRoute: WriteDocIdRoute,

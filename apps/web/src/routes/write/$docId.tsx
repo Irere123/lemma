@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import AdvancedEditor, { type WriterEditorUpdate } from '@/components/editor'
 import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
+import { getSession } from '@/lib/auth.server'
 import { type CustomBlockToken, extractCustomBlocksFromMarkdown } from '@/lib/custom-blocks'
 import { buildSeoHead } from '@/lib/seo'
 import { useDocumentStore } from '@/stores/document-store'
@@ -20,6 +21,13 @@ export const Route = createFileRoute('/write/$docId')({
       title: 'Write',
       type: 'article',
     }),
+  beforeLoad: async () => {
+    const session = await getSession()
+    if (!session) {
+      throw redirect({ to: '/login' })
+    }
+    return { user: session.data?.user }
+  },
 })
 
 type DraftState = {

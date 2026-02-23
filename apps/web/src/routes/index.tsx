@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
+import { getSession } from '@/lib/auth.server'
 import { buildSeoHead } from '@/lib/seo'
 
 export const Route = createFileRoute('/')({
@@ -14,9 +15,18 @@ export const Route = createFileRoute('/')({
       type: 'website',
     }),
   component: Home,
+  beforeLoad: async () => {
+    const session = await getSession()
+
+    return { user: session?.data?.user }
+  },
+  loader: ({ context: { user } }) => {
+    return { user }
+  },
 })
 
 function Home() {
+  const { user } = Route.useLoaderData()
   return (
     <main className='relative min-h-screen overflow-hidden bg-[#f7f8fa] text-neutral-700'>
       <div aria-hidden className='hero-ambient pointer-events-none absolute inset-0'>
@@ -28,9 +38,15 @@ function Home() {
         <header className='flex items-center justify-between'>
           <p className='text-lg font-bold'>Lemma</p>
           <Button variant='link' size='sm'>
-            <Link to='/login' className='text-sm underline underline-offset-4'>
-              Login
-            </Link>
+            {user ? (
+              <Link to='/app' className='text-sm underline underline-offset-4'>
+                Workspace
+              </Link>
+            ) : (
+              <Link to='/login' className='text-sm underline underline-offset-4'>
+                Login
+              </Link>
+            )}
           </Button>
         </header>
 

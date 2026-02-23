@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useState } from 'react'
 
 import { Sidebar } from '@/components/sidebar'
 import { useSession } from '@/lib/auth-client'
+import { getSession } from '@/lib/auth.server'
 import { buildSeoHead } from '@/lib/seo'
 import { type Document, documentStore, useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
@@ -29,6 +30,13 @@ export const Route = createFileRoute('/app')({
         fetchFn: (client) => client.documents.getUserDocuments.query({}),
       })
     }
+  },
+  beforeLoad: async () => {
+    const session = await getSession()
+    if (!session) {
+      throw redirect({ to: '/login' })
+    }
+    return { user: session.data?.user }
   },
   component: RouteComponent,
 })

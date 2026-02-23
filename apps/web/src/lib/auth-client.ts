@@ -1,5 +1,6 @@
 import { emailOTPClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
+import { tanstackStartCookies } from 'better-auth/tanstack-start'
 
 export const authClient = createAuthClient({
   basePath: '/auth',
@@ -7,7 +8,7 @@ export const authClient = createAuthClient({
   fetchOptions: {
     credentials: 'include',
   },
-  plugins: [emailOTPClient()],
+  plugins: [emailOTPClient(), tanstackStartCookies()],
 })
 
 export const { useSession, signIn, signOut } = authClient

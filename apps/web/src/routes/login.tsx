@@ -1,11 +1,12 @@
 import { IconLoader2 } from '@tabler/icons-react'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { Google } from '@/components/svgs'
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth-client'
+import { getSession } from '@/lib/auth.server'
 import { buildSeoHead } from '@/lib/seo'
 
 export const Route = createFileRoute('/login')({
@@ -18,11 +19,14 @@ export const Route = createFileRoute('/login')({
       title: 'Login',
       type: 'website',
     }),
+  beforeLoad: async () => {
+    const session = await getSession()
+    if (session) {
+      throw redirect({ to: '/app' })
+    }
+    return null
+  },
 })
-
-interface OTPFormData {
-  code: string
-}
 
 function RouteComponent() {
   const [isLoading, setIsLoading] = useState(false)
