@@ -21,7 +21,7 @@ export const Route = createFileRoute('/login')({
     }),
   beforeLoad: async () => {
     const session = await getSession()
-    if (session) {
+    if (session?.data?.user) {
       throw redirect({ to: '/app' })
     }
     return null
