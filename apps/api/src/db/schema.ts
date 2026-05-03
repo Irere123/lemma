@@ -14,7 +14,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-export const createTable = pgTableCreator((name) => `brainos_${name}`)
+export const createTable = pgTableCreator((name) => name)
 
 // ============================================================================
 // AUTHENTICATION & USER MANAGEMENT

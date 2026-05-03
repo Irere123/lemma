@@ -1,13 +1,14 @@
-import { and, desc, eq, sql, gte, lte, inArray } from 'drizzle-orm'
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
+
 import type { DB } from '@api/db'
 import {
-  campaigns,
-  campaignLinks,
-  clickEvents,
-  unsubscribeEvents,
-  subscribers,
   type Campaign,
   type CampaignLink,
+  campaignLinks,
+  campaigns,
+  clickEvents,
+  subscribers,
+  unsubscribeEvents,
 } from '@api/db/schema'
 import { generateId } from '@api/lib/utils'
 

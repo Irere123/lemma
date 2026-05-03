@@ -8,7 +8,7 @@ config()
 
 const TARGET_DATABASE_URLS = {
   local: 'LOCAL_DATABASE_URL',
-  production: 'PRODUCTION_DATABASE_URL',
+  production: 'PROD_DATABASE_URL',
 } as const
 
 const targetEnv = process.env.ENV

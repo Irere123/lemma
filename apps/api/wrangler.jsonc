@@ -54,10 +54,22 @@
       ],
       "queues": {
         "producers": [
-          { "binding": "EMAIL_QUEUE", "queue": "lemma-local-email" },
-          { "binding": "NEWSLETTER_QUEUE", "queue": "lemma-local-newsletter" },
-          { "binding": "ANALYTICS_QUEUE", "queue": "lemma-local-analytics" },
-          { "binding": "SCHEDULED_QUEUE", "queue": "lemma-local-scheduled" }
+          {
+            "binding": "EMAIL_QUEUE",
+            "queue": "lemma-local-email"
+          },
+          {
+            "binding": "NEWSLETTER_QUEUE",
+            "queue": "lemma-local-newsletter"
+          },
+          {
+            "binding": "ANALYTICS_QUEUE",
+            "queue": "lemma-local-analytics"
+          },
+          {
+            "binding": "SCHEDULED_QUEUE",
+            "queue": "lemma-local-scheduled"
+          }
         ],
         "consumers": [
           {
@@ -117,27 +129,40 @@
       "hyperdrive": [
         {
           "binding": "DB",
-          "id": "00000000000000000000000000000000"
+          "id": "0dd0f0ff924042348c6201227c79b816"
         }
       ],
       "r2_buckets": [
         {
+          "bucket_name": "lemma-production-assets",
           "binding": "R2_BUCKET",
-          "bucket_name": "lemma-production-assets"
+          "remote": true
         }
       ],
       "kv_namespaces": [
         {
           "binding": "CACHE",
-          "id": "00000000000000000000000000000000"
+          "id": "c4d7e58664054cbfb3335c52b0be2742"
         }
       ],
       "queues": {
         "producers": [
-          { "binding": "EMAIL_QUEUE", "queue": "lemma-production-email" },
-          { "binding": "NEWSLETTER_QUEUE", "queue": "lemma-production-newsletter" },
-          { "binding": "ANALYTICS_QUEUE", "queue": "lemma-production-analytics" },
-          { "binding": "SCHEDULED_QUEUE", "queue": "lemma-production-scheduled" }
+          {
+            "binding": "EMAIL_QUEUE",
+            "queue": "lemma-production-email"
+          },
+          {
+            "binding": "NEWSLETTER_QUEUE",
+            "queue": "lemma-production-newsletter"
+          },
+          {
+            "binding": "ANALYTICS_QUEUE",
+            "queue": "lemma-production-analytics"
+          },
+          {
+            "binding": "SCHEDULED_QUEUE",
+            "queue": "lemma-production-scheduled"
+          }
         ],
         "consumers": [
           {

@@ -1,2 +1,0 @@
-ALTER TABLE "brainos_documents" RENAME COLUMN "send_as_newsletter" TO "scheduled_date";--> statement-breakpoint
-CREATE INDEX "documents_scheduled_date_idx" ON "brainos_documents" USING btree ("scheduled_date");
