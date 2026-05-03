@@ -4,6 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { emailOTP, oneTimeToken } from 'better-auth/plugins'
 
 import { createDb } from '@api/db'
+import * as schema from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { sendEmail } from '@api/lib/messaging/email/mailer'
 import { getEmailSubject, getFromEmailAddress } from '@api/lib/messaging/email/utils'
@@ -16,6 +17,7 @@ export const createAuth = () => {
     basePath: '/auth',
     database: drizzleAdapter(db, {
       provider: 'pg',
+      schema,
     }),
     trustedOrigins: [...env.ALLOWED_API_ORIGINS.split(',')],
     advanced: {
