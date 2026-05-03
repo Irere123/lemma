@@ -8,81 +8,84 @@
     "enabled": true
   },
   "env": {
-    "staging": {
-      "name": "lemma-api-staging",
+    "local": {
+      "name": "lemma-api-local",
       "triggers": {
         "crons": ["*/5 * * * *"]
       },
-      "routes": [
-        {
-          "pattern": "sapi.irere.dev",
-          "custom_domain": true
-        }
-      ],
       "vars": {
-        "ENV": "staging",
-        "ALLOWED_API_ORIGINS": "https://staging.irere.dev",
-        "BASE_URL": "https://sapi.irere.dev",
-        "FRONTEND_URL": "https://staging.irere.dev",
-        "BETTER_AUTH_URL": "https://sapi.irere.dev",
-        "ADMIN_USER_ID": "platform_user_id",
+        "ENV": "local",
+        "ALLOWED_API_ORIGINS": "http://localhost:3000,http://localhost:5173",
+        "BASE_URL": "http://localhost:4000",
+        "FRONTEND_URL": "http://localhost:3000",
+        "BETTER_AUTH_URL": "http://localhost:4000",
+        "ADMIN_USER_ID": "local-admin-user",
         "CLOUDFLARE_ACCOUNT_ID": "00000000000000000000000000000000",
-        "R2_BUCKET_URL": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/lemma-staging-assets",
-        "R2_STORAGE_BASE_URL": "https://static-staging.irere.dev",
-        "RESEND_DOMAIN": "irere.dev"
+        "R2_BUCKET_URL": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/lemma-local-assets",
+        "R2_STORAGE_BASE_URL": "http://localhost:4000/assets",
+        "RESEND_DOMAIN": "localhost",
+        "GOOGLE_CLIENT_ID": "placeholder",
+        "GOOGLE_CLIENT_SECRET": "placeholder",
+        "BETTER_AUTH_SECRET": "development-secret-change-me",
+        "LEMMA_ENCRYPTION_KEY": "0000000000000000000000000000000000000000000000000000000000000000",
+        "R2_ACCESS_KEY_ID": "placeholder",
+        "R2_SECRET_ACCESS_KEY": "placeholder",
+        "RESEND_API_KEY": "placeholder"
       },
       "hyperdrive": [
         {
           "binding": "DB",
-          "id": "00000000000000000000000000000000"
+          "id": "00000000000000000000000000000000",
+          "localConnectionString": "postgresql://postgres:postgres@localhost:5432/brainos"
         }
       ],
       "r2_buckets": [
         {
           "binding": "R2_BUCKET",
-          "bucket_name": "lemma-staging-assets"
+          "bucket_name": "lemma-local-assets"
         }
       ],
       "kv_namespaces": [
         {
           "binding": "CACHE",
-          "id": "00000000000000000000000000000000"
+          "id": "00000000000000000000000000000000",
+          "preview_id": "00000000000000000000000000000000"
         }
       ],
       "queues": {
         "producers": [
-          { "binding": "EMAIL_QUEUE", "queue": "lemma-staging-email" },
-          { "binding": "NEWSLETTER_QUEUE", "queue": "lemma-staging-newsletter" },
-          { "binding": "ANALYTICS_QUEUE", "queue": "lemma-staging-analytics" },
-          { "binding": "SCHEDULED_QUEUE", "queue": "lemma-staging-scheduled" }
+          { "binding": "EMAIL_QUEUE", "queue": "lemma-local-email" },
+          { "binding": "NEWSLETTER_QUEUE", "queue": "lemma-local-newsletter" },
+          { "binding": "ANALYTICS_QUEUE", "queue": "lemma-local-analytics" },
+          { "binding": "SCHEDULED_QUEUE", "queue": "lemma-local-scheduled" }
         ],
         "consumers": [
           {
-            "queue": "lemma-staging-email",
+            "queue": "lemma-local-email",
             "max_batch_size": 10,
             "max_retries": 3,
-            "dead_letter_queue": "lemma-staging-email-dlq",
+            "dead_letter_queue": "lemma-local-email-dlq",
             "retry_delay": 60
           },
           {
-            "queue": "lemma-staging-newsletter",
+            "queue": "lemma-local-newsletter",
             "max_batch_size": 10,
             "max_retries": 3,
-            "dead_letter_queue": "lemma-staging-newsletter-dlq",
+            "dead_letter_queue": "lemma-local-newsletter-dlq",
             "retry_delay": 60
           },
           {
-            "queue": "lemma-staging-analytics",
+            "queue": "lemma-local-analytics",
             "max_batch_size": 25,
             "max_retries": 3,
-            "dead_letter_queue": "lemma-staging-analytics-dlq",
+            "dead_letter_queue": "lemma-local-analytics-dlq",
             "retry_delay": 60
           },
           {
-            "queue": "lemma-staging-scheduled",
+            "queue": "lemma-local-scheduled",
             "max_batch_size": 10,
             "max_retries": 3,
-            "dead_letter_queue": "lemma-staging-scheduled-dlq",
+            "dead_letter_queue": "lemma-local-scheduled-dlq",
             "retry_delay": 60
           }
         ]

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const EnvSchema = z.object({
   // generic stuff
-  ENV: z.enum(['staging', 'production']),
+  ENV: z.enum(['local', 'production']),
   DATABASE_URL: z.url(),
   ALLOWED_API_ORIGINS: z.string(),
   LEMMA_ENCRYPTION_KEY: z.string(),

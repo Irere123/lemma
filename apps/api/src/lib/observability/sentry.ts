@@ -39,9 +39,9 @@ export function getSentryOptions(config: Partial<SentryConfig> = {}) {
     tracesSampleRate: mergedConfig.tracesSampleRate,
     beforeSend(event: any) {
       if (event.request?.headers) {
-        delete event.request.headers.authorization
-        delete event.request.headers.cookie
-        delete event.request.headers['x-api-key']
+        event.request.headers.authorization = undefined
+        event.request.headers.cookie = undefined
+        event.request.headers['x-api-key'] = undefined
       }
 
       if (event.breadcrumbs) {
@@ -69,9 +69,8 @@ export function getSentryOptions(config: Partial<SentryConfig> = {}) {
       'ResizeObserver loop limit exceeded',
     ],
     tracePropagationTargets: [
-      /^https:\/\/sapi\.irere\.dev/,
+      /^http:\/\/localhost:\d+/,
       /^https:\/\/api\.irere\.dev/,
-      /^https:\/\/staging\.irere\.dev/,
       /^https:\/\/irere\.dev/,
     ],
   }

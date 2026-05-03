@@ -7,20 +7,18 @@ import postgres from 'postgres'
 config()
 
 const TARGET_DATABASE_URLS = {
-  staging: 'STAGING_DATABASE_URL',
+  local: 'LOCAL_DATABASE_URL',
   production: 'PRODUCTION_DATABASE_URL',
 } as const
 
 const targetEnv = process.env.ENV
 const targetUrlName =
-  targetEnv === 'staging' || targetEnv === 'production'
-    ? TARGET_DATABASE_URLS[targetEnv]
-    : undefined
+  targetEnv === 'local' || targetEnv === 'production' ? TARGET_DATABASE_URLS[targetEnv] : undefined
 const connectionString =
   process.env.DATABASE_URL ?? (targetUrlName ? process.env[targetUrlName] : undefined)
 
 if (!targetUrlName) {
-  throw new Error('ENV must be "staging" or "production"')
+  throw new Error('ENV must be "local" or "production"')
 }
 
 if (!connectionString) {

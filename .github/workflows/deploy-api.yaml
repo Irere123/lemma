@@ -4,7 +4,7 @@ permissions:
 on:
   push:
     branches:
-      - staging
+      - main
     paths:
       - apps/api/**
       - packages/**
@@ -12,9 +12,9 @@ on:
 
 jobs:
   deploy:
-    name: Deploy API to Cloudflare Staging
+    name: Deploy API to Cloudflare Production
     runs-on: ubuntu-latest
-    concurrency: cloudflare-api-staging
+    concurrency: cloudflare-api-production
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -22,7 +22,7 @@ jobs:
           bun-version: 1.2.2
       - run: bun install --frozen-lockfile
       - run: bun run --cwd apps/api typecheck
-      - run: bun run --cwd apps/api deploy:staging
+      - run: bun run --cwd apps/api deploy:production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
