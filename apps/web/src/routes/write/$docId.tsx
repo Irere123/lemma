@@ -6,6 +6,7 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import AdvancedEditor, { type WriterEditorUpdate } from '@/components/editor'
 import { BackNavigationButton } from '@/components/navigation/back-navigation-button'
+import { Button } from '@/components/ui/button'
 import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
 import { getSession } from '@/lib/auth.server'
 import { type CustomBlockToken, extractCustomBlocksFromMarkdown } from '@/lib/custom-blocks'
@@ -37,6 +38,7 @@ type DraftState = {
   customBlocks: CustomBlockToken[]
   markdown: string
   publishedDate: Date | null
+  status: 'DRAFT' | 'PUBLISHED'
   subtitle: string
   title: string
 }
@@ -69,6 +71,7 @@ function RouteComponent() {
   const [subtitle, setSubtitle] = useState('')
   const [bannerImage, setBannerImage] = useState<string | null>(null)
   const [publishedDate, setPublishedDate] = useState<Date | null>(null)
+  const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT')
   const [isBannerUploading, setIsBannerUploading] = useState(false)
   const [saveStatus, setSaveStatus] = useState('Saved')
 
@@ -79,6 +82,7 @@ function RouteComponent() {
     bannerImage: null,
     markdown: '',
     publishedDate: null,
+    status: 'DRAFT',
     customBlocks: [],
   })
 
@@ -95,6 +99,7 @@ function RouteComponent() {
         bannerImage: draftRef.current.bannerImage,
         markdown: draftRef.current.markdown,
         publishedDate: draftRef.current.publishedDate,
+        status: draftRef.current.status,
         ...patch,
       }
 
@@ -191,6 +196,7 @@ function RouteComponent() {
     const nextSubtitle = document.subtitle ?? ''
     const nextBannerImage = document.bannerImage ?? null
     const nextPublishedDate = normalizeDateValue(document.publishedDate)
+    const nextStatus = document.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
     const nextMarkdown =
       typeof document.markdown === 'string' ? document.markdown : draftRef.current.markdown
 
@@ -198,6 +204,7 @@ function RouteComponent() {
     setSubtitle(nextSubtitle)
     setBannerImage(nextBannerImage)
     setPublishedDate(nextPublishedDate)
+    setStatus(nextStatus)
     setSaveStatus('Saved')
 
     draftRef.current = {
@@ -205,6 +212,7 @@ function RouteComponent() {
       subtitle: nextSubtitle,
       bannerImage: nextBannerImage,
       publishedDate: nextPublishedDate,
+      status: nextStatus,
       markdown: nextMarkdown,
       customBlocks: extractCustomBlocksFromMarkdown(nextMarkdown),
     }
@@ -315,6 +323,49 @@ function RouteComponent() {
     }
   }, [persistDocumentNow])
 
+  const handleStatusChange = useCallback(
+    async (nextStatus: 'DRAFT' | 'PUBLISHED') => {
+      const previousStatus = draftRef.current.status
+      const previousPublishedDate = draftRef.current.publishedDate
+      const nextPublishedDate =
+        nextStatus === 'PUBLISHED'
+          ? (draftRef.current.publishedDate ?? new Date())
+          : draftRef.current.publishedDate
+
+      setStatus(nextStatus)
+      setPublishedDate(nextPublishedDate)
+      draftRef.current = {
+        ...draftRef.current,
+        status: nextStatus,
+        publishedDate: nextPublishedDate,
+      }
+
+      const didPersist = await persistDocumentNow({
+        status: nextStatus,
+        publishedDate: nextPublishedDate,
+      })
+
+      if (!didPersist) {
+        setStatus(previousStatus)
+        setPublishedDate(previousPublishedDate)
+        draftRef.current = {
+          ...draftRef.current,
+          status: previousStatus,
+          publishedDate: previousPublishedDate,
+        }
+        return
+      }
+
+      if (nextStatus === 'PUBLISHED') {
+        setSaveStatus('Published')
+        return
+      }
+
+      setSaveStatus('Unpublished')
+    },
+    [persistDocumentNow]
+  )
+
   if (isLoading && !document) {
     return (
       <WriteRoomShell>
@@ -342,7 +393,13 @@ function RouteComponent() {
   const editorInitialContent = typeof document.markdown === 'string' ? document.markdown : ''
 
   return (
-    <WriteRoomShell>
+    <WriteRoomShell
+      isStatusUpdating={isUpsertLoading}
+      status={status}
+      onStatusChange={(value) => {
+        void handleStatusChange(value)
+      }}
+    >
       <AdvancedEditor
         key={editorKey}
         className='pt-4'
@@ -392,18 +449,35 @@ function RouteComponent() {
   )
 }
 
-function WriteRoomShell({ children }: { children: ReactNode }) {
+function WriteRoomShell({
+  children,
+  isStatusUpdating = false,
+  onStatusChange,
+  status,
+}: {
+  children: ReactNode
+  isStatusUpdating?: boolean
+  onStatusChange?: (value: 'DRAFT' | 'PUBLISHED') => void
+  status?: 'DRAFT' | 'PUBLISHED'
+}) {
+  const isPublished = status === 'PUBLISHED'
+
   return (
     <div className='min-h-screen w-full bg-background pb-20'>
       <header className='sticky top-0 z-40 border-border/70 border-b bg-background/95 backdrop-blur'>
         <div className='mx-auto flex w-full max-w-[900px] items-center justify-between px-4 py-3 md:px-6'>
           <BackNavigationButton label='Back' />
-          <Link
-            to='/app'
-            className='text-muted-foreground text-sm transition-colors hover:text-foreground'
-          >
-            Library
-          </Link>
+          {status ? (
+            <Button
+              type='button'
+              size='sm'
+              variant={isPublished ? 'outline' : 'default'}
+              onClick={() => onStatusChange?.(isPublished ? 'DRAFT' : 'PUBLISHED')}
+              disabled={isStatusUpdating}
+            >
+              {isPublished ? 'Unpublish' : 'Publish'}
+            </Button>
+          ) : null}
         </div>
       </header>
       {children}
