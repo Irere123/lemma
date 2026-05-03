@@ -1,16 +1,16 @@
 import { createRoute, z } from '@hono/zod-openapi'
 
+import { getUserDocuments, updateDocumentBannerImage, upsertDocument } from '@api/db/queries'
 import { createRouter } from '@api/lib/utils'
+import { validateResponse } from '@api/lib/validate-response'
+import { withRequiredScope } from '@api/rest/middleware'
 import {
   documentsFilters,
   documentsResponseSchema,
+  updateBannerImageSchema,
   upsertDocumentResponseSchema,
   upsertDocumentSchema,
-  updateBannerImageSchema,
 } from '@api/schemas'
-import { withRequiredScope } from '@api/rest/middleware'
-import { getUserDocuments, upsertDocument, updateDocumentBannerImage } from '@api/db/queries'
-import { validateResponse } from '@api/lib/validate-response'
 
 const documentsRouter = createRouter()
 
