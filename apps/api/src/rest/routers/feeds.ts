@@ -42,7 +42,7 @@ feedsRouter.openapi(
   async (c) => {
     const db = c.get('db')
     const query = c.req.valid('query')
-    const limit = query.limit ? parseInt(query.limit, 10) : 20
+    const limit = query.limit ? Number.parseInt(query.limit, 10) : 20
 
     // Get admin user's articles for now (can be extended for multi-writer)
     const writerId = query.writerId || env.ADMIN_USER_ID
@@ -93,7 +93,7 @@ feedsRouter.openapi(
   async (c) => {
     const db = c.get('db')
     const query = c.req.valid('query')
-    const limit = query.limit ? parseInt(query.limit, 10) : 20
+    const limit = query.limit ? Number.parseInt(query.limit, 10) : 20
     const writerId = query.writerId || env.ADMIN_USER_ID
 
     const [articles, writerSettings] = await Promise.all([
@@ -145,7 +145,7 @@ feedsRouter.openapi(
     const db = c.get('db')
     const { categoryId } = c.req.valid('param')
     const query = c.req.valid('query')
-    const limit = query.limit ? parseInt(query.limit, 10) : 20
+    const limit = query.limit ? Number.parseInt(query.limit, 10) : 20
 
     const articles = await getDocumentsByCategory(db, categoryId, {
       limit,
@@ -208,7 +208,7 @@ feedsRouter.openapi(
   async (c) => {
     const db = c.get('db')
     const query = c.req.valid('query')
-    const limit = query.limit ? parseInt(query.limit, 10) : 20
+    const limit = query.limit ? Number.parseInt(query.limit, 10) : 20
     const writerId = query.writerId || env.ADMIN_USER_ID
 
     const [articles, writerSettings] = await Promise.all([

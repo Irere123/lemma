@@ -19,6 +19,7 @@ export const createAuth = () => {
       provider: 'pg',
       schema,
     }),
+    secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [...env.ALLOWED_API_ORIGINS.split(',')],
     advanced: {
       cookiePrefix: 'lemma',
