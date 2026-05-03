@@ -40,7 +40,10 @@ export const createCampaign = async (db: DB, data: CreateCampaignData): Promise<
       title: data.title,
       slug: data.slug,
       userId: data.userId,
+      documentId: data.documentId,
       content: data.content,
+      scheduledAt: data.scheduledAt,
+      status: data.status ?? 'DRAFT',
     })
     .returning()
 
@@ -58,7 +61,10 @@ export const updateCampaign = async (
   const updateValues: any = {}
   if (data.title) updateValues.title = data.title
   if (data.content) updateValues.content = data.content
-  if (data.sentAt) updateValues.sentAt = data.sentAt
+  if (Object.hasOwn(data, 'scheduledAt')) updateValues.scheduledAt = data.scheduledAt ?? null
+  if (Object.hasOwn(data, 'status')) updateValues.status = data.status
+  if (Object.hasOwn(data, 'sentAt')) updateValues.sentAt = data.sentAt ?? null
+  updateValues.updatedAt = new Date()
 
   const [campaign] = await db
     .update(campaigns)
@@ -94,6 +100,19 @@ export const getCampaignsByUser = async (
 
 export const deleteCampaign = async (db: DB, id: string): Promise<void> => {
   await db.delete(campaigns).where(eq(campaigns.id, id))
+}
+
+export const getDueScheduledCampaigns = async (
+  db: DB,
+  now: Date = new Date(),
+  limit = 50
+): Promise<Campaign[]> => {
+  return db
+    .select()
+    .from(campaigns)
+    .where(and(eq(campaigns.status, 'SCHEDULED'), lte(campaigns.scheduledAt, now)))
+    .orderBy(campaigns.scheduledAt)
+    .limit(limit)
 }
 
 // Campaign Links

@@ -8,5 +8,5 @@ export * from './queues'
 // Job producers (functions to add jobs to queues)
 export * from './producers'
 
-// Workers
-export * from './workers'
+export * from './consumer'
+export * from './scheduler'

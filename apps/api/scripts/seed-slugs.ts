@@ -9,11 +9,25 @@ import { documents } from '../src/db/schema'
 
 config()
 
-const isProd = process.env.NODE_ENV === 'production'
-const connectionString = isProd ? process.env.PROD_DATABASE_URL : process.env.DATABASE_URL
+const TARGET_DATABASE_URLS = {
+  staging: 'STAGING_DATABASE_URL',
+  production: 'PRODUCTION_DATABASE_URL',
+} as const
+
+const targetEnv = process.env.ENV
+const targetUrlName =
+  targetEnv === 'staging' || targetEnv === 'production'
+    ? TARGET_DATABASE_URLS[targetEnv]
+    : undefined
+const connectionString =
+  process.env.DATABASE_URL ?? (targetUrlName ? process.env[targetUrlName] : undefined)
+
+if (!targetUrlName) {
+  throw new Error('ENV must be "staging" or "production"')
+}
 
 if (!connectionString) {
-  throw new Error(`${isProd ? 'PROD_DATABASE_URL' : 'DATABASE_URL'} is not set`)
+  throw new Error(`DATABASE_URL or ${targetUrlName} is not set`)
 }
 
 async function ensureUniqueSlug(db: ReturnType<typeof drizzle>, base: string) {

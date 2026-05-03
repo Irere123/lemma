@@ -1,0 +1,172 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lemma-api",
+  "main": "./src/cf-worker.ts",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat_v2"],
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "staging": {
+      "name": "lemma-api-staging",
+      "triggers": {
+        "crons": ["*/5 * * * *"]
+      },
+      "routes": [
+        {
+          "pattern": "sapi.irere.dev",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "ENV": "staging",
+        "ALLOWED_API_ORIGINS": "https://staging.irere.dev",
+        "BASE_URL": "https://sapi.irere.dev",
+        "FRONTEND_URL": "https://staging.irere.dev",
+        "BETTER_AUTH_URL": "https://sapi.irere.dev",
+        "ADMIN_USER_ID": "platform_user_id",
+        "CLOUDFLARE_ACCOUNT_ID": "00000000000000000000000000000000",
+        "R2_BUCKET_URL": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/lemma-staging-assets",
+        "R2_STORAGE_BASE_URL": "https://static-staging.irere.dev",
+        "RESEND_DOMAIN": "irere.dev"
+      },
+      "hyperdrive": [
+        {
+          "binding": "DB",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2_BUCKET",
+          "bucket_name": "lemma-staging-assets"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "CACHE",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "queues": {
+        "producers": [
+          { "binding": "EMAIL_QUEUE", "queue": "lemma-staging-email" },
+          { "binding": "NEWSLETTER_QUEUE", "queue": "lemma-staging-newsletter" },
+          { "binding": "ANALYTICS_QUEUE", "queue": "lemma-staging-analytics" },
+          { "binding": "SCHEDULED_QUEUE", "queue": "lemma-staging-scheduled" }
+        ],
+        "consumers": [
+          {
+            "queue": "lemma-staging-email",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-email-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-staging-newsletter",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-newsletter-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-staging-analytics",
+            "max_batch_size": 25,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-analytics-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-staging-scheduled",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-scheduled-dlq",
+            "retry_delay": 60
+          }
+        ]
+      }
+    },
+    "production": {
+      "name": "lemma-api",
+      "triggers": {
+        "crons": ["*/5 * * * *"]
+      },
+      "routes": [
+        {
+          "pattern": "api.irere.dev",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "ENV": "production",
+        "ALLOWED_API_ORIGINS": "https://irere.dev",
+        "BASE_URL": "https://api.irere.dev",
+        "FRONTEND_URL": "https://irere.dev",
+        "BETTER_AUTH_URL": "https://api.irere.dev",
+        "ADMIN_USER_ID": "platform_user_id",
+        "CLOUDFLARE_ACCOUNT_ID": "00000000000000000000000000000000",
+        "R2_BUCKET_URL": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/lemma-production-assets",
+        "R2_STORAGE_BASE_URL": "https://static.irere.dev",
+        "RESEND_DOMAIN": "irere.dev"
+      },
+      "hyperdrive": [
+        {
+          "binding": "DB",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2_BUCKET",
+          "bucket_name": "lemma-production-assets"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "CACHE",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "queues": {
+        "producers": [
+          { "binding": "EMAIL_QUEUE", "queue": "lemma-production-email" },
+          { "binding": "NEWSLETTER_QUEUE", "queue": "lemma-production-newsletter" },
+          { "binding": "ANALYTICS_QUEUE", "queue": "lemma-production-analytics" },
+          { "binding": "SCHEDULED_QUEUE", "queue": "lemma-production-scheduled" }
+        ],
+        "consumers": [
+          {
+            "queue": "lemma-production-email",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-production-email-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-production-newsletter",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-production-newsletter-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-production-analytics",
+            "max_batch_size": 25,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-production-analytics-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-production-scheduled",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-production-scheduled-dlq",
+            "retry_delay": 60
+          }
+        ]
+      }
+    }
+  }
+}

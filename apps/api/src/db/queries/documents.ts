@@ -131,6 +131,19 @@ export const deleteDocument = async (db: DB, documentId: string): Promise<void> 
   await db.delete(documents).where(eq(documents.id, documentId))
 }
 
+export const getDueScheduledDocuments = async (
+  db: DB,
+  now: Date = new Date(),
+  limit = 50
+): Promise<Document[]> => {
+  return db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.status, 'DRAFT'), lt(documents.scheduledDate, now)))
+    .orderBy(documents.scheduledDate)
+    .limit(limit)
+}
+
 type UserDocumentsData = {
   userId: string
   status?: DocumentStatus

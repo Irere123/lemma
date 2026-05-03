@@ -1,4 +1,4 @@
-name: Fly Deploy
+name: Cloudflare API Deploy
 permissions:
   contents: read
 on:
@@ -8,15 +8,21 @@ on:
     paths:
       - apps/api/**
       - packages/**
-      
+      - bun.lock
+
 jobs:
   deploy:
-    name: 🚀 Deploy to Fly Production
+    name: Deploy API to Cloudflare Staging
     runs-on: ubuntu-latest
-    concurrency: fly-production
+    concurrency: cloudflare-api-staging
     steps:
       - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only --dockerfile apps/api/Dockerfile --config apps/api/fly.toml
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd apps/api typecheck
+      - run: bun run --cwd apps/api deploy:staging
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

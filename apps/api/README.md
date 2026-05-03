@@ -1,13 +1,13 @@
-To install dependencies:
+# API
+
+This package deploys as a Cloudflare Worker. The only configured Worker
+environments are `staging` and `production`.
+
+Useful commands:
 
 ```sh
-bun install
+bun run cf-typegen
+bun run typecheck
+bun run deploy:staging
+bun run deploy:production
 ```
-
-To run:
-
-```sh
-bun run dev
-```
-
-open http://localhost:3000

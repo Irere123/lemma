@@ -1,8 +1,8 @@
 import { render } from '@react-email/render'
-import { Job, Worker } from 'bullmq'
 import { inArray } from 'drizzle-orm'
 
 import { createDb } from '@api/db'
+import { getCampaignById, updateCampaign } from '@api/db/queries/campaigns'
 import { getDocumentById } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
@@ -10,8 +10,7 @@ import { subscribers } from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
 import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
-import { enqueueNewsletter } from '../producers'
-import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
+import { enqueueNewsletter, scheduleNewsletter } from '../producers'
 import type {
   NewsletterJobData,
   ProcessNewsletterBatchJob,
@@ -26,39 +25,46 @@ const getNewsletterTemplate = async () => {
   return DynamicDocumentNewsletter
 }
 
-async function processNewsletterJob(job: Job<NewsletterJobData>): Promise<void> {
-  const { db, conn } = createDb(env.DATABASE_URL)
-  const timer = workerLogger.time(`process-newsletter-job-${job.data.type}`, {
-    jobId: job.id,
-    jobType: job.data.type,
+type JobContext = {
+  id?: string
+  attempts?: number
+}
+
+export async function processNewsletterJob(
+  data: NewsletterJobData,
+  context: JobContext = {}
+): Promise<void> {
+  const { db } = createDb()
+  const timer = workerLogger.time(`process-newsletter-job-${data.type}`, {
+    jobId: context.id,
+    jobType: data.type,
   })
 
   try {
-    switch (job.data.type) {
+    switch (data.type) {
       case 'process-newsletter-batch': {
-        await processBatch(job.data, db)
+        await processBatch(data, db)
         break
       }
 
       case 'schedule-newsletter': {
-        await processScheduledNewsletter(job.data, db)
+        await processScheduledNewsletter(data, db)
         break
       }
 
       case 'send-ab-test': {
-        await processABTest(job.data, db)
+        await processABTest(data, db)
         break
       }
     }
   } catch (error) {
     workerLogger.error('Newsletter job failed', error as Error, {
-      jobId: job.id,
-      jobType: job.data.type,
-      attempts: job.attemptsMade,
+      jobId: context.id,
+      jobType: data.type,
+      attempts: context.attempts,
     })
     throw error
   } finally {
-    await conn.end()
     timer()
   }
 }
@@ -154,12 +160,25 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
 
 async function processScheduledNewsletter(data: ScheduleNewsletterJob, db: any): Promise<void> {
   const { campaignId, documentId, writerId, scheduledAt } = data
+  const campaign = await getCampaignById(db, campaignId)
+
+  if (!campaign || campaign.status !== 'SCHEDULED') {
+    workerLogger.info('Scheduled newsletter skipped because campaign is no longer scheduled', {
+      campaignId,
+      status: campaign?.status,
+    })
+    return
+  }
 
   const scheduledDate = new Date(scheduledAt)
   const now = new Date()
 
   // If scheduled time has arrived, trigger the send
   if (scheduledDate <= now) {
+    await updateCampaign(db, {
+      id: campaignId,
+      status: 'SENDING',
+    })
     await enqueueNewsletter({
       campaignId,
       documentId,
@@ -167,9 +186,12 @@ async function processScheduledNewsletter(data: ScheduleNewsletterJob, db: any):
     })
     workerLogger.info('Scheduled newsletter triggered for immediate send', { campaignId })
   } else {
-    // Re-schedule with remaining delay
-    const delay = scheduledDate.getTime() - now.getTime()
-    workerLogger.info('Newsletter rescheduled', { campaignId, scheduledAt, delay })
+    await scheduleNewsletter(data)
+    workerLogger.info('Newsletter rescheduled', {
+      campaignId,
+      scheduledAt,
+      delay: scheduledDate.getTime() - now.getTime(),
+    })
   }
 }
 
@@ -217,37 +239,4 @@ async function processABTest(data: SendABTestJob, db: any): Promise<void> {
   }
 
   workerLogger.info('A/B test started', { campaignId, variantCount: variants.length })
-}
-
-export function createNewsletterWorker() {
-  const worker = new Worker<NewsletterJobData>(QUEUE_NAMES.NEWSLETTER, processNewsletterJob, {
-    connection: getRedisConnection(),
-    concurrency: 3,
-    limiter: {
-      max: 10,
-      duration: 1000, // 10 jobs per second max
-    },
-  })
-
-  worker.on('completed', (job) => {
-    workerLogger.info('Newsletter job completed', {
-      jobId: job.id,
-      jobType: job.data.type,
-      duration: job.processedOn && job.finishedOn ? job.finishedOn - job.processedOn : undefined,
-    })
-  })
-
-  worker.on('failed', (job, err) => {
-    workerLogger.error('Newsletter job failed', err, {
-      jobId: job?.id,
-      jobType: job?.data.type,
-      attempts: job?.attemptsMade,
-    })
-  })
-
-  worker.on('error', (err) => {
-    workerLogger.error('Newsletter worker error', err)
-  })
-
-  return worker
 }

@@ -1,7 +1,6 @@
-import { RedisCache } from './redis-client'
+import { CloudflareCache } from './cloudflare-cache'
 
-// Redis-based cache for users shared across all server instances
-const cache = new RedisCache('user', 30 * 60) // 30 minutes TTL
+const cache = new CloudflareCache('user', 30 * 60)
 
 export const userCache = {
   get: (key: string): Promise<any | undefined> => cache.get(key),

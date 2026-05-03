@@ -2,17 +2,15 @@ import { z } from 'zod'
 
 const EnvSchema = z.object({
   // generic stuff
-  ENV: z.string().default('development'),
-  PORT: z.string().optional().default('4000'),
+  ENV: z.enum(['staging', 'production']),
   DATABASE_URL: z.url(),
-  REDIS_URL: z.url(),
-  ALLOWED_API_ORIGINS: z.string().default('http://localhost:3000'),
+  ALLOWED_API_ORIGINS: z.string(),
   LEMMA_ENCRYPTION_KEY: z.string(),
   ADMIN_USER_ID: z.string(),
 
   // observability (optional)
   SENTRY_DSN: z.string().optional(),
-  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
+  SENTRY_RELEASE: z.string().optional(),
 
   // cloudflare R2 Storage
   CLOUDFLARE_ACCOUNT_ID: z.string(),
@@ -31,9 +29,9 @@ const EnvSchema = z.object({
 
   // better-auth
   BETTER_AUTH_SECRET: z.string(),
-  BETTER_AUTH_URL: z.url().default('http://localhost:4000'),
-  BASE_URL: z.url().default('http://localhost:4000'),
-  FRONTEND_URL: z.url().default('http://localhost:3000'),
+  BETTER_AUTH_URL: z.url(),
+  BASE_URL: z.url(),
+  FRONTEND_URL: z.url(),
 })
 
 export type Environment = z.infer<typeof EnvSchema>
@@ -42,8 +40,7 @@ export function parseEnv(data: any) {
   const { data: env, error, success } = EnvSchema.safeParse(data)
 
   if (!success) {
-    console.error('Invalid environment variables:', error.format())
-    process.exit(1)
+    throw new Error(`Invalid environment variables: ${JSON.stringify(error.format())}`)
   }
 
   return env

@@ -1,11 +1,8 @@
-import * as Sentry from '@sentry/bun'
+import * as Sentry from '@sentry/cloudflare'
 
-import { env } from '@api/env-runtime'
+import { getEnv } from '@api/env-runtime'
 import { isProduction } from '@api/lib/constants'
 
-/**
- * Sentry Configuration
- */
 export interface SentryConfig {
   dsn?: string
   environment: string
@@ -15,144 +12,106 @@ export interface SentryConfig {
   debug: boolean
 }
 
-const defaultConfig: SentryConfig = {
-  dsn: process.env.SENTRY_DSN,
-  environment: env.ENV,
-  release: process.env.SENTRY_RELEASE || `lemma-api@${process.env.npm_package_version || '1.0.0'}`,
-  tracesSampleRate: isProduction ? 0.1 : 1.0, // 10% in production, 100% in dev
-  profilesSampleRate: isProduction ? 0.1 : 1.0,
-  debug: !isProduction,
-}
-
 let isInitialized = false
 
-/**
- * Initialize Sentry for error tracking and performance monitoring
- */
-export function initializeSentry(config: Partial<SentryConfig> = {}): typeof Sentry | null {
-  const mergedConfig = { ...defaultConfig, ...config }
+function defaultConfig(): SentryConfig {
+  const env = getEnv()
+  const production = isProduction()
 
-  // Skip if no DSN is configured
-  if (!mergedConfig.dsn) {
-    console.log('[Sentry] No DSN configured, skipping initialization')
-    return null
+  return {
+    dsn: env.SENTRY_DSN,
+    environment: env.ENV,
+    release: env.SENTRY_RELEASE || 'lemma-api@1.0.0',
+    tracesSampleRate: production ? 0.1 : 1.0,
+    profilesSampleRate: production ? 0.1 : 1.0,
+    debug: !production,
   }
+}
 
-  if (isInitialized) {
-    console.log('[Sentry] Already initialized')
-    return Sentry
-  }
+export function getSentryOptions(config: Partial<SentryConfig> = {}) {
+  const mergedConfig = { ...defaultConfig(), ...config }
 
-  Sentry.init({
+  return {
     dsn: mergedConfig.dsn,
     environment: mergedConfig.environment,
     release: mergedConfig.release,
     debug: mergedConfig.debug,
-
-    // Performance monitoring
     tracesSampleRate: mergedConfig.tracesSampleRate,
-
-    // Integrations
-    integrations: [
-      // Profiling integration for performance insights
-      // nodeProfilingIntegration(),
-      // HTTP integration for automatic request tracing
-      Sentry.httpIntegration({ spans: true }),
-      // Console integration to capture console.error
-      Sentry.consoleIntegration(),
-    ],
-
-    // Filter sensitive data
-    beforeSend(event, hint) {
-      // Remove sensitive headers
+    beforeSend(event: any) {
       if (event.request?.headers) {
-        delete event.request.headers['authorization']
-        delete event.request.headers['cookie']
+        delete event.request.headers.authorization
+        delete event.request.headers.cookie
         delete event.request.headers['x-api-key']
       }
 
-      // Remove sensitive data from breadcrumbs
       if (event.breadcrumbs) {
-        event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => {
-          if (breadcrumb.data?.password) {
-            breadcrumb.data.password = '[FILTERED]'
-          }
-          if (breadcrumb.data?.token) {
-            breadcrumb.data.token = '[FILTERED]'
-          }
+        event.breadcrumbs = event.breadcrumbs.map((breadcrumb: any) => {
+          if (breadcrumb.data?.password) breadcrumb.data.password = '[FILTERED]'
+          if (breadcrumb.data?.token) breadcrumb.data.token = '[FILTERED]'
           return breadcrumb
         })
       }
 
       return event
     },
-
-    // Filter transactions
-    beforeSendTransaction(event) {
-      // Skip health check transactions
+    beforeSendTransaction(event: any) {
       if (event.transaction?.includes('/health') || event.transaction?.includes('/ready')) {
         return null
       }
       return event
     },
-
-    // Ignore common non-error exceptions
     ignoreErrors: [
-      // Network errors
       'NetworkError',
       'Network request failed',
       'Failed to fetch',
-      // Cancelled requests
       'AbortError',
       'The operation was aborted',
-      // Known non-critical errors
       'ResizeObserver loop limit exceeded',
     ],
-
-    // Trace propagation targets
     tracePropagationTargets: [
-      'localhost',
-      /^https:\/\/.*\.lemma\.now/,
-      /^https:\/\/api\.lemma\.now/,
+      /^https:\/\/sapi\.irere\.dev/,
+      /^https:\/\/api\.irere\.dev/,
+      /^https:\/\/staging\.irere\.dev/,
+      /^https:\/\/irere\.dev/,
     ],
-  })
+  }
+}
+
+export function initializeSentry(config: Partial<SentryConfig> = {}): typeof Sentry | null {
+  const options = getSentryOptions(config)
+
+  if (!options.dsn) {
+    console.log('[Sentry] No DSN configured, skipping initialization')
+    return null
+  }
 
   isInitialized = true
-  console.log(`[Sentry] Initialized for ${mergedConfig.environment}`)
+  console.log(`[Sentry] Cloudflare SDK configured for ${options.environment}`)
 
   return Sentry
 }
 
-/**
- * Check if Sentry is initialized
- */
 export function isSentryInitialized(): boolean {
-  return isInitialized
+  return isInitialized || Sentry.isInitialized()
 }
 
-/**
- * Capture an exception with Sentry
- */
 export function captureException(
   error: Error | unknown,
   context?: Record<string, unknown>
 ): string | undefined {
-  if (!isInitialized) return undefined
+  if (!isSentryInitialized()) return undefined
 
   return Sentry.captureException(error, {
     extra: context,
   })
 }
 
-/**
- * Capture a message with Sentry
- */
 export function captureMessage(
   message: string,
-  level: Sentry.SeverityLevel = 'info',
+  level: any = 'info',
   context?: Record<string, unknown>
 ): string | undefined {
-  if (!isInitialized) return undefined
+  if (!isSentryInitialized()) return undefined
 
   return Sentry.captureMessage(message, {
     level,
@@ -160,36 +119,27 @@ export function captureMessage(
   })
 }
 
-/**
- * Set user context for Sentry
- */
 export function setUser(user: { id: string; email?: string; username?: string } | null): void {
-  if (!isInitialized) return
+  if (!isSentryInitialized()) return
 
   Sentry.setUser(user)
 }
 
-/**
- * Set custom tags for the current scope
- */
 export function setTags(tags: Record<string, string>): void {
-  if (!isInitialized) return
+  if (!isSentryInitialized()) return
 
   Object.entries(tags).forEach(([key, value]) => {
     Sentry.setTag(key, value)
   })
 }
 
-/**
- * Add breadcrumb for debugging
- */
 export function addBreadcrumb(breadcrumb: {
   category?: string
   message: string
-  level?: Sentry.SeverityLevel
+  level?: any
   data?: Record<string, unknown>
 }): void {
-  if (!isInitialized) return
+  if (!isSentryInitialized()) return
 
   Sentry.addBreadcrumb({
     category: breadcrumb.category || 'custom',
@@ -200,14 +150,11 @@ export function addBreadcrumb(breadcrumb: {
   })
 }
 
-/**
- * Create a new Sentry transaction for custom performance monitoring
- */
 export function startTransaction(
   name: string,
   op: string
 ): ReturnType<typeof Sentry.startInactiveSpan> | undefined {
-  if (!isInitialized) return undefined
+  if (!isSentryInitialized()) return undefined
 
   return Sentry.startInactiveSpan({
     name,
@@ -215,9 +162,6 @@ export function startTransaction(
   })
 }
 
-/**
- * Wrap a function with Sentry error handling
- */
 export function withSentry<T extends (...args: unknown[]) => unknown>(
   fn: T,
   options?: { name?: string; op?: string }
@@ -240,13 +184,9 @@ export function withSentry<T extends (...args: unknown[]) => unknown>(
   }) as T
 }
 
-/**
- * Flush Sentry events (useful before process exit)
- */
 export async function flushSentry(timeout = 2000): Promise<boolean> {
-  if (!isInitialized) return true
+  if (!isSentryInitialized()) return true
   return Sentry.flush(timeout)
 }
 
-// Re-export Sentry for direct access when needed
 export { Sentry }

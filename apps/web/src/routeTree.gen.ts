@@ -297,8 +297,9 @@ const AppSettingsRouteRouteChildren: AppSettingsRouteRouteChildren = {
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 
-const AppSettingsRouteRouteWithChildren =
-  AppSettingsRouteRoute._addFileChildren(AppSettingsRouteRouteChildren)
+const AppSettingsRouteRouteWithChildren = AppSettingsRouteRoute._addFileChildren(
+  AppSettingsRouteRouteChildren
+)
 
 interface AppRouteRouteChildren {
   AppSettingsRouteRoute: typeof AppSettingsRouteRouteWithChildren
@@ -314,9 +315,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDocumentsRoute: AppDocumentsRoute,
 }
 
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
-  AppRouteRouteChildren,
-)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(AppRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,

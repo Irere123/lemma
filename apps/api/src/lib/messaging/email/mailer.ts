@@ -59,25 +59,34 @@ interface ProcessedEmailData {
   replyTo?: string
 }
 
-const resendApiKey = env.RESEND_API_KEY
+let resend: Resend | null | undefined
 
-const resend =
-  resendApiKey && resendApiKey !== 'placeholder' && resendApiKey.trim() !== ''
-    ? new Resend(resendApiKey)
-    : null
+const getResend = () => {
+  if (resend !== undefined) return resend
+
+  const resendApiKey = env.RESEND_API_KEY
+  resend =
+    resendApiKey && resendApiKey !== 'placeholder' && resendApiKey.trim() !== ''
+      ? new Resend(resendApiKey)
+      : null
+
+  return resend
+}
 
 /**
  * Check if any email service is configured and available
  */
 export function hasEmailService(): boolean {
-  return !!resend
+  return !!getResend()
 }
 
 export async function sendEmail(options: EmailOptions): Promise<SendEmailResult> {
   try {
     const processedData = await processEmailData(options)
 
-    if (resend) {
+    const resendClient = getResend()
+
+    if (resendClient) {
       try {
         return await sendWithResend(processedData)
       } catch (error) {
@@ -148,7 +157,8 @@ async function processEmailData(options: EmailOptions): Promise<ProcessedEmailDa
 }
 
 async function sendWithResend(data: ProcessedEmailData): Promise<SendEmailResult> {
-  if (!resend) throw new Error('Resend not configured')
+  const resendClient = getResend()
+  if (!resendClient) throw new Error('Resend not configured')
 
   const fromAddress = data.senderEmail
 
@@ -171,7 +181,7 @@ async function sendWithResend(data: ProcessedEmailData): Promise<SendEmailResult
     }))
   }
 
-  const { data: responseData, error } = await resend.emails.send(emailData)
+  const { data: responseData, error } = await resendClient.emails.send(emailData)
 
   if (error) {
     throw new Error(error.message || 'Failed to send email via Resend')
@@ -188,7 +198,9 @@ export async function sendBatchEmails(options: BatchEmailOptions): Promise<Batch
   try {
     const results: SendEmailResult[] = []
 
-    if (resend) {
+    const resendClient = getResend()
+
+    if (resendClient) {
       try {
         return await sendBatchWithResend(options.emails)
       } catch (error) {
@@ -230,7 +242,8 @@ export async function sendBatchEmails(options: BatchEmailOptions): Promise<Batch
 }
 
 async function sendBatchWithResend(emails: EmailOptions[]): Promise<BatchSendEmailResult> {
-  if (!resend) throw new Error('Resend not configured')
+  const resendClient = getResend()
+  if (!resendClient) throw new Error('Resend not configured')
 
   const results: SendEmailResult[] = []
   const batchEmails: any[] = []
@@ -259,7 +272,7 @@ async function sendBatchWithResend(emails: EmailOptions[]): Promise<BatchSendEma
   }
 
   try {
-    const response = await resend.batch.send(batchEmails as any)
+    const response = await resendClient.batch.send(batchEmails as any)
 
     if (response.error) {
       throw new Error(response.error.message || 'Resend batch API error')

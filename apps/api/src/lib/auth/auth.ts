@@ -21,10 +21,10 @@ export const createAuth = () => {
     advanced: {
       cookiePrefix: 'lemma',
       crossSubDomainCookies: {
-        enabled: env.ENV !== 'development',
+        enabled: true,
         domain: '.irere.dev',
       },
-      useSecureCookies: env.ENV !== 'development',
+      useSecureCookies: true,
     },
     session: {
       cookieCache: {

@@ -53,7 +53,7 @@ function createErrorMaskingPlugin() {
     onExecute() {
       return {
         onExecuteDone({ result, setResult }: { result: any; setResult: (r: any) => void }) {
-          if (!isProduction) return
+          if (!isProduction()) return
 
           if ('errors' in result && result.errors) {
             const maskedErrors = result.errors.map((error: any) => {
@@ -131,7 +131,7 @@ export function getSecurityPlugins() {
   ]
 
   // Production-only plugins
-  if (isProduction) {
+  if (isProduction()) {
     plugins.push(disableIntrospection)
     plugins.push(createErrorMaskingPlugin())
   }

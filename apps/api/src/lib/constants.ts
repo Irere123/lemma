@@ -1,3 +1,10 @@
-export const isProduction = process.env.NODE_ENV === 'production'
+import { getEnv } from '@api/env-runtime'
 
-export const BASE_URL = isProduction ? 'https://api.irere.dev' : 'http://localhost:4000'
+export function isProduction() {
+  const env = getEnv()
+  return env.ENV === 'production'
+}
+
+export function getBaseUrl() {
+  return getEnv().BASE_URL
+}

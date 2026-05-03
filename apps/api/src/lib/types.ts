@@ -1,4 +1,4 @@
-import type { Environment } from '@api/env'
+import type { CloudflareBindings } from '@api/env-runtime'
 import { type Scope } from '@lemma/common/scopes'
 
 import type { DB } from '@api/db'
@@ -12,4 +12,4 @@ export type HonoVariables = {
   db: DB
 }
 
-export type AppBindings = { Variables: HonoVariables; Bindings: Environment }
+export type AppBindings = { Variables: HonoVariables; Bindings: CloudflareBindings }

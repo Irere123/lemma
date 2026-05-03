@@ -1,8 +1,7 @@
 import type { ApiKey } from '@api/db/queries'
-import { RedisCache } from './redis-client'
+import { CloudflareCache } from './cloudflare-cache'
 
-// Redis-based cache for API keys shared across all server instances
-const cache = new RedisCache('api-key', 30 * 60) // 30 minutes TTL
+const cache = new CloudflareCache('api-key', 30 * 60)
 
 export const apiKeyCache = {
   get: (key: string): Promise<ApiKey | undefined> => cache.get<ApiKey>(key),

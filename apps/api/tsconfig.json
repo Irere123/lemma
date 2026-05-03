@@ -18,12 +18,11 @@
     "noPropertyAccessFromIndexSignature": false,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "baseUrl": ".",
     "paths": {
-      "@api/*": ["src/*"]
+      "@api/*": ["./src/*"]
     },
     "types": ["node"]
   },
   "exclude": ["node_modules"],
-  "include": ["src/**/*.ts", "drizzle.config.ts"]
+  "include": ["src/**/*.ts", "drizzle.config.ts", "worker-configuration.d.ts"]
 }

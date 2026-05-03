@@ -1,9 +1,13 @@
+import { flushSentry, initializeSentry } from './sentry'
+import { logger } from './logger'
+
 // Sentry integration
 export {
   addBreadcrumb,
   captureException,
   captureMessage,
   flushSentry,
+  getSentryOptions,
   initializeSentry,
   isSentryInitialized,
   Sentry,
@@ -23,35 +27,16 @@ export {
   type LogLevel,
 } from './logger'
 
-/**
- * Initialize all observability services
- * Call this at the very start of the application
- */
 export function initializeObservability(options?: {
   sentry?: Parameters<typeof import('./sentry').initializeSentry>[0]
 }): void {
-  const { initializeSentry } = require('./sentry')
-  const { logger } = require('./logger')
-
   logger.info('Initializing observability services')
-
-  // Initialize Sentry
   initializeSentry(options?.sentry)
-
   logger.info('Observability services initialized')
 }
 
-/**
- * Shutdown all observability services gracefully
- */
 export async function shutdownObservability(): Promise<void> {
-  const { flushSentry } = require('./sentry')
-  const { logger } = require('./logger')
-
   logger.info('Shutting down observability services')
-
-  // Flush Sentry events
   await flushSentry()
-
   logger.info('Observability services shut down')
 }

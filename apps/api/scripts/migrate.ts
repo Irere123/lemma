@@ -6,10 +6,25 @@ import postgres from 'postgres'
 
 config()
 
-const connectionString = process.env.DATABASE_URL ?? process.env.PROD_DATABASE_URL
+const TARGET_DATABASE_URLS = {
+  staging: 'STAGING_DATABASE_URL',
+  production: 'PRODUCTION_DATABASE_URL',
+} as const
+
+const targetEnv = process.env.ENV
+const targetUrlName =
+  targetEnv === 'staging' || targetEnv === 'production'
+    ? TARGET_DATABASE_URLS[targetEnv]
+    : undefined
+const connectionString =
+  process.env.DATABASE_URL ?? (targetUrlName ? process.env[targetUrlName] : undefined)
+
+if (!targetUrlName) {
+  throw new Error('ENV must be "staging" or "production"')
+}
 
 if (!connectionString) {
-  throw new Error('DATABASE_URL (or fallback PROD_DATABASE_URL) is not set')
+  throw new Error(`DATABASE_URL or ${targetUrlName} is not set`)
 }
 
 console.log('Connecting to:', connectionString.replace(/:[^:@]+@/, ':****@')) // Log sanitized connection string

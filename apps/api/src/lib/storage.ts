@@ -1,6 +1,6 @@
 import { AwsClient } from 'aws4fetch'
 
-import { env } from '@api/env-runtime'
+import { env, getRuntimeBindings } from '@api/env-runtime'
 import { fetchWithTimeout } from '@api/utils'
 
 interface imageOptions {
@@ -26,10 +26,8 @@ type SignedUrlResult = {
 }
 
 class StorageClient {
-  private client: AwsClient
-
-  constructor() {
-    this.client = new AwsClient({
+  private createAwsClient() {
+    return new AwsClient({
       accessKeyId: env.R2_ACCESS_KEY_ID || '',
       secretAccessKey: env.R2_SECRET_ACCESS_KEY || '',
       service: 's3',
@@ -66,11 +64,22 @@ class StorageClient {
     }
 
     try {
-      await this.client.fetch(`${env.R2_BUCKET_URL}/${key}`, {
-        method: 'PUT',
-        headers,
-        body: uploadBody,
-      })
+      const bucket = getRuntimeBindings().R2_BUCKET
+
+      if (bucket) {
+        await bucket.put(key, uploadBody, {
+          httpMetadata: {
+            contentType: opts?.contentType,
+            contentLength,
+          },
+        })
+      } else {
+        await this.createAwsClient().fetch(`${env.R2_BUCKET_URL}/${key}`, {
+          method: 'PUT',
+          headers,
+          body: uploadBody,
+        })
+      }
 
       return {
         url: `${env.R2_STORAGE_BASE_URL}/${key}`,
@@ -81,9 +90,15 @@ class StorageClient {
   }
 
   async delete(key: string) {
-    await this.client.fetch(`${env.R2_BUCKET_URL}/${key}`, {
-      method: 'DELETE',
-    })
+    const bucket = getRuntimeBindings().R2_BUCKET
+
+    if (bucket) {
+      await bucket.delete(key)
+    } else {
+      await this.createAwsClient().fetch(`${env.R2_BUCKET_URL}/${key}`, {
+        method: 'DELETE',
+      })
+    }
 
     return { success: true }
   }
@@ -101,7 +116,7 @@ class StorageClient {
     url.searchParams.set('X-Amz-Expires', String(ttl))
 
     try {
-      const response = await this.client.sign(url, {
+      const response = await this.createAwsClient().sign(url, {
         method,
         headers,
         aws: {

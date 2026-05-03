@@ -3,17 +3,15 @@
   "main": "src/trpc/routers/_app.ts",
   "types": "src/trpc/routers/_app.ts",
   "scripts": {
-    "dev": "bun run --parallel api:dev worker:dev",
-    "api:dev": "bun run --watch src/index.ts",
-    "worker": "bun run src/worker.ts",
-    "start": "bun run src/index.ts",
-    "worker:dev": "bun --watch run src/worker.ts",
+    "cf-typegen": "cross-env CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false wrangler types --env staging",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
     "generate-migration": "drizzle-kit generate",
     "typecheck": "tsc --noEmit",
-    "migrate:local": "bun run ./scripts/migrate.ts",
-    "migrate:prod": "cross-env NODE_ENV=production bun run ./scripts/migrate.ts",
-    "seed-slugs:local": "bun run ./scripts/seed-slugs.ts",
-    "seed-slugs:prod": "cross-env NODE_ENV=production bun run ./scripts/seed-slugs.ts"
+    "migrate:staging": "cross-env ENV=staging bun run ./scripts/migrate.ts",
+    "migrate:production": "cross-env ENV=production bun run ./scripts/migrate.ts",
+    "seed-slugs:staging": "cross-env ENV=staging bun run ./scripts/seed-slugs.ts",
+    "seed-slugs:production": "cross-env ENV=production bun run ./scripts/seed-slugs.ts"
   },
   "dependencies": {
     "@escape.tech/graphql-armor-cost-limit": "2.4.3",
@@ -26,18 +24,16 @@
     "@lemma/email": "workspace:*",
     "@react-email/render": "^1.1.3",
     "@scalar/hono-api-reference": "^0.9.16",
-    "@sentry/bun": "10.32.1",
+    "@sentry/cloudflare": "^10.32.1",
     "@sindresorhus/slugify": "3.0.0",
     "@trpc/server": "^11.4.3",
     "aws4fetch": "^1.0.20",
     "better-auth": "^1.2.12",
-    "bullmq": "^5.34.8",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.2",
     "graphql": "16.12.0",
     "graphql-yoga": "5.18.0",
     "hono": "^4.8.4",
-    "ioredis": "^5.4.2",
     "jimp": "^1.6.0",
     "ksuid": "^3.0.0",
     "neverthrow": "^8.2.0",
@@ -45,14 +41,13 @@
     "resend": "^4.6.0",
     "slugify": "^1.6.6",
     "superjson": "^2.2.2",
-    "winston": "3.19.0",
     "zod": "^4.1.5"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@types/node": "^24.1.0",
     "cross-env": "^10.0.0",
     "drizzle-kit": "^0.31.4",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "wrangler": "^4.26.0"
   }
 }

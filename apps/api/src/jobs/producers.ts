@@ -1,9 +1,22 @@
+import type { QueueBinding } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
+import { generateId } from '@api/lib/utils'
+import {
+  isDelayWithinQueueLimit,
+  MAX_QUEUE_DELAY_SECONDS,
+  QUEUE_NAMES,
+  toDelaySeconds,
+} from './queue-config'
 import { getAnalyticsQueue, getEmailQueue, getNewsletterQueue, getScheduledQueue } from './queues'
 import type {
   AggregateCampaignStatsJob,
+  AnalyticsJobData,
+  EmailJobData,
+  JobData,
+  NewsletterJobData,
   ProcessNewsletterBatchJob,
   PublishScheduledDocumentJob,
+  ScheduledJobData,
   ScheduleNewsletterJob,
   SendABTestJob,
   SendBatchEmailJob,
@@ -18,19 +31,72 @@ import type {
 
 const jobLogger = logger.child({ component: 'jobs', subcomponent: 'producers' })
 
-// Email Jobs
+export type QueuedJob<T extends JobData = JobData> = {
+  id: string
+  name: string
+  data: T
+  queueName: string
+}
+
+type EnqueueOptions = {
+  priority?: number
+  delay?: number
+  jobId?: string
+  skipInline?: boolean
+}
+
+async function processInline(data: JobData, delay?: number) {
+  if (delay && delay > 0) {
+    setTimeout(
+      () => {
+        import('./consumer')
+          .then(({ processJobData }) => processJobData(data))
+          .catch((error) => jobLogger.error('Inline delayed job failed', error as Error))
+      },
+      Math.min(delay, 2_147_483_647)
+    )
+    return
+  }
+
+  const { processJobData } = await import('./consumer')
+  await processJobData(data)
+}
+
+async function enqueueJob<T extends JobData>(
+  queue: QueueBinding<T | JobData> | null,
+  queueName: string,
+  name: string,
+  data: T,
+  options?: EnqueueOptions
+): Promise<QueuedJob<T>> {
+  const id = options?.jobId ?? generateId('job')
+  const delaySeconds = toDelaySeconds(options?.delay)
+
+  if (queue) {
+    await queue.send(data, delaySeconds ? { delaySeconds } : undefined)
+  } else if (!options?.skipInline) {
+    await processInline(data, options?.delay)
+  } else {
+    jobLogger.info('Job persisted in database for scheduled worker pickup', {
+      queueName,
+      name,
+      delayMs: options?.delay,
+    })
+  }
+
+  return { id, name, data, queueName }
+}
+
 export async function enqueueSingleEmail(
   data: Omit<SendSingleEmailJob, 'type'>,
   options?: { priority?: number; delay?: number }
 ) {
-  const queue = getEmailQueue()
-  const job = await queue.add(
+  const job = await enqueueJob<EmailJobData>(
+    getEmailQueue(),
+    QUEUE_NAMES.EMAIL,
     'send-single-email',
     { type: 'send-single-email', ...data },
-    {
-      priority: options?.priority ?? 5,
-      delay: options?.delay,
-    }
+    options
   )
 
   jobLogger.info('Single email job enqueued', { jobId: job.id, to: data.to })
@@ -42,16 +108,15 @@ export async function enqueueBatchEmail(
   data: Omit<SendBatchEmailJob, 'type'>,
   options?: { priority?: number }
 ) {
-  const queue = getEmailQueue()
-  const job = await queue.add(
+  const job = await enqueueJob<EmailJobData>(
+    getEmailQueue(),
+    QUEUE_NAMES.EMAIL,
     'send-batch-email',
     { type: 'send-batch-email', ...data },
-    {
-      priority: options?.priority ?? 3,
-    }
+    options
   )
 
-  jobLogger.info('Batch email job enqueued', { jobId: job.id, emailCount: data.emails.length })
+  jobLogger.info('Batch emails job enqueued', { jobId: job.id, emailCount: data.emails.length })
 
   return job
 }
@@ -60,8 +125,9 @@ export async function enqueueWelcomeEmail(
   data: Omit<SendWelcomeEmailJob, 'type'>,
   options?: { delay?: number; priority?: number }
 ) {
-  const queue = getEmailQueue()
-  return queue.add(
+  return enqueueJob<EmailJobData>(
+    getEmailQueue(),
+    QUEUE_NAMES.EMAIL,
     'send-welcome-email',
     { type: 'send-welcome-email', ...data },
     {
@@ -75,8 +141,9 @@ export async function enqueueConfirmationEmail(
   data: Omit<SendConfirmationEmailJob, 'type'>,
   options?: { priority?: number }
 ) {
-  const queue = getEmailQueue()
-  return queue.add(
+  return enqueueJob<EmailJobData>(
+    getEmailQueue(),
+    QUEUE_NAMES.EMAIL,
     'send-confirmation-email',
     { type: 'send-confirmation-email', ...data },
     {
@@ -89,8 +156,9 @@ export async function enqueueNewsletter(
   data: Omit<SendNewsletterJob, 'type'>,
   options?: { priority?: number; delay?: number }
 ) {
-  const queue = getEmailQueue()
-  return queue.add(
+  return enqueueJob<EmailJobData>(
+    getEmailQueue(),
+    QUEUE_NAMES.EMAIL,
     'send-newsletter',
     { type: 'send-newsletter', ...data },
     {
@@ -100,13 +168,13 @@ export async function enqueueNewsletter(
   )
 }
 
-// Newsletter Jobs
 export async function enqueueNewsletterBatch(
   data: Omit<ProcessNewsletterBatchJob, 'type'>,
   options?: { priority?: number }
 ) {
-  const queue = getNewsletterQueue()
-  return queue.add(
+  return enqueueJob<NewsletterJobData>(
+    getNewsletterQueue(),
+    QUEUE_NAMES.NEWSLETTER,
     'process-newsletter-batch',
     { type: 'process-newsletter-batch', ...data },
     {
@@ -119,16 +187,19 @@ export async function scheduleNewsletter(
   data: Omit<ScheduleNewsletterJob, 'type'>,
   options?: { priority?: number }
 ) {
-  const queue = getNewsletterQueue()
   const scheduledDate = new Date(data.scheduledAt)
   const delay = Math.max(0, scheduledDate.getTime() - Date.now())
+  const withinQueueLimit = isDelayWithinQueueLimit(delay)
 
-  return queue.add(
+  return enqueueJob<NewsletterJobData>(
+    getNewsletterQueue(),
+    QUEUE_NAMES.NEWSLETTER,
     'schedule-newsletter',
     { type: 'schedule-newsletter', ...data },
     {
       priority: options?.priority ?? 5,
-      delay,
+      delay: withinQueueLimit ? delay : MAX_QUEUE_DELAY_SECONDS * 1000,
+      skipInline: !withinQueueLimit,
     }
   )
 }
@@ -137,8 +208,9 @@ export async function enqueueABTest(
   data: Omit<SendABTestJob, 'type'>,
   options?: { priority?: number }
 ) {
-  const queue = getNewsletterQueue()
-  return queue.add(
+  return enqueueJob<NewsletterJobData>(
+    getNewsletterQueue(),
+    QUEUE_NAMES.NEWSLETTER,
     'send-ab-test',
     { type: 'send-ab-test', ...data },
     {
@@ -147,10 +219,13 @@ export async function enqueueABTest(
   )
 }
 
-// Analytics Jobs
 export async function trackClick(data: Omit<TrackClickJob, 'type'>) {
-  const queue = getAnalyticsQueue()
-  const job = await queue.add('track-click', { type: 'track-click', ...data })
+  const job = await enqueueJob<AnalyticsJobData>(
+    getAnalyticsQueue(),
+    QUEUE_NAMES.ANALYTICS,
+    'track-click',
+    { type: 'track-click', ...data }
+  )
 
   jobLogger.debug('Click tracking job enqueued', {
     jobId: job.id,
@@ -161,29 +236,37 @@ export async function trackClick(data: Omit<TrackClickJob, 'type'>) {
 }
 
 export async function trackOpen(data: Omit<TrackOpenJob, 'type'>) {
-  const queue = getAnalyticsQueue()
-  return queue.add('track-open', { type: 'track-open', ...data })
+  return enqueueJob<AnalyticsJobData>(getAnalyticsQueue(), QUEUE_NAMES.ANALYTICS, 'track-open', {
+    type: 'track-open',
+    ...data,
+  })
 }
 
 export async function aggregateCampaignStats(data: Omit<AggregateCampaignStatsJob, 'type'>) {
-  const queue = getAnalyticsQueue()
-  return queue.add('aggregate-campaign-stats', { type: 'aggregate-campaign-stats', ...data })
+  return enqueueJob<AnalyticsJobData>(
+    getAnalyticsQueue(),
+    QUEUE_NAMES.ANALYTICS,
+    'aggregate-campaign-stats',
+    { type: 'aggregate-campaign-stats', ...data }
+  )
 }
 
-// Scheduled Jobs
 export async function scheduleDocumentPublish(
   data: Omit<PublishScheduledDocumentJob, 'type'>,
   scheduledAt: Date
 ) {
-  const queue = getScheduledQueue()
   const delay = Math.max(0, scheduledAt.getTime() - Date.now())
+  const withinQueueLimit = isDelayWithinQueueLimit(delay)
 
-  return queue.add(
+  return enqueueJob<ScheduledJobData>(
+    getScheduledQueue(),
+    QUEUE_NAMES.SCHEDULED,
     'publish-scheduled-document',
     { type: 'publish-scheduled-document', ...data },
     {
-      delay,
+      delay: withinQueueLimit ? delay : MAX_QUEUE_DELAY_SECONDS * 1000,
       jobId: `publish-${data.documentId}`,
+      skipInline: !withinQueueLimit,
     }
   )
 }
@@ -192,61 +275,25 @@ export async function scheduleNewsletterSend(
   data: Omit<SendScheduledNewsletterJob, 'type'>,
   scheduledAt: Date
 ) {
-  const queue = getScheduledQueue()
   const delay = Math.max(0, scheduledAt.getTime() - Date.now())
+  const withinQueueLimit = isDelayWithinQueueLimit(delay)
 
-  return queue.add(
+  return enqueueJob<ScheduledJobData>(
+    getScheduledQueue(),
+    QUEUE_NAMES.SCHEDULED,
     'send-scheduled-newsletter',
     { type: 'send-scheduled-newsletter', ...data },
     {
-      delay,
+      delay: withinQueueLimit ? delay : MAX_QUEUE_DELAY_SECONDS * 1000,
       jobId: `newsletter-${data.campaignId}`,
+      skipInline: !withinQueueLimit,
     }
   )
 }
 
-// Utility functions
 export async function cancelScheduledJob(jobId: string) {
-  const queue = getScheduledQueue()
-  const job = await queue.getJob(jobId)
-  if (job) {
-    await job.remove()
-    return true
-  }
+  jobLogger.warn('Cloudflare Queues does not support removing an enqueued delayed message', {
+    jobId,
+  })
   return false
-}
-
-export async function getJobStatus(
-  queueName: 'email' | 'newsletter' | 'analytics' | 'scheduled',
-  jobId: string
-) {
-  const queues = {
-    email: getEmailQueue,
-    newsletter: getNewsletterQueue,
-    analytics: getAnalyticsQueue,
-    scheduled: getScheduledQueue,
-  }
-
-  const queue = queues[queueName]()
-  const job = await queue.getJob(jobId)
-
-  if (!job) {
-    jobLogger.warn('Job not found', { queueName, jobId })
-    return null
-  }
-
-  const state = await job.getState()
-
-  jobLogger.debug('Job status retrieved', { queueName, jobId, state })
-
-  return {
-    id: job.id,
-    name: job.name,
-    state,
-    progress: job.progress,
-    attemptsMade: job.attemptsMade,
-    failedReason: job.failedReason,
-    processedOn: job.processedOn,
-    finishedOn: job.finishedOn,
-  }
 }

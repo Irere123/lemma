@@ -1,12 +1,9 @@
 import { createDb } from '@api/db'
 import { clickEvents } from '@api/db/schema'
-import { env } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
 import { generateId } from '@api/lib/utils'
-import { type Job, Worker } from 'bullmq'
 import { eq, sql } from 'drizzle-orm'
 
-import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
   AggregateCampaignStatsJob,
   AnalyticsJobData,
@@ -16,38 +13,45 @@ import type {
 
 const workerLogger = logger.child({ component: 'jobs', subcomponent: 'analytics-worker' })
 
-async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<void> {
-  const { db, conn } = createDb(env.DATABASE_URL)
-  const timer = workerLogger.time(`process-analytics-job-${job.data.type}`, {
-    jobId: job.id,
-    jobType: job.data.type,
+type JobContext = {
+  id?: string
+  attempts?: number
+}
+
+export async function processAnalyticsJob(
+  data: AnalyticsJobData,
+  context: JobContext = {}
+): Promise<void> {
+  const { db } = createDb()
+  const timer = workerLogger.time(`process-analytics-job-${data.type}`, {
+    jobId: context.id,
+    jobType: data.type,
   })
 
   try {
-    switch (job.data.type) {
+    switch (data.type) {
       case 'track-click': {
-        await processClickTracking(job.data, db)
+        await processClickTracking(data, db)
         break
       }
 
       case 'track-open': {
-        await processOpenTracking(job.data, db)
+        await processOpenTracking(data, db)
         break
       }
 
       case 'aggregate-campaign-stats': {
-        await processCampaignAggregation(job.data, db)
+        await processCampaignAggregation(data, db)
         break
       }
     }
   } catch (error) {
     workerLogger.error('Analytics job failed', error as Error, {
-      jobId: job.id,
-      jobType: job.data.type,
+      jobId: context.id,
+      jobType: data.type,
     })
     throw error
   } finally {
-    await conn.end()
     timer()
   }
 }
@@ -89,36 +93,4 @@ async function processCampaignAggregation(data: AggregateCampaignStatsJob, db: a
 
   const count = clickCount[0]?.count || 0
   workerLogger.info('Campaign stats aggregated', { campaignId, clickCount: count })
-}
-
-export function createAnalyticsWorker() {
-  const worker = new Worker<AnalyticsJobData>(QUEUE_NAMES.ANALYTICS, processAnalyticsJob, {
-    connection: getRedisConnection(),
-    concurrency: 10,
-    limiter: {
-      max: 1000,
-      duration: 1000, // High throughput for analytics
-    },
-  })
-
-  worker.on('completed', (job) => {
-    workerLogger.info('Analytics job completed', {
-      jobId: job.id,
-      jobType: job.data.type,
-      duration: job.processedOn && job.finishedOn ? job.finishedOn - job.processedOn : undefined,
-    })
-  })
-
-  worker.on('failed', (job, err) => {
-    workerLogger.error('Analytics job failed', err, {
-      jobId: job?.id,
-      jobType: job?.data.type,
-    })
-  })
-
-  worker.on('error', (err) => {
-    workerLogger.error('Analytics worker error', err)
-  })
-
-  return worker
 }

@@ -1,5 +1,4 @@
 import { render } from '@react-email/render'
-import { Job, Worker } from 'bullmq'
 
 import { createDb } from '@api/db'
 import { getDocumentById } from '@api/db/queries/documents'
@@ -9,7 +8,6 @@ import { env } from '@api/env-runtime'
 import { sendBatchEmails, sendEmail } from '@api/lib/messaging/email/mailer'
 import { logger } from '@api/lib/observability'
 import { enqueueNewsletterBatch } from '../producers'
-import { getRedisConnection, QUEUE_NAMES } from '../queue-config'
 import type {
   EmailJobData,
   SendConfirmationEmailJob,
@@ -26,17 +24,22 @@ const getSubscriptionTemplate = async () => {
 
 const BATCH_SIZE = 50
 
-async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
-  const { db, conn } = createDb(env.DATABASE_URL)
-  const processTimer = workerLogger.time(`process-email-job-${job.data.type}`, {
-    jobId: job.id,
-    jobType: job.data.type,
+type JobContext = {
+  id?: string
+  attempts?: number
+}
+
+export async function processEmailJob(data: EmailJobData, context: JobContext = {}): Promise<void> {
+  const { db } = createDb()
+  const processTimer = workerLogger.time(`process-email-job-${data.type}`, {
+    jobId: context.id,
+    jobType: data.type,
   })
 
   try {
-    switch (job.data.type) {
+    switch (data.type) {
       case 'send-single-email': {
-        const { to, subject, html, text, from, replyTo } = job.data
+        const { to, subject, html, text, from, replyTo } = data
         await sendEmail({
           to,
           subject,
@@ -46,46 +49,45 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
           replyTo,
           emailType: 'transactional',
         })
-        workerLogger.info('Single email sent', { jobId: job.id, to })
+        workerLogger.info('Single email sent', { jobId: context.id, to })
         break
       }
 
       case 'send-batch-email': {
-        const { emails } = job.data
+        const { emails } = data
         await sendBatchEmails({
           emails: emails.map((e) => ({
             ...e,
             emailType: 'marketing' as const,
           })),
         })
-        workerLogger.info('Batch emails sent', { jobId: job.id, count: emails.length })
+        workerLogger.info('Batch emails sent', { jobId: context.id, count: emails.length })
         break
       }
 
       case 'send-welcome-email': {
-        await processWelcomeEmail(job.data, db)
+        await processWelcomeEmail(data, db)
         break
       }
 
       case 'send-confirmation-email': {
-        await processConfirmationEmail(job.data, db)
+        await processConfirmationEmail(data, db)
         break
       }
 
       case 'send-newsletter': {
-        await processNewsletterSend(job.data, db)
+        await processNewsletterSend(data, db)
         break
       }
     }
   } catch (error) {
     workerLogger.error('Email job failed', error as Error, {
-      jobId: job.id,
-      jobType: job.data.type,
-      attempts: job.attemptsMade,
+      jobId: context.id,
+      jobType: data.type,
+      attempts: context.attempts,
     })
     throw error
   } finally {
-    await conn.end()
     processTimer()
   }
 }
@@ -213,37 +215,4 @@ async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<
     batchCount: batches.length,
     subscriberCount: subscribers.length,
   })
-}
-
-export function createEmailWorker() {
-  const worker = new Worker<EmailJobData>(QUEUE_NAMES.EMAIL, processEmailJob, {
-    connection: getRedisConnection(),
-    concurrency: 5,
-    limiter: {
-      max: 100,
-      duration: 1000, // 100 jobs per second max
-    },
-  })
-
-  worker.on('completed', (job) => {
-    workerLogger.info('Email job completed', {
-      jobId: job.id,
-      jobType: job.data.type,
-      duration: job.processedOn && job.finishedOn ? job.finishedOn - job.processedOn : undefined,
-    })
-  })
-
-  worker.on('failed', (job, err) => {
-    workerLogger.error('Email job failed', err, {
-      jobId: job?.id,
-      jobType: job?.data.type,
-      attempts: job?.attemptsMade,
-    })
-  })
-
-  worker.on('error', (err) => {
-    workerLogger.error('Email worker error', err)
-  })
-
-  return worker
 }

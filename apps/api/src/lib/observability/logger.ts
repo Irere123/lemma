@@ -1,12 +1,6 @@
-import * as Sentry from '@sentry/bun'
-import winston from 'winston'
-
 import { isProduction } from '@api/lib/constants'
 import { addBreadcrumb, captureException, captureMessage } from './sentry'
 
-/**
- * Log Levels
- */
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 
 export interface LogEntry {
@@ -22,9 +16,6 @@ export interface LogEntry {
   }
 }
 
-/**
- * Logger Configuration
- */
 export interface LoggerConfig {
   service: string
   minLevel: LogLevel
@@ -33,70 +24,48 @@ export interface LoggerConfig {
   enableSentryIntegration: boolean
 }
 
-const defaultConfig: LoggerConfig = {
-  service: 'lemma-api',
-  minLevel: isProduction ? 'info' : 'debug',
-  enableConsole: true,
-  enableJson: isProduction,
-  enableSentryIntegration: isProduction, // Only enable in production
+const levels: Record<LogLevel, number> = {
+  fatal: 0,
+  error: 1,
+  warn: 2,
+  info: 3,
+  debug: 4,
 }
 
-/**
- * Create Winston logger instance with proper transports
- */
-function createWinstonLogger(config: LoggerConfig): winston.Logger {
-  const transports: winston.transport[] = []
+function createDefaultConfig(): LoggerConfig {
+  let production = false
 
-  if (config.enableConsole) {
-    if (config.enableJson) {
-      transports.push(
-        new winston.transports.Console({
-          format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
-        })
-      )
-    } else {
-      transports.push(
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-            winston.format.colorize(),
-            winston.format.printf((info) => {
-              const timestamp = info.timestamp as string
-              const time = timestamp.split('T')[1]?.slice(0, 12) || timestamp.split(' ')[1] || ''
-              const contextStr = info.context ? ` ${JSON.stringify(info.context)}` : ''
-              const errorStr = info.error
-                ? ` | ${(info.error as { name: string; message: string }).name}: ${
-                    (info.error as { name: string; message: string }).message
-                  }`
-                : ''
-              return `${time} ${info.level} [${config.service}] ${info.message}${contextStr}${errorStr}`
-            })
-          ),
-        })
-      )
-    }
+  try {
+    production = isProduction()
+  } catch {
+    production = false
   }
 
-  return winston.createLogger({
-    levels: { fatal: 0, error: 1, warn: 2, info: 3, debug: 4 },
-    level: config.minLevel,
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.errors({ stack: true }),
-      winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'service'] })
-    ),
-    defaultMeta: { service: config.service },
-    transports,
-    exceptionHandlers: transports,
-    rejectionHandlers: transports,
-  })
+  return {
+    service: 'lemma-api',
+    minLevel: production ? 'info' : 'debug',
+    enableConsole: true,
+    enableJson: production,
+    enableSentryIntegration: production,
+  }
 }
 
-/**
- * Map log level to Sentry severity level
- */
-function mapToSentryLevel(level: LogLevel): Sentry.SeverityLevel {
-  const map: Record<LogLevel, Sentry.SeverityLevel> = {
+function shouldLog(level: LogLevel, minLevel: LogLevel) {
+  return levels[level] <= levels[minLevel]
+}
+
+function serializeError(error?: Error) {
+  if (!error) return undefined
+
+  return {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+  }
+}
+
+function mapToSentryLevel(level: LogLevel) {
+  const map: Record<LogLevel, 'debug' | 'info' | 'warning' | 'error' | 'fatal'> = {
     debug: 'debug',
     info: 'info',
     warn: 'warning',
@@ -106,37 +75,26 @@ function mapToSentryLevel(level: LogLevel): Sentry.SeverityLevel {
   return map[level] || 'info'
 }
 
-/**
- * Logger class with structured logging support
- */
 export class Logger {
   private config: LoggerConfig
   private childContext: Record<string, unknown>
-  private winstonLogger: winston.Logger
 
   constructor(config: Partial<LoggerConfig> = {}, childContext: Record<string, unknown> = {}) {
-    this.config = { ...defaultConfig, ...config }
+    this.config = { ...createDefaultConfig(), ...config }
     this.childContext = childContext
-    this.winstonLogger = createWinstonLogger(this.config)
   }
 
-  /**
-   * Create a child logger with additional context
-   */
   child(context: Record<string, unknown>): Logger {
     return new Logger(this.config, { ...this.childContext, ...context })
   }
 
-  /**
-   * Send to Sentry if enabled (only in production)
-   */
   private sendToSentry(
     level: LogLevel,
     message: string,
     context?: Record<string, unknown>,
     error?: Error
   ): void {
-    if (!this.config.enableSentryIntegration || !isProduction) return
+    if (!this.config.enableSentryIntegration || !isProduction()) return
 
     const sentryLevel = mapToSentryLevel(level)
     const mergedContext = { ...this.childContext, ...(context || {}) }
@@ -159,21 +117,37 @@ export class Logger {
     }
   }
 
-  /**
-   * Log method
-   */
+  private writeToConsole(entry: LogEntry): void {
+    if (!this.config.enableConsole || !shouldLog(entry.level, this.config.minLevel)) return
+
+    if (this.config.enableJson) {
+      console[entry.level === 'fatal' ? 'error' : entry.level](JSON.stringify(entry))
+      return
+    }
+
+    const contextStr = entry.context ? ` ${JSON.stringify(entry.context)}` : ''
+    const errorStr = entry.error ? ` | ${entry.error.name}: ${entry.error.message}` : ''
+    const line = `${entry.timestamp} ${entry.level} [${entry.service}] ${entry.message}${contextStr}${errorStr}`
+
+    console[entry.level === 'fatal' ? 'error' : entry.level](line)
+  }
+
   private log(
     level: LogLevel,
     message: string,
     context?: Record<string, unknown>,
     error?: Error
   ): void {
-    const metadata: Record<string, unknown> = { ...this.childContext, ...(context || {}) }
-    if (error) {
-      metadata.error = { name: error.name, message: error.message, stack: error.stack }
+    const entry: LogEntry = {
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+      service: this.config.service,
+      context: { ...this.childContext, ...(context || {}) },
+      error: serializeError(error),
     }
 
-    this.winstonLogger.log(level, message, metadata)
+    this.writeToConsole(entry)
     this.sendToSentry(level, message, context, error)
   }
 

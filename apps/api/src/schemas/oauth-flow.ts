@@ -42,7 +42,7 @@ export const oauthAuthorizationRequestSchema = z.object({
 export const oauthAuthorizationResponseSchema = z.object({
   authorize_url: z.string().url().openapi({
     description: 'URL to redirect user for authorization',
-    example: 'https://app.lemma.now/oauth/authorize?client_id=lemm_abcdef123456789&...',
+    example: 'https://irere.dev/oauth/authorize?client_id=lemm_abcdef123456789&...',
   }),
 })
 
@@ -158,7 +158,7 @@ export const oauthErrorResponseSchema = z.object({
   }),
   error_uri: z.string().url().optional().openapi({
     description: 'URI to a human-readable error page',
-    example: 'https://docs.lemma.now/errors/invalid_request',
+    example: 'https://irere.dev/docs/errors/invalid_request',
   }),
   // SECURITY: Enhanced state parameter validation (optional for error responses)
   state: z
