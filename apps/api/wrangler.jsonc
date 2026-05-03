@@ -116,7 +116,6 @@
       ],
       "vars": {
         "ENV": "production",
-        "ALLOWED_API_ORIGINS": "https://irere.dev",
         "BASE_URL": "https://api.irere.dev",
         "FRONTEND_URL": "https://lemma.irere.dev",
         "BETTER_AUTH_URL": "https://api.irere.dev",
