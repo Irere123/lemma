@@ -36,9 +36,22 @@ type DraftState = {
   bannerImage: string | null
   customBlocks: CustomBlockToken[]
   markdown: string
+  publishedDate: Date | null
   subtitle: string
   title: string
 }
+
+type DateValue = Date | string | null | undefined
+
+const normalizeDateValue = (value: DateValue): Date | null => {
+  if (!value) return null
+
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+const areNullableDatesEqual = (first: Date | null, second: Date | null) =>
+  (first?.getTime() ?? null) === (second?.getTime() ?? null)
 
 function RouteComponent() {
   const { docId } = Route.useParams()
@@ -55,6 +68,7 @@ function RouteComponent() {
   const [title, setTitle] = useState('')
   const [subtitle, setSubtitle] = useState('')
   const [bannerImage, setBannerImage] = useState<string | null>(null)
+  const [publishedDate, setPublishedDate] = useState<Date | null>(null)
   const [isBannerUploading, setIsBannerUploading] = useState(false)
   const [saveStatus, setSaveStatus] = useState('Saved')
 
@@ -64,6 +78,7 @@ function RouteComponent() {
     subtitle: '',
     bannerImage: null,
     markdown: '',
+    publishedDate: null,
     customBlocks: [],
   })
 
@@ -79,6 +94,7 @@ function RouteComponent() {
         subtitle: draftRef.current.subtitle.trim() || null,
         bannerImage: draftRef.current.bannerImage,
         markdown: draftRef.current.markdown,
+        publishedDate: draftRef.current.publishedDate,
         ...patch,
       }
 
@@ -119,6 +135,16 @@ function RouteComponent() {
 
     for (const [key, value] of Object.entries(patch)) {
       const typedKey = key as keyof DraftState
+
+      if (typedKey === 'publishedDate') {
+        const nextDate = value as DraftState['publishedDate']
+        if (!areNullableDatesEqual(draftRef.current.publishedDate, nextDate)) {
+          changed = true
+          break
+        }
+        continue
+      }
+
       if (!Object.is(draftRef.current[typedKey], value)) {
         changed = true
         break
@@ -164,18 +190,21 @@ function RouteComponent() {
     const nextTitle = document.title ?? ''
     const nextSubtitle = document.subtitle ?? ''
     const nextBannerImage = document.bannerImage ?? null
+    const nextPublishedDate = normalizeDateValue(document.publishedDate)
     const nextMarkdown =
       typeof document.markdown === 'string' ? document.markdown : draftRef.current.markdown
 
     setTitle(nextTitle)
     setSubtitle(nextSubtitle)
     setBannerImage(nextBannerImage)
+    setPublishedDate(nextPublishedDate)
     setSaveStatus('Saved')
 
     draftRef.current = {
       title: nextTitle,
       subtitle: nextSubtitle,
       bannerImage: nextBannerImage,
+      publishedDate: nextPublishedDate,
       markdown: nextMarkdown,
       customBlocks: extractCustomBlocksFromMarkdown(nextMarkdown),
     }
@@ -321,6 +350,7 @@ function RouteComponent() {
         title={title}
         subtitle={subtitle}
         bannerImage={bannerImage}
+        publishedDate={publishedDate}
         isBannerUploading={isBannerUploading}
         saveStatus={isUpsertLoading ? 'Saving...' : saveStatus}
         onBannerImageSelect={handleBannerImageSelect}
@@ -334,6 +364,10 @@ function RouteComponent() {
         onSubtitleChange={(value) => {
           setSubtitle(value)
           queueDraftUpdate({ subtitle: value })
+        }}
+        onPublishedDateChange={(value) => {
+          setPublishedDate(value)
+          queueDraftUpdate({ publishedDate: value })
         }}
         onContentChange={(value: WriterEditorUpdate) => {
           const markdown = value.markdown

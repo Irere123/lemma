@@ -10,12 +10,22 @@ import {
   handleCommandNavigation,
   type JSONContent,
 } from '@lemma/headless'
-import { ImagePlus, Loader2, Trash2, Upload } from 'lucide-react'
+import { CalendarClock, ImagePlus, Loader2, Settings2, Trash2, Upload, X } from 'lucide-react'
 import type { ChangeEvent } from 'react'
 import { useRef, useState } from 'react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
+import {
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+} from '../ui/dialog'
+import { Input } from '../ui/input'
 import { Separator } from '../ui/separator'
 import { defaultExtensions } from './extensions'
 import { ColorSelector } from './selectors/color-selector'
@@ -30,11 +40,33 @@ export type WriterEditorUpdate = {
   words: number
 }
 
+const formatDatetimeLocalValue = (value?: Date | string | null) => {
+  if (!value) return ''
+
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const pad = (part: number) => part.toString().padStart(2, '0')
+
+  return (
+    [date.getFullYear(), pad(date.getMonth() + 1), pad(date.getDate())].join('-') +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  )
+}
+
+const parseDatetimeLocalValue = (value: string): Date | null | undefined => {
+  if (!value) return null
+
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
 type AdvancedEditorProps = {
   initialContent?: JSONContent | string
   title: string
   subtitle: string
   bannerImage?: string | null
+  publishedDate?: Date | string | null
   isBannerUploading?: boolean
   saveStatus?: string
   disabled?: boolean
@@ -43,6 +75,7 @@ type AdvancedEditorProps = {
   onSubtitleChange: (value: string) => void
   onBannerImageSelect?: (file: File) => void
   onBannerImageRemove?: () => void
+  onPublishedDateChange?: (value: Date | null) => void
   onContentChange?: (value: WriterEditorUpdate) => void
 }
 
@@ -54,10 +87,12 @@ const AdvancedEditor = ({
   onContentChange,
   onBannerImageRemove,
   onBannerImageSelect,
+  onPublishedDateChange,
   onSubtitleChange,
   onTitleChange,
   saveStatus = 'Saved',
   bannerImage,
+  publishedDate,
   subtitle,
   title,
 }: AdvancedEditorProps) => {
@@ -66,6 +101,7 @@ const AdvancedEditor = ({
   const [openNode, setOpenNode] = useState(false)
   const [openColor, setOpenColor] = useState(false)
   const [openLink, setOpenLink] = useState(false)
+  const [isPublishingSettingsOpen, setIsPublishingSettingsOpen] = useState(false)
 
   const openFilePicker = () => fileInputRef.current?.click()
 
@@ -74,6 +110,15 @@ const AdvancedEditor = ({
     if (!file) return
     onBannerImageSelect?.(file)
     event.currentTarget.value = ''
+  }
+
+  const publishedDateValue = formatDatetimeLocalValue(publishedDate)
+
+  const handlePublishedDateChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextPublishedDate = parseDatetimeLocalValue(event.currentTarget.value)
+    if (nextPublishedDate === undefined) return
+
+    onPublishedDateChange?.(nextPublishedDate)
   }
 
   return (
@@ -85,13 +130,72 @@ const AdvancedEditor = ({
           <p className='text-muted-foreground text-xs font-medium uppercase tracking-[0.22em]'>
             Draft
           </p>
-          <div className='flex items-center gap-2 rounded-full bg-muted/60 px-2.5 py-1 text-muted-foreground text-xs'>
+          <div className='flex items-center gap-2 rounded-full bg-muted/60 py-1 pr-1 pl-2.5 text-muted-foreground text-xs'>
             <span>{saveStatus}</span>
             <span aria-hidden='true'>·</span>
             <span>{wordsCount.toLocaleString()} words</span>
+            <span aria-hidden='true' className='h-3 w-px bg-border/80' />
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon-xs'
+              className={cn(
+                'rounded-full text-muted-foreground hover:text-foreground',
+                publishedDateValue && 'text-foreground'
+              )}
+              onClick={() => setIsPublishingSettingsOpen(true)}
+              aria-label='Open publishing settings'
+            >
+              <Settings2 />
+            </Button>
           </div>
         </div>
       </header>
+
+      <Dialog open={isPublishingSettingsOpen} onOpenChange={setIsPublishingSettingsOpen}>
+        <DialogPopup className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Publishing settings</DialogTitle>
+            <DialogDescription>
+              Set the timestamp used by feeds and published post ordering.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogPanel className='space-y-3'>
+            <label className='flex items-center gap-2 text-sm font-medium' htmlFor='published-date'>
+              <CalendarClock className='size-4 text-muted-foreground' />
+              Published date
+            </label>
+            <div className='flex items-center gap-2'>
+              <Input
+                id='published-date'
+                nativeInput
+                type='datetime-local'
+                value={publishedDateValue}
+                onChange={handlePublishedDateChange}
+                disabled={disabled}
+                size='lg'
+              />
+              {publishedDateValue ? (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  onClick={() => onPublishedDateChange?.(null)}
+                  disabled={disabled}
+                  aria-label='Clear published date'
+                >
+                  <X />
+                </Button>
+              ) : null}
+            </div>
+          </DialogPanel>
+          <DialogFooter>
+            <Button type='button' onClick={() => setIsPublishingSettingsOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogPopup>
+      </Dialog>
 
       <div className='mb-6'>
         <input
