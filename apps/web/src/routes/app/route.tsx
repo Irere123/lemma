@@ -1,24 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router'
-import { useCallback, useEffect, useState } from 'react'
+import { Settings } from 'lucide-react'
+import { useCallback, useEffect, useRef } from 'react'
 
-import { Sidebar } from '@/components/sidebar'
-import { useSession } from '@/lib/auth-client'
+import { Sidebar, SidebarCreateDocumentButton } from '@/components/sidebar'
 import { getSession } from '@/lib/auth.server'
+import { useSession } from '@/lib/auth-client'
 import { buildSeoHead } from '@/lib/seo'
 import { type Document, documentStore, useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/app')({
-  head: () =>
-    buildSeoHead({
-      canonicalPath: '/app',
-      description:
-        'Your Lemma workspace for drafting, editing, and organizing structured knowledge.',
-      noIndex: true,
-      title: 'Workspace',
-      type: 'website',
-    }),
+  beforeLoad: async () => {
+    const session = await getSession()
+    if (!session.data?.user) {
+      throw redirect({ to: '/login' })
+    }
+    return { user: session.data?.user }
+  },
   loader: async ({ context }) => {
     if (typeof window === 'undefined') {
       const { serverPrefetch } = await import('@/trpc/server')
@@ -31,13 +30,15 @@ export const Route = createFileRoute('/app')({
       })
     }
   },
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session.data?.user) {
-      throw redirect({ to: '/login' })
-    }
-    return { user: session.data?.user }
-  },
+  head: () =>
+    buildSeoHead({
+      canonicalPath: '/app',
+      description:
+        'Your Lemma workspace for drafting, editing, and organizing structured knowledge.',
+      noIndex: true,
+      title: 'Workspace',
+      type: 'website',
+    }),
   component: RouteComponent,
 })
 
@@ -49,17 +50,17 @@ function RouteComponent() {
     trpc.documents.getUserDocuments.queryOptions({})
   )
   const setDocuments = useDocumentStore((state) => state.setDocuments)
-  const [isPageLoaded, setIsPageLoaded] = useState(false)
+  const isPageLoadedRef = useRef(false)
 
   const setupStore = useCallback(async () => {
-    if (!isPageLoaded && !isPending && session?.user) {
+    if (!isPageLoadedRef.current && !isPending && session?.user) {
       documentStore.persist.clearStorage()
       documentStore.persist.setOptions({
         name: `documents-storage-${session.user.id}`,
       })
       await documentStore.persist.rehydrate()
     }
-  }, [isPageLoaded, isPending, session])
+  }, [isPending, session])
 
   useEffect(() => {
     setupStore()
@@ -69,7 +70,7 @@ function RouteComponent() {
     if (!session && !isPending) return
 
     if (!documents && !documentsLoading) {
-      setIsPageLoaded(true)
+      isPageLoadedRef.current = true
       return
     }
 
@@ -81,7 +82,7 @@ function RouteComponent() {
         return acc
       }, {})
       setDocuments(docsAsObj ?? {})
-      setIsPageLoaded(true)
+      isPageLoadedRef.current = true
     }
   }, [documents, documentsLoading, isPending, session, setDocuments])
 
@@ -91,10 +92,10 @@ function RouteComponent() {
       return
     }
 
-    if (!isPageLoaded && session?.user) {
+    if (!isPageLoadedRef.current && session?.user) {
       initData()
     }
-  }, [initData, isPageLoaded, isPending, navigate, session])
+  }, [initData, isPending, navigate, session])
 
   if (!session?.user && isPending) {
     return null
@@ -104,13 +105,25 @@ function RouteComponent() {
   }
 
   return (
-    <main className='flex min-h-screen flex-1 flex-col bg-background md:flex-row'>
+    <main className='flex min-h-screen flex-1 bg-background'>
       <Sidebar />
-      <div className='flex w-full flex-col'>
-        <header className='flex items-center justify-between border-b border-border/70 px-4 py-3 md:hidden'>
-          <Link to='/app' className='text-base font-semibold tracking-tight'>
-            Lemma
-          </Link>
+      <div className='flex min-w-0 flex-1 flex-col'>
+        <header className='sticky top-0 z-40 flex items-center justify-between border-border/70 border-b bg-background/95 px-3 py-2 backdrop-blur md:hidden'>
+          <div className='flex min-w-0 items-center gap-2'>
+            <Link to='/app' className='truncate text-base font-semibold tracking-tight'>
+              Lemma
+            </Link>
+          </div>
+          <div className='flex items-center gap-1'>
+            <SidebarCreateDocumentButton className='size-9' />
+            <Link
+              aria-label='Settings'
+              className='inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+              to='/app/settings'
+            >
+              <Settings className='size-4' />
+            </Link>
+          </div>
         </header>
         <Outlet />
       </div>

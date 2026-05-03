@@ -77,15 +77,19 @@ const AdvancedEditor = ({
   }
 
   return (
-    <section className={cn('writer-editor mx-auto w-full max-w-[860px] px-4 pb-24', className)}>
-      <header className='mb-8 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-4 pt-6'>
-        <p className='text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground'>
-          Draft
-        </p>
-        <div className='flex items-center gap-3 text-xs text-muted-foreground'>
-          <span>{saveStatus}</span>
-          <span aria-hidden='true'>·</span>
-          <span>{wordsCount.toLocaleString()} words</span>
+    <section
+      className={cn('writer-editor mx-auto w-full max-w-[900px] px-4 pb-24 md:px-6', className)}
+    >
+      <header className='mb-8 border-border/60 border-b pb-4 pt-4 md:pt-6'>
+        <div className='flex flex-wrap items-center justify-between gap-3'>
+          <p className='text-muted-foreground text-xs font-medium uppercase tracking-[0.22em]'>
+            Draft
+          </p>
+          <div className='flex items-center gap-2 rounded-full bg-muted/60 px-2.5 py-1 text-muted-foreground text-xs'>
+            <span>{saveStatus}</span>
+            <span aria-hidden='true'>·</span>
+            <span>{wordsCount.toLocaleString()} words</span>
+          </div>
         </div>
       </header>
 
@@ -102,7 +106,7 @@ const AdvancedEditor = ({
             <img
               src={bannerImage}
               alt='Article cover'
-              className='h-52 w-full rounded-xl border border-border/70 object-cover'
+              className='h-52 w-full rounded-lg border border-border/70 object-cover'
             />
             <div className='flex items-center gap-2'>
               <Button
@@ -164,7 +168,7 @@ const AdvancedEditor = ({
       />
 
       <EditorRoot>
-        <div className='rounded-2xl border border-border/70 bg-card/50 px-5 py-6 md:px-10 md:py-8'>
+        <div className='rounded-lg border border-border/70 bg-card px-5 py-6 shadow-xs/5 md:px-10 md:py-8'>
           <EditorContent
             initialContent={initialContent ?? ''}
             extensions={extensions as any}

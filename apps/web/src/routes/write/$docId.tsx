@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import AdvancedEditor, { type WriterEditorUpdate } from '@/components/editor'
+import { BackNavigationButton } from '@/components/navigation/back-navigation-button'
 import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
 import { getSession } from '@/lib/auth.server'
 import { type CustomBlockToken, extractCustomBlocksFromMarkdown } from '@/lib/custom-blocks'
@@ -12,7 +14,13 @@ import { useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/write/$docId')({
-  component: RouteComponent,
+  beforeLoad: async () => {
+    const session = await getSession()
+    if (!session) {
+      throw redirect({ to: '/login' })
+    }
+    return { user: session.data?.user }
+  },
   head: ({ params }) =>
     buildSeoHead({
       canonicalPath: `/write/${params.docId}`,
@@ -21,13 +29,7 @@ export const Route = createFileRoute('/write/$docId')({
       title: 'Write',
       type: 'article',
     }),
-  beforeLoad: async () => {
-    const session = await getSession()
-    if (!session) {
-      throw redirect({ to: '/login' })
-    }
-    return { user: session.data?.user }
-  },
+  component: RouteComponent,
 })
 
 type DraftState = {
@@ -207,24 +209,6 @@ function RouteComponent() {
     }
   }, [persistDocumentDebounced, persistDocumentNow])
 
-  if (isLoading && !document) {
-    return <div className='mx-auto w-full max-w-[860px] px-4 py-10 text-sm'>Loading draft...</div>
-  }
-
-  if (!document) {
-    return (
-      <div className='mx-auto flex w-full max-w-[860px] flex-col gap-4 px-4 py-10'>
-        <p className='text-sm text-muted-foreground'>Document not found.</p>
-        <Link to='/app' className='text-sm font-medium underline underline-offset-4'>
-          Return to documents
-        </Link>
-      </div>
-    )
-  }
-
-  const editorKey = `${docId}:${fetchedDocument ? 'server' : 'store'}`
-  const editorInitialContent = typeof document.markdown === 'string' ? document.markdown : ''
-
   const handleBannerImageSelect = useCallback(
     async (file: File) => {
       if (!file.type.startsWith('image/')) {
@@ -302,11 +286,37 @@ function RouteComponent() {
     }
   }, [persistDocumentNow])
 
+  if (isLoading && !document) {
+    return (
+      <WriteRoomShell>
+        <div className='mx-auto w-full max-w-[900px] px-4 py-10 text-sm md:px-6'>
+          Loading draft...
+        </div>
+      </WriteRoomShell>
+    )
+  }
+
+  if (!document) {
+    return (
+      <WriteRoomShell>
+        <div className='mx-auto flex w-full max-w-[900px] flex-col gap-4 px-4 py-10 md:px-6'>
+          <p className='text-sm text-muted-foreground'>Document not found.</p>
+          <Link to='/app' className='text-sm font-medium underline underline-offset-4'>
+            Return to documents
+          </Link>
+        </div>
+      </WriteRoomShell>
+    )
+  }
+
+  const editorKey = `${docId}:${fetchedDocument ? 'server' : 'store'}`
+  const editorInitialContent = typeof document.markdown === 'string' ? document.markdown : ''
+
   return (
-    <div className='w-full pb-20'>
+    <WriteRoomShell>
       <AdvancedEditor
         key={editorKey}
-        className='pt-2'
+        className='pt-4'
         initialContent={editorInitialContent}
         title={title}
         subtitle={subtitle}
@@ -344,6 +354,25 @@ function RouteComponent() {
           })
         }}
       />
+    </WriteRoomShell>
+  )
+}
+
+function WriteRoomShell({ children }: { children: ReactNode }) {
+  return (
+    <div className='min-h-screen w-full bg-background pb-20'>
+      <header className='sticky top-0 z-40 border-border/70 border-b bg-background/95 backdrop-blur'>
+        <div className='mx-auto flex w-full max-w-[900px] items-center justify-between px-4 py-3 md:px-6'>
+          <BackNavigationButton label='Back' />
+          <Link
+            to='/app'
+            className='text-muted-foreground text-sm transition-colors hover:text-foreground'
+          >
+            Library
+          </Link>
+        </div>
+      </header>
+      {children}
     </div>
   )
 }
