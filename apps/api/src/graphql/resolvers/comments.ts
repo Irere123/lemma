@@ -49,7 +49,7 @@ async function getCommentsTotalCount(
   }
 
   const result = await db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: sql<number>`count(*)` })
     .from(comments)
     .where(and(...filters))
 

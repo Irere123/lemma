@@ -1,7 +1,6 @@
 import type { MiddlewareHandler } from 'hono'
 
 import { createDb } from '@api/db'
-import { env } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
 
 const middlewareLogger = logger.child({ component: 'rest', subcomponent: 'middleware' })
@@ -11,7 +10,7 @@ const middlewareLogger = logger.child({ component: 'rest', subcomponent: 'middle
  */
 export const withDatabase: MiddlewareHandler = async (c, next) => {
   const timer = middlewareLogger.time('database-connection')
-  const { db } = createDb(env.DATABASE_URL)
+  const { db } = createDb()
 
   // Set database on context
   c.set('db', db)

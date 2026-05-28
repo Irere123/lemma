@@ -1,4 +1,4 @@
-import { documentStatusEnum } from '@api/db/schema'
+import { documentStatus } from '@api/db/schema'
 import { z } from '@hono/zod-openapi'
 
 // Request
@@ -8,7 +8,7 @@ export const documentSchema = z.object({
   slug: z.string().nullable().optional(),
   title: z.string().optional(),
   subtitle: z.string().optional().nullable(),
-  status: z.enum(documentStatusEnum.enumValues).default('DRAFT'),
+  status: z.enum(documentStatus).default('DRAFT'),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
   scheduledDate: z.date().nullable().optional(),
@@ -21,7 +21,7 @@ export const upsertDocumentSchema = z.object({
   id: z.string().optional(),
   title: z.string().nullable().optional(),
   subtitle: z.string().nullable().optional(),
-  status: z.enum(documentStatusEnum.enumValues).optional(),
+  status: z.enum(documentStatus).optional(),
   markdown: z.string().nullable().optional(),
   bannerImage: z.string().nullable().optional(),
   scheduledDate: z.coerce.date().nullable().optional(),
@@ -33,7 +33,7 @@ export const deleteDocumentSchema = z.object({
 })
 
 export const documentsFilters = z.object({
-  status: z.enum(documentStatusEnum.enumValues).optional(),
+  status: z.enum(documentStatus).optional(),
   limit: z.number().min(1).max(100).optional().default(20),
   cursor: z.string().optional(),
 })

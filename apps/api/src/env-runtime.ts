@@ -51,17 +51,8 @@ export type R2BucketBinding = {
   delete: (key: string) => Promise<void>
 }
 
-export type HyperdriveBinding = {
-  readonly connectionString: string
-  readonly host: string
-  readonly port: number
-  readonly user: string
-  readonly password: string
-  readonly database: string
-}
-
 export type CloudflareBindings = Partial<Environment> & {
-  DB?: HyperdriveBinding
+  DB?: D1Database
   R2_BUCKET?: R2BucketBinding
   CACHE?: KVNamespaceBinding
   EMAIL_QUEUE?: QueueBinding<JobData>
@@ -90,10 +81,6 @@ const buildEnvInput = () => {
     ...runtimeBindings,
   }
 
-  if (runtimeBindings.DB?.connectionString) {
-    data.DATABASE_URL = runtimeBindings.DB.connectionString
-  }
-
   return data
 }
 
@@ -112,10 +99,6 @@ export function getEnv(): Environment {
   }
 
   return parsedEnv
-}
-
-export function getDatabaseUrl(): string {
-  return getEnv().DATABASE_URL
 }
 
 export const env = new Proxy({} as Environment, {

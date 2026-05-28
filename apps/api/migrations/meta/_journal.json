@@ -1,19 +1,12 @@
 {
   "version": "7",
-  "dialect": "postgresql",
+  "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
-      "version": "7",
-      "when": 1777832751523,
-      "tag": "0000_init_lemma_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1777833270889,
-      "tag": "0001_parallel_robbie_robertson",
+      "version": "6",
+      "when": 1779992475650,
+      "tag": "0000_special_smiling_tiger",
       "breakpoints": true
     }
   ]

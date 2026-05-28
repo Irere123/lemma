@@ -1,16 +1,17 @@
-import { and, eq, desc, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, ne, sql } from 'drizzle-orm'
+
 import type { DB } from '@api/db'
 import {
-  categories,
-  tags,
-  documentCategories,
-  documentTags,
-  documents,
   type Category,
+  categories,
+  documentCategories,
+  documents,
+  documentTags,
   type Tag,
+  tags,
 } from '@api/db/schema'
-import { generateId } from '@api/lib/utils'
 import { slugifyString } from '@api/db/utils/slugify'
+import { generateId } from '@api/lib/utils'
 
 // Category CRUD
 export type CreateCategoryData = {
@@ -288,7 +289,7 @@ export const addDocumentTag = async (db: DB, documentId: string, tagId: string):
   await db
     .update(tags)
     .set({
-      usageCount: sql`(${tags.usageCount}::int + 1)::text`,
+      usageCount: sql`cast(cast(${tags.usageCount} as integer) + 1 as text)`,
     })
     .where(eq(tags.id, tagId))
 }
@@ -306,7 +307,7 @@ export const removeDocumentTag = async (
   await db
     .update(tags)
     .set({
-      usageCount: sql`greatest(0, ${tags.usageCount}::int - 1)::text`,
+      usageCount: sql`cast(max(0, cast(${tags.usageCount} as integer) - 1) as text)`,
     })
     .where(eq(tags.id, tagId))
 }

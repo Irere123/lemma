@@ -11,12 +11,12 @@ import { getEmailSubject, getFromEmailAddress } from '@api/lib/messaging/email/u
 import { quickValidateEmail } from '@api/lib/messaging/email/validation'
 
 export const createAuth = () => {
-  const { db } = createDb(env.DATABASE_URL)
+  const { db } = createDb()
 
   return betterAuth({
     basePath: '/auth',
     database: drizzleAdapter(db, {
-      provider: 'pg',
+      provider: 'sqlite',
       schema,
     }),
     secret: env.BETTER_AUTH_SECRET,

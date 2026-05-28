@@ -34,11 +34,13 @@
         "R2_SECRET_ACCESS_KEY": "placeholder",
         "RESEND_API_KEY": "placeholder"
       },
-      "hyperdrive": [
+      "d1_databases": [
         {
           "binding": "DB",
-          "id": "00000000000000000000000000000000",
-          "localConnectionString": "postgresql://postgres:postgres@localhost:5432/brainos"
+          "database_name": "lemma-local",
+          // Placeholder id is fine for `--local` dev; only matters for remote.
+          "database_id": "00000000000000000000000000000000",
+          "migrations_dir": "migrations"
         }
       ],
       "r2_buckets": [
@@ -128,10 +130,12 @@
         "R2_STORAGE_BASE_URL": "https://assests.irere.dev",
         "RESEND_DOMAIN": "updates.irere.dev"
       },
-      "hyperdrive": [
+      "d1_databases": [
         {
           "binding": "DB",
-          "id": "f6f7b182000246d3add057759480d6bb"
+          "database_name": "lemma-production",
+          "database_id": "c051d216-659f-4ada-947c-6ef429bc2d1d",
+          "migrations_dir": "migrations"
         }
       ],
       "r2_buckets": [

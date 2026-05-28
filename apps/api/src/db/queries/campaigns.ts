@@ -218,7 +218,7 @@ export const getClicksOverTime = async (
 ): Promise<Array<{ date: string; clicks: number }>> => {
   const results = await db
     .select({
-      date: sql<string>`date_trunc('hour', ${clickEvents.clickedAt})::text`,
+      date: sql<string>`strftime('%Y-%m-%d %H:00:00', ${clickEvents.clickedAt}, 'unixepoch')`,
       clicks: sql<number>`count(*)`,
     })
     .from(clickEvents)
@@ -230,8 +230,8 @@ export const getClicksOverTime = async (
         lte(clickEvents.clickedAt, endDate)
       )
     )
-    .groupBy(sql`date_trunc('hour', ${clickEvents.clickedAt})`)
-    .orderBy(sql`date_trunc('hour', ${clickEvents.clickedAt})`)
+    .groupBy(sql`strftime('%Y-%m-%d %H:00:00', ${clickEvents.clickedAt}, 'unixepoch')`)
+    .orderBy(sql`strftime('%Y-%m-%d %H:00:00', ${clickEvents.clickedAt}, 'unixepoch')`)
 
   return results
 }
@@ -245,7 +245,7 @@ export const getSubscriberGrowth = async (
 ): Promise<Array<{ date: string; newSubscribers: number; unsubscribes: number }>> => {
   const newSubs = await db
     .select({
-      date: sql<string>`date_trunc('day', ${subscribers.subscribedAt})::text`,
+      date: sql<string>`strftime('%Y-%m-%d', ${subscribers.subscribedAt}, 'unixepoch')`,
       count: sql<number>`count(*)`,
     })
     .from(subscribers)
@@ -256,11 +256,11 @@ export const getSubscriberGrowth = async (
         lte(subscribers.subscribedAt, endDate)
       )
     )
-    .groupBy(sql`date_trunc('day', ${subscribers.subscribedAt})`)
+    .groupBy(sql`strftime('%Y-%m-%d', ${subscribers.subscribedAt}, 'unixepoch')`)
 
   const unsubs = await db
     .select({
-      date: sql<string>`date_trunc('day', ${subscribers.unsubscribedAt})::text`,
+      date: sql<string>`strftime('%Y-%m-%d', ${subscribers.unsubscribedAt}, 'unixepoch')`,
       count: sql<number>`count(*)`,
     })
     .from(subscribers)
@@ -271,7 +271,7 @@ export const getSubscriberGrowth = async (
         lte(subscribers.unsubscribedAt, endDate)
       )
     )
-    .groupBy(sql`date_trunc('day', ${subscribers.unsubscribedAt})`)
+    .groupBy(sql`strftime('%Y-%m-%d', ${subscribers.unsubscribedAt}, 'unixepoch')`)
 
   // Merge results
   const dateMap = new Map<string, { newSubscribers: number; unsubscribes: number }>()
@@ -303,9 +303,9 @@ export const getSubscriberStats = async (
   const results = await db
     .select({
       total: sql<number>`count(*)`,
-      confirmed: sql<number>`count(*) filter (where ${subscribers.isConfirmed} = true and ${subscribers.isUnsubscribed} = false)`,
-      unsubscribed: sql<number>`count(*) filter (where ${subscribers.isUnsubscribed} = true)`,
-      pending: sql<number>`count(*) filter (where ${subscribers.isConfirmed} = false and ${subscribers.isUnsubscribed} = false)`,
+      confirmed: sql<number>`count(*) filter (where ${subscribers.isConfirmed} = 1 and ${subscribers.isUnsubscribed} = 0)`,
+      unsubscribed: sql<number>`count(*) filter (where ${subscribers.isUnsubscribed} = 1)`,
+      pending: sql<number>`count(*) filter (where ${subscribers.isConfirmed} = 0 and ${subscribers.isUnsubscribed} = 0)`,
     })
     .from(subscribers)
     .where(eq(subscribers.writerId, writerId))

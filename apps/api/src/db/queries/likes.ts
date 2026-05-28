@@ -64,7 +64,7 @@ export const getLikeStatus = async (
 
 export const getDocumentLikeCount = async (db: DB, documentId: string): Promise<number> => {
   const result = await db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: sql<number>`count(*)` })
     .from(documentLikes)
     .where(eq(documentLikes.documentId, documentId))
 

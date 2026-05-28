@@ -1,11 +1,11 @@
-import { env } from '@api/env-runtime'
-import { TRPCError, initTRPC } from '@trpc/server'
+import { initTRPC, TRPCError } from '@trpc/server'
 import type { User } from 'better-auth'
 import type { Context } from 'hono'
 import SuperJSON from 'superjson'
 
 import { createDb, type DB } from '@api/db'
 import type { Environment } from '@api/env'
+import { env } from '@api/env-runtime'
 import { createAuth } from '@api/lib/auth'
 
 type TRPCContext = {
@@ -16,7 +16,7 @@ type TRPCContext = {
 
 export const createTRPCContext = async (_: unknown, c: Context): Promise<TRPCContext> => {
   const auth = createAuth()
-  const { db } = createDb(env.DATABASE_URL)
+  const { db } = createDb()
 
   const session = await auth.api.getSession({
     headers: c.req.raw.headers,

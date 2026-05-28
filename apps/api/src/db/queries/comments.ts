@@ -153,7 +153,7 @@ export const getCommentReplies = async (
 
 export const getReplyCount = async (db: DB, commentId: string): Promise<number> => {
   const result = await db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: sql<number>`count(*)` })
     .from(comments)
     .where(eq(comments.parentId, commentId))
 
@@ -162,7 +162,7 @@ export const getReplyCount = async (db: DB, commentId: string): Promise<number> 
 
 export const getDocumentCommentCount = async (db: DB, documentId: string): Promise<number> => {
   const result = await db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: sql<number>`count(*)` })
     .from(comments)
     .where(eq(comments.documentId, documentId))
 

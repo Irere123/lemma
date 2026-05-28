@@ -8,10 +8,8 @@
     "deploy:production": "wrangler deploy --env production",
     "generate-migration": "drizzle-kit generate",
     "typecheck": "tsc --noEmit",
-    "migrate:local": "cross-env ENV=local bun run ./scripts/migrate.ts",
-    "migrate:production": "cross-env ENV=production bun run ./scripts/migrate.ts",
-    "seed-slugs:local": "cross-env ENV=local bun run ./scripts/seed-slugs.ts",
-    "seed-slugs:production": "cross-env ENV=production bun run ./scripts/seed-slugs.ts"
+    "migrate:local": "wrangler d1 migrations apply lemma-local --env local --local",
+    "migrate:production": "wrangler d1 migrations apply lemma-production --env production --remote"
   },
   "dependencies": {
     "@escape.tech/graphql-armor-cost-limit": "2.4.3",
@@ -37,7 +35,6 @@
     "jimp": "^1.6.0",
     "ksuid": "^3.0.0",
     "neverthrow": "^8.2.0",
-    "postgres": "^3.4.7",
     "resend": "^4.6.0",
     "slugify": "^1.6.6",
     "superjson": "^2.2.2",
@@ -47,6 +44,7 @@
     "@types/node": "^24.1.0",
     "cross-env": "^10.0.0",
     "drizzle-kit": "^0.31.4",
+    "postgres": "^3.4.7",
     "typescript": "5.9.3",
     "wrangler": "^4.26.0"
   }

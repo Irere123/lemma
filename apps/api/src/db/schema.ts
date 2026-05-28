@@ -1,47 +1,41 @@
-import { sql } from 'drizzle-orm'
 import {
-  boolean,
   foreignKey,
   index,
-  inet,
-  jsonb,
-  pgEnum,
-  pgTable,
-  pgTableCreator,
+  integer,
+  sqliteTable,
+  sqliteTableCreator,
   text,
-  timestamp,
   unique,
-  varchar,
-} from 'drizzle-orm/pg-core'
+} from 'drizzle-orm/sqlite-core'
 
-export const createTable = pgTableCreator((name) => name)
+export const createTable = sqliteTableCreator((name) => name)
 
 // ============================================================================
 // AUTHENTICATION & USER MANAGEMENT
 // ============================================================================
 
-export const user = pgTable('user', {
+export const user = sqliteTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified')
+  emailVerified: integer('email_verified', { mode: 'boolean' })
     .$defaultFn(() => false)
     .notNull(),
   image: text('image'),
-  createdAt: timestamp('created_at')
+  createdAt: integer('created_at', { mode: 'timestamp' })
     .$defaultFn(() => /* @__PURE__ */ new Date())
     .notNull(),
-  updatedAt: timestamp('updated_at')
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
     .$defaultFn(() => /* @__PURE__ */ new Date())
     .notNull(),
 })
 
-export const session = pgTable('session', {
+export const session = sqliteTable('session', {
   id: text('id').primaryKey(),
-  expiresAt: timestamp('expires_at').notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
   token: text('token').notNull().unique(),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   userId: text('user_id')
@@ -49,7 +43,7 @@ export const session = pgTable('session', {
     .references(() => user.id, { onDelete: 'cascade' }),
 })
 
-export const account = pgTable('account', {
+export const account = sqliteTable('account', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
@@ -59,29 +53,34 @@ export const account = pgTable('account', {
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
-  accessTokenExpiresAt: timestamp('access_token_expires_at'),
-  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+  accessTokenExpiresAt: integer('access_token_expires_at', { mode: 'timestamp' }),
+  refreshTokenExpiresAt: integer('refresh_token_expires_at', { mode: 'timestamp' }),
   scope: text('scope'),
   password: text('password'),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
 
-export const verification = pgTable('verification', {
+export const verification = sqliteTable('verification', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
-  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
 })
 
 // ============================================================================
 // DOCUMENTS & CONTENT MANAGEMENT
 // ============================================================================
 
-// Note: Enum name has a typo in the database ('document_staus'), keeping it for compatibility
-export const documentStatusEnum = pgEnum('document_staus', ['DRAFT', 'PUBLISHED'])
+// Note: Status values stored as text. Historical typo in the PG enum name
+// ('document_staus') is irrelevant on SQLite — the column is a plain text enum.
+export const documentStatus = ['DRAFT', 'PUBLISHED'] as const
 
 export const documents = createTable(
   'documents',
@@ -90,14 +89,14 @@ export const documents = createTable(
     slug: text('slug'),
     title: text('title'),
     subtitle: text('subtitle'),
-    status: documentStatusEnum(),
+    status: text('status', { enum: documentStatus }),
     userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
     markdown: text('markdown'),
     bannerImage: text('banner_image'),
-    scheduledDate: timestamp('scheduled_date'),
-    publishedDate: timestamp('published_date'),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    scheduledDate: integer('scheduled_date', { mode: 'timestamp' }),
+    publishedDate: integer('published_date', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
     // SEO metadata
     metaTitle: text('meta_title'),
     metaDescription: text('meta_description'),
@@ -105,10 +104,10 @@ export const documents = createTable(
     canonicalUrl: text('canonical_url'),
     ogImage: text('og_image'),
     // Reading time and word count
-    readingTime: varchar('reading_time'),
-    wordCount: varchar('word_count'),
+    readingTime: text('reading_time'),
+    wordCount: text('word_count'),
     // Featured flag
-    isFeatured: boolean('is_featured').default(false),
+    isFeatured: integer('is_featured', { mode: 'boolean' }).default(false),
   },
   (table) => [
     index('documents_user_id_idx').on(table.userId),
@@ -123,7 +122,7 @@ export const documents = createTable(
 
 export type Document = typeof documents.$inferSelect
 export type DocumentInsert = typeof documents.$inferInsert
-export type DocumentStatus = (typeof documentStatusEnum.enumValues)[number]
+export type DocumentStatus = (typeof documentStatus)[number]
 
 // Categories
 export const categories = createTable(
@@ -138,8 +137,8 @@ export const categories = createTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     parentId: text('parent_id'), // For hierarchical categories
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   },
   (table) => [
     index('categories_writer_id_idx').on(table.writerId),
@@ -182,8 +181,8 @@ export const tags = createTable(
     writerId: text('writer_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    usageCount: varchar('usage_count').default('0'),
-    createdAt: timestamp('created_at').defaultNow(),
+    usageCount: text('usage_count').default('0'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   },
   (table) => [
     index('tags_writer_id_idx').on(table.writerId),
@@ -233,8 +232,8 @@ export const comments = createTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     parentId: text('parent_id'), // Self-reference for nested replies
     content: text('content').notNull(),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   },
   (table) => [
     index('comments_document_id_idx').on(table.documentId),
@@ -263,7 +262,7 @@ export const documentLikes = createTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   },
   (table) => [
     index('document_likes_document_id_idx').on(table.documentId),
@@ -283,18 +282,16 @@ export const subscribers = createTable(
   'subscribers',
   {
     id: text().primaryKey(),
-    email: varchar().notNull().unique(),
+    email: text().notNull().unique(),
     token: text().notNull().unique(),
     writerId: text('writer_id').references(() => user.id, {
       onDelete: 'cascade',
     }),
-    subscribedAt: timestamp('subscribed_at', {
-      withTimezone: true,
-    }).defaultNow(),
-    confirmedAt: timestamp('confirmed_at'),
-    unsubscribedAt: timestamp('unsubscribed_at'),
-    isConfirmed: boolean('is_confirmed').default(false),
-    isUnsubscribed: boolean('is_unsubscribed').default(false),
+    subscribedAt: integer('subscribed_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
+    unsubscribedAt: integer('unsubscribed_at', { mode: 'timestamp' }),
+    isConfirmed: integer('is_confirmed', { mode: 'boolean' }).default(false),
+    isUnsubscribed: integer('is_unsubscribed', { mode: 'boolean' }).default(false),
   },
   (table) => [
     index('email_idx').on(table.email),
@@ -321,9 +318,9 @@ export const newsletterSettings = createTable(
     fromName: text('from_name').notNull(),
     logoUrl: text('logo_url'),
     brandColor: text('brand_color').default('#000000'),
-    isActive: boolean('is_active').default(true),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    isActive: integer('is_active', { mode: 'boolean' }).default(true),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   },
   (table) => [
     index('writer_newsletter_writer_id_idx').on(table.writerId),
@@ -338,14 +335,14 @@ export type NewsletterSettingsInsert = typeof newsletterSettings.$inferInsert
 // CAMPAIGNS & ANALYTICS
 // ============================================================================
 
-export const campaignStatusEnum = pgEnum('campaign_status', [
+export const campaignStatus = [
   'DRAFT',
   'SCHEDULED',
   'SENDING',
   'SENT',
   'FAILED',
   'CANCELLED',
-])
+] as const
 
 export const campaigns = createTable(
   'campaigns',
@@ -358,19 +355,19 @@ export const campaigns = createTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     documentId: text('document_id').references(() => documents.id, { onDelete: 'set null' }),
     content: text(),
-    status: campaignStatusEnum().default('DRAFT'),
-    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
-    sentAt: timestamp('sent_at', { withTimezone: true }),
-    totalSent: varchar('total_sent').default('0'),
-    totalOpens: varchar('total_opens').default('0'),
-    totalClicks: varchar('total_clicks').default('0'),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    status: text({ enum: campaignStatus }).default('DRAFT'),
+    scheduledAt: integer('scheduled_at', { mode: 'timestamp' }),
+    sentAt: integer('sent_at', { mode: 'timestamp' }),
+    totalSent: text('total_sent').default('0'),
+    totalOpens: text('total_opens').default('0'),
+    totalClicks: text('total_clicks').default('0'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
     // A/B Testing fields
-    isAbTest: boolean('is_ab_test').default(false),
+    isAbTest: integer('is_ab_test', { mode: 'boolean' }).default(false),
     parentCampaignId: text('parent_campaign_id'),
     variantName: text('variant_name'),
-    variantPercentage: varchar('variant_percentage'),
+    variantPercentage: text('variant_percentage'),
   },
   (table) => [
     index('campaigns_user_id_idx').on(table.userId),
@@ -382,6 +379,7 @@ export const campaigns = createTable(
 
 export type Campaign = typeof campaigns.$inferSelect
 export type CampaignInsert = typeof campaigns.$inferInsert
+export type CampaignStatus = (typeof campaignStatus)[number]
 
 export const campaignLinks = createTable(
   'campaign_links',
@@ -410,9 +408,11 @@ export const clickEvents = createTable(
     linkId: text('link_id').references(() => campaignLinks.id, {
       onDelete: 'cascade',
     }),
-    clickedAt: timestamp('clicked_at', { withTimezone: true }).notNull().defaultNow(),
+    clickedAt: integer('clicked_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     userAgent: text('user_agent'),
-    ipAddress: inet('ip_address'),
+    ipAddress: text('ip_address'),
   },
   (table) => [index('sub_id_idx').on(table.subscriberId), index('camp_ev_id_idx').on(table.linkId)]
 )
@@ -430,9 +430,9 @@ export const openEvents = createTable(
     campaignId: text('campaign_id').references(() => campaigns.id, {
       onDelete: 'cascade',
     }),
-    openedAt: timestamp('opened_at', { withTimezone: true }).defaultNow(),
+    openedAt: integer('opened_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
     userAgent: text('user_agent'),
-    ipAddress: inet('ip_address'),
+    ipAddress: text('ip_address'),
   },
   (table) => [
     index('open_sub_id_idx').on(table.subscriberId),
@@ -453,9 +453,7 @@ export const unsubscribeEvents = createTable(
     campaignId: text('campaign_id').references(() => campaigns.id, {
       onDelete: 'cascade',
     }),
-    unsubscribedAt: timestamp('unsubscribed_at', {
-      withTimezone: true,
-    }).defaultNow(),
+    unsubscribedAt: integer('unsubscribed_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
     reason: text(),
   },
   (table) => [
@@ -471,7 +469,7 @@ export type UnSubscribeEventInsert = typeof unsubscribeEvents.$inferInsert
 // WORKSPACES & MULTI-TENANCY
 // ============================================================================
 
-export const workspaceRoleEnum = pgEnum('workspace_role', ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER'])
+export const workspaceRole = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER'] as const
 
 export const workspaces = createTable(
   'workspaces',
@@ -485,15 +483,15 @@ export const workspaces = createTable(
     ownerId: text('owner_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    settings: jsonb('settings').$type<{
+    settings: text('settings', { mode: 'json' }).$type<{
       allowPublicSignup?: boolean
       defaultRole?: 'EDITOR' | 'VIEWER'
       brandColor?: string
       customCss?: string
     }>(),
-    isActive: boolean('is_active').default(true),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    isActive: integer('is_active', { mode: 'boolean' }).default(true),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   },
   (table) => [
     index('workspaces_owner_id_idx').on(table.ownerId),
@@ -515,11 +513,11 @@ export const workspaceMembers = createTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    role: workspaceRoleEnum().default('VIEWER'),
+    role: text('role', { enum: workspaceRole }).default('VIEWER'),
     invitedBy: text('invited_by').references(() => user.id),
-    invitedAt: timestamp('invited_at').defaultNow(),
-    joinedAt: timestamp('joined_at'),
-    isActive: boolean('is_active').default(true),
+    invitedAt: integer('invited_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    joinedAt: integer('joined_at', { mode: 'timestamp' }),
+    isActive: integer('is_active', { mode: 'boolean' }).default(true),
   },
   (table) => [
     index('workspace_members_workspace_id_idx').on(table.workspaceId),
@@ -530,7 +528,7 @@ export const workspaceMembers = createTable(
 
 export type WorkspaceMember = typeof workspaceMembers.$inferSelect
 export type WorkspaceMemberInsert = typeof workspaceMembers.$inferInsert
-export type WorkspaceRole = (typeof workspaceRoleEnum.enumValues)[number]
+export type WorkspaceRole = (typeof workspaceRole)[number]
 
 export const workspaceInvites = createTable(
   'workspace_invites',
@@ -540,14 +538,14 @@ export const workspaceInvites = createTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
-    role: workspaceRoleEnum().default('VIEWER'),
+    role: text('role', { enum: workspaceRole }).default('VIEWER'),
     token: text('token').notNull().unique(),
     invitedBy: text('invited_by')
       .notNull()
       .references(() => user.id),
-    expiresAt: timestamp('expires_at').notNull(),
-    acceptedAt: timestamp('accepted_at'),
-    createdAt: timestamp('created_at').defaultNow(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    acceptedAt: integer('accepted_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   },
   (table) => [
     index('workspace_invites_workspace_id_idx').on(table.workspaceId),
@@ -563,26 +561,23 @@ export type WorkspaceInviteInsert = typeof workspaceInvites.$inferInsert
 // API KEYS
 // ============================================================================
 
-export const apiKeys = pgTable(
+export const apiKeys = sqliteTable(
   'api_keys',
   {
     id: text('id').notNull().primaryKey(),
     keyEncrypted: text('key_encrypted').notNull(),
     name: text('name').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    createdAt: text('created_at')
       .notNull()
-      .defaultNow(),
+      .$defaultFn(() => new Date().toISOString()),
     userId: text('user_id').notNull(),
     keyHash: text('key_hash'),
-    scopes: text('scopes').array().notNull().default(sql`'{}'::text[]`),
-    lastUsedAt: timestamp('last_used_at', {
-      withTimezone: true,
-      mode: 'string',
-    }),
+    scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    lastUsedAt: text('last_used_at'),
   },
   (table) => [
-    index('api_keys_key_idx').using('btree', table.keyHash.asc().nullsLast().op('text_ops')),
-    index('api_keys_user_id_idx').using('btree', table.userId.asc().nullsLast().op('text_ops')),
+    index('api_keys_key_idx').on(table.keyHash),
+    index('api_keys_user_id_idx').on(table.userId),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [user.id],
@@ -597,7 +592,7 @@ export const apiKeys = pgTable(
 // ============================================================================
 
 // OAuth applications
-export const oauthApplications = pgTable(
+export const oauthApplications = sqliteTable(
   'oauth_applications',
   {
     id: text('id').primaryKey(),
@@ -608,68 +603,50 @@ export const oauthApplications = pgTable(
     logoUrl: text('logo_url'),
     website: text('website'),
     installUrl: text('install_url'),
-    screenshots: text('screenshots').array().notNull().default(sql`'{}'::text[]`),
-    redirectUris: text('redirect_uris').array().notNull().default(sql`'{}'::text[]`),
+    screenshots: text('screenshots', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    redirectUris: text('redirect_uris', { mode: 'json' }).$type<string[]>().notNull().default([]),
     clientId: text('client_id').notNull(),
     clientSecret: text('client_secret').notNull(),
-    scopes: text('scopes').array().notNull().default(sql`'{}'::text[]`),
+    scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull().default([]),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    createdAt: text('created_at')
       .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at')
       .notNull()
-      .defaultNow(),
-    isPublic: boolean('is_public').default(false),
-    active: boolean('active').default(true),
+      .$defaultFn(() => new Date().toISOString()),
+    isPublic: integer('is_public', { mode: 'boolean' }).default(false),
+    active: integer('active', { mode: 'boolean' }).default(true),
     status: text('status', { enum: ['draft', 'pending', 'approved', 'rejected'] }).default('draft'),
   },
   (table) => [
-    index('oauth_applications_client_id_idx').using(
-      'btree',
-      table.clientId.asc().nullsLast().op('text_ops')
-    ),
-    index('oauth_applications_slug_idx').using(
-      'btree',
-      table.slug.asc().nullsLast().op('text_ops')
-    ),
+    index('oauth_applications_client_id_idx').on(table.clientId),
+    index('oauth_applications_slug_idx').on(table.slug),
   ]
 )
 
 // OAuth Authorization codes
-export const oauthAuthorizationCodes = pgTable(
+export const oauthAuthorizationCodes = sqliteTable(
   'oauth_authorization_codes',
   {
     id: text('id').primaryKey(),
     code: text('code').notNull().unique(),
     applicationId: text('application_id').notNull(),
     userId: text('user_id').notNull(),
-    scopes: text('scopes').array().notNull(),
+    scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull(),
     redirectUri: text('redirect_uri').notNull(),
-    expiresAt: timestamp('expires_at', {
-      withTimezone: true,
-      mode: 'string',
-    }).notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    expiresAt: text('expires_at').notNull(),
+    createdAt: text('created_at')
       .notNull()
-      .defaultNow(),
-    used: boolean('used').default(false),
+      .$defaultFn(() => new Date().toISOString()),
+    used: integer('used', { mode: 'boolean' }).default(false),
     codeChallenge: text('code_challenge'),
     codeChallengeMethod: text('code_challenge_method'),
   },
   (table) => [
-    index('oauth_authorization_codes_code_idx').using(
-      'btree',
-      table.code.asc().nullsLast().op('text_ops')
-    ),
-    index('oauth_authorization_codes_application_id_idx').using(
-      'btree',
-      table.applicationId.asc().nullsLast().op('text_ops')
-    ),
-    index('oauth_authorization_codes_user_id_idx').using(
-      'btree',
-      table.userId.asc().nullsLast().op('text_ops')
-    ),
+    index('oauth_authorization_codes_code_idx').on(table.code),
+    index('oauth_authorization_codes_application_id_idx').on(table.applicationId),
+    index('oauth_authorization_codes_user_id_idx').on(table.userId),
     foreignKey({
       columns: [table.applicationId],
       foreignColumns: [oauthApplications.id],
@@ -684,7 +661,7 @@ export const oauthAuthorizationCodes = pgTable(
 )
 
 // OAuth Access Tokens
-export const oauthAccessTokens = pgTable(
+export const oauthAccessTokens = sqliteTable(
   'oauth_access_tokens',
   {
     id: text('id').notNull().primaryKey(),
@@ -692,42 +669,21 @@ export const oauthAccessTokens = pgTable(
     refreshToken: text('refresh_token').unique(),
     applicationId: text('application_id').notNull(),
     userId: text('user_id').notNull(),
-    scopes: text('scopes').array().notNull(),
-    expiresAt: timestamp('expires_at', {
-      withTimezone: true,
-      mode: 'string',
-    }).notNull(),
-    refreshTokenExpiresAt: timestamp('refresh_token_expires_at', {
-      withTimezone: true,
-      mode: 'string',
-    }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull(),
+    expiresAt: text('expires_at').notNull(),
+    refreshTokenExpiresAt: text('refresh_token_expires_at'),
+    createdAt: text('created_at')
       .notNull()
-      .defaultNow(),
-    lastUsedAt: timestamp('last_used_at', {
-      withTimezone: true,
-      mode: 'string',
-    }),
-    revoked: boolean('revoked').default(false),
-    revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'string' }),
+      .$defaultFn(() => new Date().toISOString()),
+    lastUsedAt: text('last_used_at'),
+    revoked: integer('revoked', { mode: 'boolean' }).default(false),
+    revokedAt: text('revoked_at'),
   },
   (table) => [
-    index('oauth_access_tokens_token_idx').using(
-      'btree',
-      table.token.asc().nullsLast().op('text_ops')
-    ),
-    index('oauth_access_tokens_refresh_token_idx').using(
-      'btree',
-      table.refreshToken.asc().nullsLast().op('text_ops')
-    ),
-    index('oauth_access_tokens_application_id_idx').using(
-      'btree',
-      table.applicationId.asc().nullsLast().op('text_ops')
-    ),
-    index('oauth_access_tokens_user_id_idx').using(
-      'btree',
-      table.userId.asc().nullsLast().op('text_ops')
-    ),
+    index('oauth_access_tokens_token_idx').on(table.token),
+    index('oauth_access_tokens_refresh_token_idx').on(table.refreshToken),
+    index('oauth_access_tokens_application_id_idx').on(table.applicationId),
+    index('oauth_access_tokens_user_id_idx').on(table.userId),
     foreignKey({
       columns: [table.applicationId],
       foreignColumns: [oauthApplications.id],
