@@ -10,9 +10,11 @@
   "env": {
     "local": {
       "name": "lemma-api-local",
-      "triggers": {
-        "crons": ["*/5 * * * *"]
-      },
+      // Cron trigger disabled — newsletter scheduling not yet supported and frequent
+      // firings were hitting usage limits. Re-enable when newsletters ship.
+      // "triggers": {
+      //   "crons": ["*/5 * * * *"]
+      // },
       "vars": {
         "ENV": "local",
         "ALLOWED_API_ORIGINS": "http://localhost:3000,http://localhost:5173",
@@ -105,9 +107,11 @@
     },
     "production": {
       "name": "lemma-api",
-      "triggers": {
-        "crons": ["*/5 * * * *"]
-      },
+      // Cron trigger disabled — newsletter scheduling not yet supported and frequent
+      // firings were hitting usage limits. Re-enable when newsletters ship.
+      // "triggers": {
+      //   "crons": ["*/5 * * * *"]
+      // },
       "routes": [
         {
           "pattern": "api.irere.dev",
