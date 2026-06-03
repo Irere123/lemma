@@ -12,6 +12,7 @@
       "name": "lemma-api-local",
       "triggers": {
         "crons": ["*/5 * * * *"]
+
       },
       "vars": {
         "ENV": "local",
