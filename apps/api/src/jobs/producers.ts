@@ -46,16 +46,15 @@ type EnqueueOptions = {
 }
 
 async function processInline(data: JobData, delay?: number) {
+  // Inline execution only runs when no queue binding is configured (local dev).
+  // A delayed setTimeout is NOT durable on Workers — the isolate can be evicted
+  // before it fires, silently dropping the job. Run immediately instead and warn
+  // that the delay was ignored, so the job is never lost.
   if (delay && delay > 0) {
-    setTimeout(
-      () => {
-        import('./consumer')
-          .then(({ processJobData }) => processJobData(data))
-          .catch((error) => jobLogger.error('Inline delayed job failed', error as Error))
-      },
-      Math.min(delay, 2_147_483_647)
-    )
-    return
+    jobLogger.warn('No queue binding; running delayed job immediately (delay ignored)', {
+      delay,
+      jobType: (data as { type?: string }).type,
+    })
   }
 
   const { processJobData } = await import('./consumer')

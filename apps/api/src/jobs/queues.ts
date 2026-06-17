@@ -1,4 +1,5 @@
 import { getRuntimeBindings, type QueueBinding } from '@api/env-runtime'
+import { QUEUE_NAMES } from './queue-config'
 import type {
   AnalyticsJobData,
   EmailJobData,
@@ -6,7 +7,6 @@ import type {
   NewsletterJobData,
   ScheduledJobData,
 } from './types'
-import { QUEUE_NAMES } from './queue-config'
 
 export function getEmailQueue(): QueueBinding<EmailJobData | JobData> | null {
   return (

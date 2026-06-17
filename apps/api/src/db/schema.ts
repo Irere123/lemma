@@ -465,6 +465,30 @@ export const unsubscribeEvents = createTable(
 export type UnSubscribeEvent = typeof unsubscribeEvents.$inferSelect
 export type UnSubscribeEventInsert = typeof unsubscribeEvents.$inferInsert
 
+// Per-subscriber delivery ledger. Guarantees a newsletter send is idempotent:
+// a retried/duplicated batch job can claim each (campaignId, subscriberId) pair
+// exactly once, so subscribers never receive the same campaign twice. campaignId
+// is a plain text column (not an FK) because A/B variants use a suffixed id.
+export const newsletterDeliveries = createTable(
+  'newsletter_deliveries',
+  {
+    id: text('id').primaryKey(),
+    campaignId: text('campaign_id').notNull(),
+    subscriberId: text('subscriber_id')
+      .notNull()
+      .references(() => subscribers.id, { onDelete: 'cascade' }),
+    deliveredAt: integer('delivered_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index('newsletter_deliveries_campaign_idx').on(table.campaignId),
+    index('newsletter_deliveries_subscriber_idx').on(table.subscriberId),
+    unique('newsletter_deliveries_unique').on(table.campaignId, table.subscriberId),
+  ]
+)
+
+export type NewsletterDelivery = typeof newsletterDeliveries.$inferSelect
+export type NewsletterDeliveryInsert = typeof newsletterDeliveries.$inferInsert
+
 // ============================================================================
 // WORKSPACES & MULTI-TENANCY
 // ============================================================================

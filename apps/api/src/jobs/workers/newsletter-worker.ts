@@ -1,14 +1,15 @@
 import { render } from '@react-email/render'
-import { inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 import { createDb } from '@api/db'
 import { getCampaignById, updateCampaign } from '@api/db/queries/campaigns'
 import { getDocumentById } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
-import { subscribers } from '@api/db/schema'
+import { newsletterDeliveries, subscribers } from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { logger } from '@api/lib/observability'
+import { generateId } from '@api/lib/utils'
 import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
 import { enqueueNewsletter, scheduleNewsletter } from '../producers'
 import type {
@@ -102,12 +103,35 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
     return
   }
 
+  // Idempotency: atomically claim each (campaignId, subscriberId) pair. Only the
+  // newly-inserted rows proceed, so a retried batch never re-sends to a
+  // subscriber who already received this campaign.
+  const claimed = await db
+    .insert(newsletterDeliveries)
+    .values(
+      batchSubscribers.map((s: any) => ({
+        id: generateId('nd'),
+        campaignId,
+        subscriberId: s.id,
+      }))
+    )
+    .onConflictDoNothing()
+    .returning({ subscriberId: newsletterDeliveries.subscriberId })
+
+  const claimedIds = new Set(claimed.map((c: { subscriberId: string }) => c.subscriberId))
+  const recipients = batchSubscribers.filter((s: any) => claimedIds.has(s.id))
+
+  if (recipients.length === 0) {
+    workerLogger.info('Newsletter batch already delivered, skipping', { batchIndex, campaignId })
+    return
+  }
+
   // Render newsletter template
   const NewsletterTemplate = await getNewsletterTemplate()
 
   // Prepare batch emails
   const emails = await Promise.all(
-    batchSubscribers.map(async (subscriber: any) => {
+    recipients.map(async (subscriber: any) => {
       const html = await render(
         NewsletterTemplate({
           document: {
@@ -142,18 +166,34 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
     })
   )
 
-  // Send batch
-  const result = await sendBatchEmails({
-    emails: emails.map((e) => ({
-      ...e,
-      emailType: 'marketing' as const,
-    })),
-  })
+  // Send batch. If it fails, release the claims so the retry re-attempts these
+  // recipients instead of skipping them as "already delivered".
+  let result: Awaited<ReturnType<typeof sendBatchEmails>>
+  try {
+    result = await sendBatchEmails({
+      emails: emails.map((e) => ({
+        ...e,
+        emailType: 'marketing' as const,
+      })),
+    })
+  } catch (error) {
+    await db.delete(newsletterDeliveries).where(
+      and(
+        eq(newsletterDeliveries.campaignId, campaignId),
+        inArray(
+          newsletterDeliveries.subscriberId,
+          recipients.map((s: any) => s.id)
+        )
+      )
+    )
+    throw error
+  }
 
   workerLogger.info('Newsletter batch completed', {
     campaignId,
     batchIndex: batchIndex + 1,
     totalBatches,
+    recipientCount: recipients.length,
     result: result.message,
   })
 }
