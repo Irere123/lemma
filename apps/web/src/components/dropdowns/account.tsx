@@ -38,7 +38,7 @@ export function AccountDropdown({
   return (
     <Menu>
       <MenuTrigger render={trigger as ReactElement<Record<string, unknown>>} />
-      <MenuPopup align={align} side={side} sideOffset={4}>
+      <MenuPopup align={align} side={side} sideOffset={4} className='min-w-54!'>
         <MenuItem
           render={
             <Link to='/u/$username' params={{ username: 'profile' }}>

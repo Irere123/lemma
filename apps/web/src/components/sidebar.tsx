@@ -82,6 +82,7 @@ export function Sidebar() {
         <div
           className={cn('flex flex-1 flex-col gap-1', expanded ? 'items-stretch' : 'items-center')}
         >
+          <SidebarSearchButton expanded={expanded} />
           <SidebarLink
             href='/app'
             exact
@@ -89,7 +90,6 @@ export function Sidebar() {
             label='Library'
             expanded={expanded}
           />
-          <SidebarSearchButton expanded={expanded} />
           <SidebarCreateDocumentButton expanded={expanded} />
           <SidebarLink
             href='/app/settings'
