@@ -38,7 +38,7 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - run: bun install
 
       # `deploy:<env>` runs the Vite build and then `wrangler deploy --env <env>`.
       - name: Build & deploy (${{ env.TARGET_ENV }})

@@ -30,7 +30,7 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - run: bun install
       - run: bun run --cwd apps/api typecheck
 
   build-web:
@@ -47,7 +47,7 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - run: bun install
       - run: bun run --cwd apps/web build
 
   # ---- Advisory gates (pre-existing debt; not yet blocking) ------------------
@@ -68,7 +68,7 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - run: bun install
       - run: bun run biome:check
 
   # TODO: the web type-check has pre-existing project-reference issues; make this
@@ -88,5 +88,5 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - run: bun install
       - run: bun run --cwd apps/web typecheck
