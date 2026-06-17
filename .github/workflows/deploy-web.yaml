@@ -1,0 +1,45 @@
+name: Deploy Web
+
+on:
+  push:
+    branches: [staging, main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'bun.lock'
+      - '.github/workflows/deploy-web.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-web-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy web (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    env:
+      TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      # The web app has no runtime secrets — all of its config is public
+      # (VITE_PUBLIC_* vars in wrangler.jsonc). Only deploy credentials are needed.
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
+      - name: Cache bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+
+      # `deploy:<env>` runs the Vite build and then `wrangler deploy --env <env>`.
+      - name: Build & deploy (${{ env.TARGET_ENV }})
+        run: bun run --cwd apps/web deploy:${{ env.TARGET_ENV }}

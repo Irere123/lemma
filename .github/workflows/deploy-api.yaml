@@ -1,28 +1,54 @@
-name: Cloudflare API Deploy
-permissions:
-  contents: read
+name: Deploy API
+
 on:
   push:
-    branches:
-      - main
+    branches: [staging, main]
     paths:
-      - apps/api/**
-      - packages/**
-      - bun.lock
+      - 'apps/api/**'
+      - 'packages/**'
+      - 'bun.lock'
+      - '.github/workflows/deploy-api.yaml'
+
+permissions:
+  contents: read
+
+# Never run two deploys to the same environment at once; do not cancel an
+# in-flight deploy (it may already be applying migrations).
+concurrency:
+  group: deploy-api-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy API to Cloudflare Production
+    name: Deploy API (${{ github.ref_name == 'main' && 'production' || 'staging' }})
     runs-on: ubuntu-latest
-    concurrency: cloudflare-api-production
+    # Maps to a GitHub Environment so the Cloudflare token can be scoped and
+    # production can require manual approval (configured in repo settings).
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    env:
+      TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      # Deploy credentials only — runtime secrets live as Worker secrets and are
+      # never passed through CI (see docs/DEPLOYMENT.md).
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.2
+      - name: Cache bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run --cwd apps/api typecheck
-      - run: bun run --cwd apps/api deploy:production
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Type check
+        run: bun run --cwd apps/api typecheck
+
+      - name: Apply D1 migrations (${{ env.TARGET_ENV }})
+        run: bun run --cwd apps/api migrate:${{ env.TARGET_ENV }}
+
+      - name: Deploy (${{ env.TARGET_ENV }})
+        run: bun run --cwd apps/api deploy:${{ env.TARGET_ENV }}
