@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
 import {
@@ -191,6 +191,62 @@ export const getCampaignStats = async (db: DB, campaignId: string): Promise<Camp
   }
 }
 
+/**
+ * Batch campaign stats for many campaigns (avoids the GraphQL N+1 when resolving
+ * `Campaign.stats` across a list).
+ */
+export const getCampaignStatsByIds = async (
+  db: DB,
+  campaignIds: string[]
+): Promise<Map<string, CampaignStats>> => {
+  const map = new Map<string, CampaignStats>()
+  if (campaignIds.length === 0) return map
+
+  const clicksRows = await db
+    .select({
+      campaignId: campaignLinks.campaignId,
+      total: sql<number>`count(${clickEvents.id})`,
+      unique: sql<number>`count(distinct ${clickEvents.subscriberId})`,
+    })
+    .from(campaignLinks)
+    .leftJoin(clickEvents, eq(clickEvents.linkId, campaignLinks.id))
+    .where(inArray(campaignLinks.campaignId, campaignIds))
+    .groupBy(campaignLinks.campaignId)
+
+  const unsubRows = await db
+    .select({
+      campaignId: unsubscribeEvents.campaignId,
+      count: sql<number>`count(*)`,
+    })
+    .from(unsubscribeEvents)
+    .where(inArray(unsubscribeEvents.campaignId, campaignIds))
+    .groupBy(unsubscribeEvents.campaignId)
+
+  const clicksByCampaign = new Map(clicksRows.map((r) => [r.campaignId, r]))
+  const unsubsByCampaign = new Map(unsubRows.map((r) => [r.campaignId, r.count]))
+
+  for (const campaignId of campaignIds) {
+    const clicks = clicksByCampaign.get(campaignId)
+    const totalClicks = clicks?.total ?? 0
+    const uniqueClicks = clicks?.unique ?? 0
+    const totalUnsubscribes = unsubsByCampaign.get(campaignId) ?? 0
+    // TODO: Track total sent in campaign table (mirrors getCampaignStats).
+    const totalSent = 0
+
+    map.set(campaignId, {
+      campaignId,
+      totalSent,
+      totalClicks,
+      uniqueClicks,
+      totalUnsubscribes,
+      clickRate: totalSent > 0 ? (uniqueClicks / totalSent) * 100 : 0,
+      unsubscribeRate: totalSent > 0 ? (totalUnsubscribes / totalSent) * 100 : 0,
+    })
+  }
+
+  return map
+}
+
 export const getClicksByLink = async (
   db: DB,
   campaignId: string
@@ -208,6 +264,46 @@ export const getClicksByLink = async (
     .groupBy(campaignLinks.id)
 
   return results
+}
+
+/**
+ * Batch link-click breakdowns for many campaigns (avoids the GraphQL N+1 when
+ * resolving `Campaign.linkClicks` across a list).
+ */
+export const getClicksByLinkForCampaigns = async (
+  db: DB,
+  campaignIds: string[]
+): Promise<
+  Map<string, Array<{ linkId: string; url: string; label: string | null; clicks: number }>>
+> => {
+  const map = new Map<
+    string,
+    Array<{ linkId: string; url: string; label: string | null; clicks: number }>
+  >()
+  if (campaignIds.length === 0) return map
+
+  const results = await db
+    .select({
+      campaignId: campaignLinks.campaignId,
+      linkId: campaignLinks.id,
+      url: campaignLinks.url,
+      label: campaignLinks.label,
+      clicks: sql<number>`count(${clickEvents.id})`,
+    })
+    .from(campaignLinks)
+    .leftJoin(clickEvents, eq(clickEvents.linkId, campaignLinks.id))
+    .where(inArray(campaignLinks.campaignId, campaignIds))
+    .groupBy(campaignLinks.id)
+
+  for (const id of campaignIds) map.set(id, [])
+
+  for (const row of results) {
+    const list = map.get(row.campaignId) ?? []
+    list.push({ linkId: row.linkId, url: row.url, label: row.label, clicks: row.clicks })
+    map.set(row.campaignId, list)
+  }
+
+  return map
 }
 
 export const getClicksOverTime = async (

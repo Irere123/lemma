@@ -1,31 +1,31 @@
+import { eq, sql } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
-import { sql, eq } from 'drizzle-orm'
 
-import { campaigns, type Campaign } from '@api/db/schema'
 import {
+  type CampaignStats,
   createCampaign,
-  updateCampaign,
-  getCampaignById,
-  getCampaignsByUser,
   deleteCampaign,
+  getCampaignById,
   getCampaignStats,
+  getCampaignsByUser,
   getClicksByLink,
   getSubscriberStats,
-  type CampaignStats,
+  updateCampaign,
 } from '@api/db/queries/campaigns'
 import { getDocumentById } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
+import { type Campaign, campaigns } from '@api/db/schema'
 import { slugifyString } from '@api/db/utils/slugify'
-import { generateId } from '@api/lib/utils'
 import { enqueueNewsletter, scheduleNewsletter } from '@api/jobs/producers'
+import { generateId } from '@api/lib/utils'
 import type { GraphQLContext } from '../context'
-import { requireAuth } from '../context'
+import { requireScope } from '../context'
 import {
   buildConnectionFromCursor,
-  getLimit,
-  decodeCursor,
-  type ConnectionArgs,
   type Connection,
+  type ConnectionArgs,
+  decodeCursor,
+  getLimit,
 } from '../pagination'
 
 type PaginationInput = ConnectionArgs
@@ -71,7 +71,7 @@ export const campaignResolvers = {
       args: { pagination?: PaginationInput },
       context: GraphQLContext
     ): Promise<Connection<Campaign>> => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.read')
 
       const { db, session } = context
       const userId = session!.user.id
@@ -98,7 +98,7 @@ export const campaignResolvers = {
       args: { id: string },
       context: GraphQLContext
     ): Promise<Campaign | null> => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.read')
 
       const campaign = await getCampaignById(context.db, args.id)
       if (!campaign) return null
@@ -117,7 +117,7 @@ export const campaignResolvers = {
       args: { id: string },
       context: GraphQLContext
     ): Promise<CampaignStats | null> => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.read')
 
       const campaign = await getCampaignById(context.db, args.id)
       if (!campaign || campaign.userId !== context.session!.user.id) {
@@ -134,7 +134,7 @@ export const campaignResolvers = {
       args: { id: string },
       context: GraphQLContext
     ): Promise<LinkClickStats[]> => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.read')
 
       const campaign = await getCampaignById(context.db, args.id)
       if (!campaign || campaign.userId !== context.session!.user.id) {
@@ -147,7 +147,7 @@ export const campaignResolvers = {
     },
 
     subscriberStats: async (_: unknown, __: unknown, context: GraphQLContext) => {
-      requireAuth(context)
+      requireScope(context, 'subscribers.read')
       return getSubscriberStats(context.db, context.session!.user.id)
     },
   },
@@ -158,7 +158,7 @@ export const campaignResolvers = {
       args: { input: CreateCampaignInput },
       context: GraphQLContext
     ): Promise<Campaign> => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.write')
 
       const { db, session } = context
       const slug = slugifyString(args.input.title) || generateId()
@@ -179,7 +179,7 @@ export const campaignResolvers = {
       args: { input: SendCampaignInput },
       context: GraphQLContext
     ) => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.write')
 
       const { db, session } = context
       const { campaignId, documentId } = args.input
@@ -221,7 +221,7 @@ export const campaignResolvers = {
       args: { input: ScheduleCampaignInput },
       context: GraphQLContext
     ) => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.write')
 
       const { db, session } = context
       const { campaignId, documentId, scheduledAt } = args.input
@@ -260,7 +260,7 @@ export const campaignResolvers = {
       args: { id: string },
       context: GraphQLContext
     ): Promise<boolean> => {
-      requireAuth(context)
+      requireScope(context, 'campaigns.write')
 
       const { db, session } = context
 
@@ -277,17 +277,20 @@ export const campaignResolvers = {
   },
 
   Campaign: {
+    // Field resolvers use per-request DataLoaders to batch across a list of
+    // campaigns (avoids N+1). The parent campaign is already ownership-checked
+    // by the query/mutation that produced it.
     document: async (parent: Campaign, _: unknown, context: GraphQLContext) => {
       if (!parent.documentId) return null
-      return getDocumentById(context.db, parent.documentId)
+      return context.loaders.document(parent.documentId)
     },
 
     stats: async (parent: Campaign, _: unknown, context: GraphQLContext) => {
-      return getCampaignStats(context.db, parent.id)
+      return context.loaders.campaignStats(parent.id)
     },
 
     linkClicks: async (parent: Campaign, _: unknown, context: GraphQLContext) => {
-      return getClicksByLink(context.db, parent.id)
+      return context.loaders.campaignLinkClicks(parent.id)
     },
   },
 }
