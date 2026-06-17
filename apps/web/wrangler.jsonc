@@ -11,12 +11,8 @@
   "observability": {
     "enabled": true
   },
-  "routes": [
-    {
-      "pattern": "lemma.irere.dev",
-      "custom_domain": true
-    }
-  ],
+  // Routes are defined per-environment below. Named environments do NOT inherit
+  // a top-level `routes` key, so each env binds its own custom domain.
   "env": {
     "local": {
       "name": "brain-local",
@@ -27,6 +23,12 @@
     },
     "staging": {
       "name": "brain-staging",
+      "routes": [
+        {
+          "pattern": "staging.irere.dev",
+          "custom_domain": true
+        }
+      ],
       "vars": {
         "VITE_PUBLIC_BACKEND_URL": "https://sapi.irere.dev",
         "VITE_PUBLIC_APP_URL": "https://staging.irere.dev"
@@ -34,6 +36,12 @@
     },
     "production": {
       "name": "brainos",
+      "routes": [
+        {
+          "pattern": "lemma.irere.dev",
+          "custom_domain": true
+        }
+      ],
       "vars": {
         "VITE_PUBLIC_BACKEND_URL": "https://api.irere.dev",
         "VITE_PUBLIC_APP_URL": "https://irere.dev"

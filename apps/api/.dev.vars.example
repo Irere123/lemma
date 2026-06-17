@@ -1,0 +1,22 @@
+# apps/api/.dev.vars.example
+#
+# Copy to `.dev.vars` (gitignored) to supply REAL secrets for local
+# `wrangler dev`. Values here override the placeholders in the `local` env of
+# wrangler.jsonc.
+#
+# In staging/production these are NEVER committed and NEVER passed through CI —
+# they are Cloudflare Worker secrets, set once with:
+#   bunx wrangler secret put <NAME> --env <staging|production>
+# See docs/DEPLOYMENT.md.
+
+BETTER_AUTH_SECRET=""
+LEMMA_ENCRYPTION_KEY=""          # 64 hex chars (32 bytes)
+R2_ACCESS_KEY_ID=""
+R2_SECRET_ACCESS_KEY=""
+RESEND_API_KEY=""
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+
+# Optional observability
+# SENTRY_DSN=""
+# SENTRY_RELEASE=""
