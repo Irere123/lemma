@@ -29,6 +29,7 @@
     "@trpc/server": "^11.4.3",
     "aws4fetch": "^1.0.20",
     "better-auth": "^1.2.12",
+    "dataloader": "2.2.3",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.2",
     "graphql": "16.12.0",

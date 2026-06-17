@@ -214,7 +214,7 @@ export const commentResolvers = {
         return null
       }
       // Batched per-request to avoid N+1 across a list of comments.
-      return context.loaders.replyCount(parent.id)
+      return context.loaders.replyCount.load(parent.id)
     },
 
     replies: async (

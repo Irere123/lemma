@@ -1,3 +1,5 @@
+import DataLoader from 'dataloader'
+
 import type { DB } from '@api/db'
 import {
   type CampaignStats,
@@ -11,87 +13,69 @@ import type { Document } from '@api/db/schema'
 type LinkClickStats = { linkId: string; url: string; label: string | null; clicks: number }
 
 /**
- * Minimal per-request batching loader (a small DataLoader): coalesces the keys
- * requested within a microtask into a single batch query and memoizes results
- * for the lifetime of the request. Uses `queueMicrotask` for Workers
- * compatibility (no `process`/`setImmediate` dependency).
+ * Adapt a Map-returning batch query into a DataLoader batch function. DataLoader
+ * requires results in the same order and length as the requested keys, so we map
+ * each key through the result Map and fall back for any the query omitted.
  */
-export function createBatchLoader<K extends string, V>(
+function fromMap<K, V>(
   batchFn: (keys: K[]) => Promise<Map<K, V>>,
   fallback: (key: K) => V
-): (key: K) => Promise<V> {
-  const cache = new Map<K, Promise<V>>()
-  let batch: { key: K; resolve: (value: V) => void; reject: (error: unknown) => void }[] = []
-  let scheduled = false
-
-  const flush = () => {
-    scheduled = false
-    const current = batch
-    batch = []
-    const keys = [...new Set(current.map((item) => item.key))]
-
-    batchFn(keys)
-      .then((result) => {
-        for (const item of current) {
-          item.resolve(result.get(item.key) ?? fallback(item.key))
-        }
-      })
-      .catch((error) => {
-        for (const item of current) item.reject(error)
-      })
-  }
-
-  return (key: K): Promise<V> => {
-    const cached = cache.get(key)
-    if (cached) return cached
-
-    const promise = new Promise<V>((resolve, reject) => {
-      batch.push({ key, resolve, reject })
-    })
-    cache.set(key, promise)
-
-    if (!scheduled) {
-      scheduled = true
-      queueMicrotask(flush)
-    }
-
-    return promise
+): (keys: readonly K[]) => Promise<V[]> {
+  return async (keys) => {
+    const result = await batchFn([...keys])
+    return keys.map((key) => result.get(key) ?? fallback(key))
   }
 }
 
+// Batch within a single microtask without depending on `process`/`setImmediate`,
+// which aren't available on Cloudflare Workers.
+const batchScheduleFn = (callback: () => void) => queueMicrotask(callback)
+
 export type GraphQLLoaders = {
-  document: (id: string) => Promise<Document | null>
-  campaignStats: (campaignId: string) => Promise<CampaignStats>
-  campaignLinkClicks: (campaignId: string) => Promise<LinkClickStats[]>
-  replyCount: (parentId: string) => Promise<number>
+  document: DataLoader<string, Document | null>
+  campaignStats: DataLoader<string, CampaignStats>
+  campaignLinkClicks: DataLoader<string, LinkClickStats[]>
+  replyCount: DataLoader<string, number>
 }
 
 /** Build a fresh set of loaders for a single GraphQL request. */
 export function createLoaders(db: DB): GraphQLLoaders {
   return {
-    document: createBatchLoader<string, Document | null>(
-      (ids) => getDocumentsByIds(db, ids) as Promise<Map<string, Document | null>>,
-      () => null
+    document: new DataLoader<string, Document | null>(
+      fromMap(
+        (ids) => getDocumentsByIds(db, ids) as Promise<Map<string, Document | null>>,
+        () => null
+      ),
+      { batchScheduleFn }
     ),
-    campaignStats: createBatchLoader<string, CampaignStats>(
-      (ids) => getCampaignStatsByIds(db, ids),
-      (campaignId) => ({
-        campaignId,
-        totalSent: 0,
-        totalClicks: 0,
-        uniqueClicks: 0,
-        totalUnsubscribes: 0,
-        clickRate: 0,
-        unsubscribeRate: 0,
-      })
+    campaignStats: new DataLoader<string, CampaignStats>(
+      fromMap(
+        (ids) => getCampaignStatsByIds(db, ids),
+        (campaignId) => ({
+          campaignId,
+          totalSent: 0,
+          totalClicks: 0,
+          uniqueClicks: 0,
+          totalUnsubscribes: 0,
+          clickRate: 0,
+          unsubscribeRate: 0,
+        })
+      ),
+      { batchScheduleFn }
     ),
-    campaignLinkClicks: createBatchLoader<string, LinkClickStats[]>(
-      (ids) => getClicksByLinkForCampaigns(db, ids),
-      () => []
+    campaignLinkClicks: new DataLoader<string, LinkClickStats[]>(
+      fromMap(
+        (ids) => getClicksByLinkForCampaigns(db, ids),
+        () => []
+      ),
+      { batchScheduleFn }
     ),
-    replyCount: createBatchLoader<string, number>(
-      (ids) => getReplyCountsByParentIds(db, ids),
-      () => 0
+    replyCount: new DataLoader<string, number>(
+      fromMap(
+        (ids) => getReplyCountsByParentIds(db, ids),
+        () => 0
+      ),
+      { batchScheduleFn }
     ),
   }
 }

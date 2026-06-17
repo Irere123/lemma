@@ -282,15 +282,15 @@ export const campaignResolvers = {
     // by the query/mutation that produced it.
     document: async (parent: Campaign, _: unknown, context: GraphQLContext) => {
       if (!parent.documentId) return null
-      return context.loaders.document(parent.documentId)
+      return context.loaders.document.load(parent.documentId)
     },
 
     stats: async (parent: Campaign, _: unknown, context: GraphQLContext) => {
-      return context.loaders.campaignStats(parent.id)
+      return context.loaders.campaignStats.load(parent.id)
     },
 
     linkClicks: async (parent: Campaign, _: unknown, context: GraphQLContext) => {
-      return context.loaders.campaignLinkClicks(parent.id)
+      return context.loaders.campaignLinkClicks.load(parent.id)
     },
   },
 }
