@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { IconHeart, IconHeartFilled, IconLoader2 } from '@tabler/icons-react'
+import { IconHeart, IconHeartFilled, IconLoader2, IconMessageCircle } from '@tabler/icons-react'
 import { type FormEvent, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -54,6 +54,36 @@ export function LikeButton({ documentId }: { documentId: string }) {
   )
 }
 
+/**
+ * Read-only engagement summary shown in the article byline: total likes and
+ * comments. Reuses the same queries as the interactive controls below, so the
+ * numbers stay in sync via the shared React Query cache.
+ */
+export function ArticleStats({ documentId }: { documentId: string }) {
+  const trpc = useTRPC()
+  const { data: likeStatus } = useQuery(trpc.likes.getStatus.queryOptions({ documentId }))
+  const { data: commentData } = useQuery(trpc.comments.count.queryOptions({ documentId }))
+
+  const likes = likeStatus?.likeCount ?? 0
+  const comments = commentData?.count ?? 0
+
+  return (
+    <div className='flex shrink-0 items-center gap-1 text-muted-foreground text-sm'>
+      <span className='flex items-center gap-1.5 px-2 py-1'>
+        <IconHeart className='size-4' />
+        <span className='tabular-nums'>{likes}</span>
+      </span>
+      <a
+        href='#comments'
+        className='flex items-center gap-1.5 rounded-full px-2 py-1 transition-colors hover:bg-muted hover:text-foreground'
+      >
+        <IconMessageCircle className='size-4' />
+        <span className='tabular-nums'>{comments}</span>
+      </a>
+    </div>
+  )
+}
+
 type CommentItem = {
   id: string
   content: string
@@ -84,6 +114,8 @@ export function Comments({ documentId }: { documentId: string }) {
       onSuccess: () => {
         setContent('')
         queryClient.invalidateQueries({ queryKey: commentsQuery.queryKey })
+        // Keep the byline stat in sync with the freshly posted comment.
+        queryClient.invalidateQueries({ queryKey: trpc.comments.count.queryKey({ documentId }) })
       },
       onError: (err) => toast.error(err.message || 'Could not post comment'),
     })
@@ -98,7 +130,7 @@ export function Comments({ documentId }: { documentId: string }) {
   const comments = (data?.comments ?? []) as CommentItem[]
 
   return (
-    <section className='mx-auto w-full max-w-2xl px-5 md:px-6'>
+    <section id='comments' className='mx-auto w-full max-w-2xl scroll-mt-8 px-5 md:px-6'>
       <h2 className='mb-4 font-semibold text-lg'>
         Comments {comments.length > 0 && <span className='text-muted-foreground'>({comments.length})</span>}
       </h2>

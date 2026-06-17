@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 import { ArticleContent } from '@/components/profile/article-content'
-import { Comments, LikeButton } from '@/components/profile/article-engagement'
+import { ArticleStats, Comments, LikeButton } from '@/components/profile/article-engagement'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { buildSeoHead } from '@/lib/seo'
@@ -76,15 +76,19 @@ function RouteComponent() {
           <p className='mt-4 text-pretty text-muted-foreground text-xl leading-8'>{post.subtitle}</p>
         )}
 
-        <div className='mt-7 flex items-center gap-3 border-border/60 border-b pb-7'>
+        <div className='mt-7 flex items-center justify-between gap-4 border-border/60 border-b pb-7'>
           {author && (
-            <Link to='/u/$username' params={{ username }} className='group flex items-center gap-3'>
-              <Avatar className='size-10'>
+            <Link
+              to='/u/$username'
+              params={{ username }}
+              className='group flex min-w-0 items-center gap-3'
+            >
+              <Avatar className='size-10 shrink-0'>
                 <AvatarImage src={author.image ?? undefined} alt={author.name ?? ''} />
                 <AvatarFallback>{(author.name ?? '?').charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <div className='text-sm leading-tight'>
-                <p className='font-medium group-hover:underline'>{author.name}</p>
+              <div className='min-w-0 text-sm leading-tight'>
+                <p className='truncate font-medium group-hover:underline'>{author.name}</p>
                 <p className='mt-0.5 text-muted-foreground text-xs'>
                   {formatDate(post.publishedDate)}
                   {post.readingTime ? ` · ${post.readingTime}` : ''}
@@ -92,6 +96,7 @@ function RouteComponent() {
               </div>
             </Link>
           )}
+          <ArticleStats documentId={post.id} />
         </div>
 
         {post.bannerImage && (

@@ -1,4 +1,5 @@
 import { TRPCError } from '@trpc/server'
+import { z } from 'zod'
 
 import {
   createComment,
@@ -6,6 +7,7 @@ import {
   getCommentById,
   getCommentWithAuthor,
   getDocumentComments,
+  getDocumentCommentCount,
   getCommentReplies,
   getReplyCount,
   updateComment,
@@ -43,6 +45,14 @@ export const commentsRouter = createTRPCRouter({
       nextCursor,
     }
   }),
+
+  // Total comment count for a document (public - used for byline/engagement stats)
+  count: publicProcedure
+    .input(z.object({ documentId: z.string() }))
+    .query(async ({ ctx: { db }, input }) => {
+      const total = await getDocumentCommentCount(db, input.documentId)
+      return { count: total }
+    }),
 
   // Get replies for a comment
   getReplies: publicProcedure
