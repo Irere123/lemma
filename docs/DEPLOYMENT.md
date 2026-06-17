@@ -1,37 +1,47 @@
 # Deployment & secrets
 
-Both apps run on Cloudflare Workers and are deployed with Wrangler. CI/CD is
-GitHub Actions. This document describes how deploys are triggered and—most
-importantly—**what is public config vs. what is a secret**.
+Both apps run on Cloudflare Workers and are deployed with Wrangler. CI/CD is a
+single GitHub Actions pipeline. This document describes how deploys are
+triggered and—most importantly—**what is public config vs. what is a secret**.
 
-## Environments & branch mapping
+## Environment
 
-| Branch    | Deploys to   | API worker          | Web worker      | API domain        | Web domain          |
-| --------- | ------------ | ------------------- | --------------- | ----------------- | ------------------- |
-| `staging` | `staging`    | `lemma-api-staging` | `brain-staging` | `sapi.irere.dev`  | `staging.irere.dev` |
-| `main`    | `production` | `lemma-api`         | `brainos`       | `api.irere.dev`   | `lemma.irere.dev`   |
+There is **one deployed environment**. The Wrangler env key is `staging`, but it
+carries the **production (customer-facing) config** — that is what customers
+use. The `local` env exists only for local dev (`bun run dev`).
 
-Pull requests run **CI only** (no deploy). Pushing to `staging` or `main`
-triggers the deploy workflows for whichever app changed (path-filtered).
+> Why the name: the git branch and the pipeline deploy with `--env staging`, so
+> the live config lives under the `staging` key. The resources it points at are
+> the real production ones (`lemma-api` on `api.irere.dev`, `lemma-production`
+> D1, etc.).
 
-> `main` does not exist yet — create it from `staging` when you are ready to cut
-> a production line, and set it as a protected branch.
+| App | Wrangler env | Worker     | Domain            | D1 / KV / R2 / Queues prefix |
+| --- | ------------ | ---------- | ----------------- | ---------------------------- |
+| API | `staging`    | `lemma-api`| `api.irere.dev`   | `lemma-production*`          |
+| Web | `staging`    | `brainos`  | `lemma.irere.dev` | — (no runtime state)         |
 
-## Workflows
+Pull requests run **CI only** (no deploy). Pushing to `staging` runs CI and then
+deploys whichever app changed (path-filtered).
 
-| Workflow             | Trigger                              | What it does                                            |
-| -------------------- | ------------------------------------ | ------------------------------------------------------- |
-| `ci.yaml`            | PR + push to `staging`/`main`        | `turbo build` + type-check API/packages (blocking); lint + web type-check (advisory) |
-| `deploy-api.yaml`    | push to `staging`/`main` (api paths) | Type-check → apply D1 migrations → `wrangler deploy`     |
-| `deploy-web.yaml`    | push to `staging`/`main` (web paths) | `turbo build --filter=web` → `wrangler deploy`           |
+## Pipeline
 
-The target env is derived from the branch: `main → production`, otherwise
-`staging`.
+One workflow, **`.github/workflows/ci.yaml`** (`CI/CD`), with four jobs:
+
+| Job          | Runs on              | What it does                                                                          |
+| ------------ | -------------------- | ------------------------------------------------------------------------------------- |
+| `ci`         | PR + push `staging`  | `turbo build` + type-check API/packages (blocking); lint + web type-check (advisory)  |
+| `changes`    | push, after CI green | Detects which app changed (`dorny/paths-filter`) so only needed deploys run           |
+| `deploy-api` | api changed          | `bun install` → apply D1 migrations → `wrangler deploy --env staging`                  |
+| `deploy-web` | web changed          | `bun install` → `turbo build --filter=web` → `wrangler deploy --env staging`           |
+
+Deploys are gated on a green `ci` (`needs:`), never run on PRs, and never run a
+redundant type-check of their own. The API deploy does **not** type-check again
+(CI already did). Docs-only commits skip the whole pipeline (`paths-ignore`).
 
 ### Root orchestration via Turborepo
 
-CI never runs per-app `--cwd` commands. Everything goes through Turbo from the
-repo root so workspace packages build in dependency order and nothing builds
+CI never runs per-app `--cwd` build commands. Everything goes through Turbo from
+the repo root so workspace packages build in dependency order and nothing builds
 against a stale or missing dependency:
 
 - `bun run build` → `turbo build` builds `@lemma/headless` (its gitignored
@@ -48,25 +58,27 @@ against a stale or missing dependency:
 
 ## GitHub configuration
 
-### 1. Repository / environment secrets
+### 1. Environment secrets
 
-Only **deploy credentials** belong in GitHub. Add these as secrets on the
-`production` and `staging` GitHub Environments (Settings → Environments):
+Only **deploy credentials** belong in GitHub. Add these to the `staging` GitHub
+Environment (Settings → Environments):
 
-| Secret                  | Used for                          |
-| ----------------------- | --------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | Wrangler auth for deploy + D1      |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account                |
+| Secret                  | Used for                     |
+| ----------------------- | ---------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Wrangler auth for deploy + D1 |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account            |
 
 **Cloudflare API token scopes** (My Profile → API Tokens → Create Token):
 `Workers Scripts:Edit`, `Workers KV Storage:Edit`, `Workers R2 Storage:Edit`,
-`D1:Edit`, `Account Settings:Read`. Scope it to the single account.
+`D1:Edit`, `Account Settings:Read`. Scope it to the single account. The token
+**must** have `D1:Edit` on the account that owns `lemma-production`, or the
+`Apply D1 migrations` step fails with `code: 7403` (not authorized).
 
-### 2. GitHub Environments (recommended)
+### 2. GitHub Environment
 
-Create `production` and `staging` environments and attach the token secrets to
-each. Add **required reviewers** to `production` so prod deploys need manual
-approval. The workflows already set `environment:` based on the branch.
+Create the `staging` environment and attach the token secrets to it. The deploy
+jobs reference `environment: staging`. Add **required reviewers** there if you
+want deploys to need manual approval.
 
 ## Configuration model — public vs. secret
 
@@ -86,7 +98,7 @@ The web app has **no runtime secrets**.
 
 ### Secret (Cloudflare Worker secrets — API only)
 
-Never committed. Set per environment:
+Never committed. Set on the `staging` env:
 
 - `BETTER_AUTH_SECRET`
 - `LEMMA_ENCRYPTION_KEY`
@@ -102,7 +114,7 @@ Never committed. Set per environment:
 > secrets there. For real local secrets use `apps/api/.dev.vars` (gitignored;
 > see `.dev.vars.example`).
 
-## Setting Worker secrets (run once per environment)
+## Setting Worker secrets (run once)
 
 Secrets persist across deploys, so this is a one-time setup (and whenever a value
 rotates). They never flow through CI.
@@ -111,43 +123,12 @@ rotates). They never flow through CI.
 cd apps/api
 for NAME in BETTER_AUTH_SECRET LEMMA_ENCRYPTION_KEY R2_ACCESS_KEY_ID \
             R2_SECRET_ACCESS_KEY RESEND_API_KEY GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
-  bunx wrangler secret put "$NAME" --env production   # or --env staging
+  bunx wrangler secret put "$NAME" --env staging
 done
 
 # verify
-bunx wrangler secret list --env production
+bunx wrangler secret list --env staging
 ```
-
-## Provisioning the staging API (one-time)
-
-The `staging` env in `apps/api/wrangler.jsonc` has placeholder resource IDs.
-Create the resources and paste the IDs in:
-
-```sh
-cd apps/api
-bunx wrangler d1 create lemma-staging                 # -> database_id
-bunx wrangler kv namespace create CACHE-staging       # -> id
-bunx wrangler r2 bucket create lemma-staging-assets
-for q in email newsletter analytics scheduled; do
-  bunx wrangler queues create lemma-staging-$q
-  bunx wrangler queues create lemma-staging-$q-dlq
-done
-```
-
-Replace `REPLACE_WITH_STAGING_D1_ID` and `REPLACE_WITH_STAGING_KV_ID`, set the
-staging Worker secrets (above), then `bun run migrate:staging`. Add the
-`sapi.irere.dev` and `staging.irere.dev` custom domains to the account.
-
-## Production go-live checklist
-
-- [ ] Create the `main` branch and protect it (require PR + CI + reviewer).
-- [ ] Add `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` to both GitHub Environments.
-- [ ] Set all Worker secrets for `production` (and `staging`).
-- [ ] **Verify `ALLOWED_API_ORIGINS` is present for production** — it is required
-      by `src/env.ts` but is *not* currently in the production `vars`; add it (it
-      is public config) or the worker will fail to boot.
-- [ ] First prod deploy runs migrations automatically; for a manual run use
-      `bun run --cwd apps/api migrate:production`.
 
 ## Local development
 
@@ -162,19 +143,24 @@ bun run dev
 
 ## Known gaps / follow-ups
 
+- **`ALLOWED_API_ORIGINS` is missing from the `staging` (production) `vars`** but
+  is **required** by `src/env.ts` (`z.string()`). The worker throws
+  `Invalid environment variables` on boot until it is added. Add it as public
+  config — e.g. `"ALLOWED_API_ORIGINS": "https://lemma.irere.dev"` (the
+  customer web origin) — before relying on the deploy.
+- The web route is `lemma.irere.dev` while `VITE_PUBLIC_APP_URL` is
+  `https://irere.dev` — reconcile these to the real customer domain.
+- `ENV` only accepts `local | production`, so the live env runs with `ENV:
+  "production"`. There is no distinct `staging` mode.
+- The old per-stage resources (`lemma-api-staging`, `brain-staging`, the
+  `lemma-staging` D1/KV, `lemma-staging-*` queues/buckets) are now **orphaned**
+  and can be deleted from Cloudflare.
 - **Lint (Biome) and web type-check are advisory** in CI (`continue-on-error`)
-  because of pre-existing violations. The web type-check fails on a stray
-  `react-router` import in `src/hooks/use-nprogress.ts` and ~68 `TS6307`
-  project-reference errors (web's `tsc -b` pulls API source in via path aliases
-  without listing it). Fix those, then drop `continue-on-error` and fold
-  `--filter=web` back into the blocking type-check.
+  because of pre-existing violations (a stray `react-router` import in
+  `src/hooks/use-nprogress.ts` and ~68 `TS6307` project-reference errors). Fix
+  those, then drop `continue-on-error` and fold `--filter=web` into the blocking
+  type-check.
 - **Bun is pinned to `1.3.14`** (`package.json` `packageManager` + every
   `setup-bun` step). Do not downgrade to `1.2.x`: bun `1.2.2` has a `catalog:`
-  resolution bug that tries to `git clone` `@types/react` and fails
-  (`@types/react@catalog: failed to resolve`), which breaks every CI job. CI
-  uses `bun install --frozen-lockfile` for reproducible installs, so regenerate
-  and commit `bun.lock` (`bun install`) whenever dependencies change.
-- The web `production` route is `lemma.irere.dev` while `VITE_PUBLIC_APP_URL`
-  is `https://irere.dev` — reconcile these to the real production domain.
-- Consider whether `ENV` should gain a distinct `staging` value (it currently
-  reuses `production` behavior on the staging worker).
+  resolution bug that breaks `bun install`. CI uses `--frozen-lockfile`, so
+  regenerate and commit `bun.lock` whenever dependencies change.

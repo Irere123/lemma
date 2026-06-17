@@ -13,6 +13,7 @@ Welcome to the irere-brain project documentation. This documentation is designed
 ### Getting Started
 
 4. **[Contributing Guide](./CONTRIBUTING.md)** - How to contribute to the project
+5. **[Deployment & Secrets](./DEPLOYMENT.md)** - Environment, CI/CD pipeline, and Worker secrets
 
 ## 🎯 Project Overview
 
@@ -115,11 +116,17 @@ We welcome contributions! Please read our [Contributing Guide](./CONTRIBUTING.md
 # Install dependencies
 bun install
 
-# Start development servers
-cd api && bun dev        # API server
-cd web && bun dev        # Web app
-cd packages/email && bun dev  # Email preview
+# Start every app together (via Turborepo) from the repo root
+bun run dev
+
+# …or run one at a time
+bun run --cwd apps/api dev            # API server (wrangler dev, :4000)
+bun run --cwd apps/web dev            # Web app (vite dev)
+bun run --cwd packages/email start:dev  # Email preview (:3003)
 ```
+
+See **[Deployment & Secrets](./DEPLOYMENT.md)** for how the single `staging`
+environment and the CI/CD pipeline work.
 
 ## 📝 Documentation Standards
 
