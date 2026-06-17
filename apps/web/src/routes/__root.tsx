@@ -1,6 +1,7 @@
 // src/routes/__root.tsx
 /// <reference types="vite/client" />
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
+import { Agentation } from 'agentation'
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import type { ReactNode } from 'react'
 
@@ -53,6 +54,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
       <body>
         <Providers>{children}</Providers>
         <Scripts />
+        {process.env.NODE_ENV === 'development' && <Agentation />}
       </body>
     </html>
   )
