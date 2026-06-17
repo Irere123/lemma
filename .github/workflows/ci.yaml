@@ -1,27 +1,31 @@
-name: CI
+name: CI/CD
 
 on:
   pull_request:
     branches: [staging, main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE'
   push:
     branches: [staging, main]
-
-# Cancel superseded runs for the same ref.
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE'
 
 permissions:
   contents: read
 
 jobs:
-  # Everything is orchestrated from the repo root with Turborepo. Turbo builds
-  # workspace packages in dependency order (e.g. @lemma/headless -> web) and
-  # caches results, so there are no per-app `--cwd` commands and no chance of an
-  # app building against a stale/missing workspace dependency.
-  verify:
+  ci:
     name: Build & type-check
+    # Skip on pushes to main: that tree already passed CI on staging before promotion.
+    if: ${{ github.event_name == 'pull_request' || github.ref_name == 'staging' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -35,23 +39,59 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
 
-      # Build all deployable artifacts in dependency order.
       - name: Build
         run: bun run build
 
-      # Type-check the API and shared packages. `web` is excluded here because it
-      # has known, pre-existing type errors (see the advisory job below). Turbo
-      # reuses the build above, so dependency declarations are already present.
       - name: Type-check (API + packages)
         run: bunx turbo typecheck --filter='!web'
 
-  # Advisory checks: pre-existing debt that we surface on every PR but do not
-  # block on yet. Each step is `continue-on-error` so the job stays green while
-  # still showing failures as annotations. Promote to required checks (and drop
-  # `continue-on-error`) once each is clean.
-  quality:
-    name: Lint & web type-check (advisory)
+      # Advisory: pre-existing debt, surfaced as annotations but not blocking.
+      - name: Lint & format check (advisory)
+        if: ${{ !cancelled() }}
+        run: bun run biome:check
+        continue-on-error: true
+      - name: Type-check web (advisory)
+        if: ${{ !cancelled() }}
+        run: bunx turbo typecheck --filter=web
+        continue-on-error: true
+
+  # Only spin up the deploy(s) that are needed, and only once CI is green.
+  changes:
+    name: Detect changed apps
+    needs: ci
+    if: ${{ always() && github.event_name == 'push' && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
     runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'packages/**'
+              - 'bun.lock'
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'bun.lock'
+
+  deploy-api:
+    name: Deploy API (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    concurrency:
+      group: deploy-api-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -65,14 +105,41 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
 
-      # TODO: clear repo-wide Biome violations, then make this blocking.
-      - name: Lint & format check
-        run: bun run biome:check
-        continue-on-error: true
+      - name: Apply D1 migrations (${{ env.TARGET_ENV }})
+        run: bun run --cwd apps/api migrate:${{ env.TARGET_ENV }}
 
-      # TODO: fix the react-router import in src/hooks/use-nprogress.ts and the
-      # tsconfig project-reference setup that pulls API source into web, then
-      # fold web back into the blocking type-check above.
-      - name: Type-check (web)
-        run: bunx turbo typecheck --filter=web
-        continue-on-error: true
+      - name: Deploy (${{ env.TARGET_ENV }})
+        run: bun run --cwd apps/api deploy:${{ env.TARGET_ENV }}
+
+  deploy-web:
+    name: Deploy web (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    concurrency:
+      group: deploy-web-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Cache bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+
+      - name: Build (web + workspace deps)
+        run: bunx turbo build --filter=web
+
+      - name: Deploy (${{ env.TARGET_ENV }})
+        working-directory: apps/web
+        run: bunx wrangler deploy --env ${{ env.TARGET_ENV }}
