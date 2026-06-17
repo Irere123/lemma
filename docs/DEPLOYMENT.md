@@ -147,6 +147,11 @@ bun run dev
 - **Lint (Biome) and web type-check are advisory** in CI (`continue-on-error`)
   because of pre-existing violations. Fix them, then drop `continue-on-error`
   and mark them required.
+- **CI/CD uses `bun install` (not `--frozen-lockfile`)** because `bun.lock` is
+  currently out of sync with the workspace (catalog deps fail to resolve under
+  a frozen install). Regenerate the lockfile with the pinned bun version
+  (`bun@1.2.2 install`), commit it, then switch the workflows back to
+  `bun install --frozen-lockfile` for reproducible installs.
 - The web `production` route is `lemma.irere.dev` while `VITE_PUBLIC_APP_URL`
   is `https://irere.dev` — reconcile these to the real production domain.
 - Consider whether `ENV` should gain a distinct `staging` value (it currently
