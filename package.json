@@ -14,6 +14,8 @@
   "packageManager": "bun@1.2.2",
   "scripts": {
     "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
     "format": "biome format --write",
     "lint": "biome lint",
     "biome:check": "biome check"

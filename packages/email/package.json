@@ -10,7 +10,7 @@
     "clean": "rm -rf node_modules",
     "typecheck": "tsc --noEmit",
     "start:dev": "email dev -p 3003",
-    "build": "email build",
+    "preview:build": "email build",
     "start": "email start"
   },
   "dependencies": {

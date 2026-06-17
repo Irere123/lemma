@@ -45,7 +45,7 @@ jobs:
       - run: bun install
 
       - name: Type check
-        run: bun run --cwd apps/api typecheck
+        run: bunx turbo typecheck --filter=@lemma/api
 
       - name: Apply D1 migrations (${{ env.TARGET_ENV }})
         run: bun run --cwd apps/api migrate:${{ env.TARGET_ENV }}

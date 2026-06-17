@@ -40,6 +40,13 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install
 
-      # `deploy:<env>` runs the Vite build and then `wrangler deploy --env <env>`.
-      - name: Build & deploy (${{ env.TARGET_ENV }})
-        run: bun run --cwd apps/web deploy:${{ env.TARGET_ENV }}
+      # Build from the repo root so Turbo builds workspace deps in order
+      # (@lemma/headless -> web). A bare `vite build` would not rebuild
+      # @lemma/headless' dist (which is gitignored), so it must go through Turbo.
+      - name: Build (web + workspace deps)
+        run: bunx turbo build --filter=web
+
+      # Deploy the already-built worker. No rebuild here.
+      - name: Deploy (${{ env.TARGET_ENV }})
+        working-directory: apps/web
+        run: bunx wrangler deploy --env ${{ env.TARGET_ENV }}
