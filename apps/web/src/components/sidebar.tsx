@@ -5,8 +5,8 @@ import {
   IconLoader2,
   IconPlus,
   IconSearch,
+  IconSelector,
   IconSettings,
-  IconUserCircle,
 } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
@@ -78,7 +78,7 @@ export function Sidebar() {
           {expanded && (
             <span className='truncate font-semibold text-base tracking-tight'>Lemma</span>
           )}
-          <AccountDropdown />
+          <SidebarToggle expanded={expanded} onToggle={toggle} />
         </div>
 
         <div
@@ -100,13 +100,6 @@ export function Sidebar() {
           />
           <SidebarCreateDocumentButton expanded={expanded} />
           <SidebarLink
-            href='/u/profile'
-            exact
-            icon={<IconUserCircle size={20} />}
-            label='Profile'
-            expanded={expanded}
-          />
-          <SidebarLink
             href='/app/settings'
             icon={<IconSettings size={20} />}
             label='Settings'
@@ -114,31 +107,44 @@ export function Sidebar() {
           />
         </div>
 
-        <div className={cn('flex flex-col gap-1', expanded ? 'items-stretch' : 'items-center')}>
-          <SidebarToggle expanded={expanded} onToggle={toggle} />
-          <div
-            className={cn(
-              'mt-1 flex items-center border-neutral-200 border-t pt-2',
-              expanded ? 'gap-2 px-1' : 'justify-center'
-            )}
-          >
-            {isPending ? (
-              <Skeleton className='size-9 shrink-0 rounded-full' />
-            ) : (
+        <div
+          className={cn(
+            'flex border-neutral-200 border-t pt-2',
+            expanded ? 'flex-col' : 'justify-center'
+          )}
+        >
+          {isPending ? (
+            <Skeleton className='size-9 shrink-0 rounded-full' />
+          ) : (
+            <AccountDropdown
+              side='top'
+              align='start'
+              triggerClassName={cn(
+                'group/item flex items-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+                expanded
+                  ? 'w-full gap-2 rounded-lg p-1 text-left'
+                  : 'size-10 justify-center rounded-full'
+              )}
+            >
               <Avatar className='size-9 shrink-0 rounded-full'>
                 <AvatarImage alt='User' src={session?.user?.image ?? undefined} />
                 <AvatarFallback>{session?.user?.name?.charAt(0)}</AvatarFallback>
               </Avatar>
-            )}
-            {expanded && (
-              <div className='min-w-0 flex-1'>
-                <p className='truncate font-medium text-foreground text-sm'>
-                  {session?.user?.name}
-                </p>
-                <p className='truncate text-muted-foreground text-xs'>{session?.user?.email}</p>
-              </div>
-            )}
-          </div>
+              {expanded && (
+                <>
+                  <span className='min-w-0 flex-1'>
+                    <span className='block truncate font-medium text-foreground text-sm'>
+                      {session?.user?.name}
+                    </span>
+                    <span className='block truncate text-muted-foreground text-xs'>
+                      {session?.user?.email}
+                    </span>
+                  </span>
+                  <IconSelector size={16} className='shrink-0 opacity-70' />
+                </>
+              )}
+            </AccountDropdown>
+          )}
         </div>
       </nav>
     </>
@@ -225,34 +231,32 @@ export function SidebarCreateDocumentButton({
   )
 }
 
+// Compact icon toggle that lives in the header. Always renders as an icon
+// button (with a tooltip) so it stays tidy next to the wordmark when expanded
+// and centered in the rail when collapsed.
 function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  const label = expanded ? 'Collapse sidebar' : 'Expand sidebar'
+
   const button = (
     <button
       type='button'
       onClick={onToggle}
-      aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+      aria-label={label}
       aria-expanded={expanded}
-      className={itemClassName(expanded)}
+      className='group/item flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background'
     >
-      <span className='flex size-10 shrink-0 items-center justify-center'>
-        {expanded ? (
-          <IconLayoutSidebarLeftCollapse size={20} />
-        ) : (
-          <IconLayoutSidebarLeftExpand size={20} />
-        )}
-      </span>
-      {expanded && <span className='truncate text-sm'>Collapse</span>}
+      {expanded ? (
+        <IconLayoutSidebarLeftCollapse size={20} />
+      ) : (
+        <IconLayoutSidebarLeftExpand size={20} />
+      )}
     </button>
   )
-
-  if (expanded) {
-    return button
-  }
 
   return (
     <Tooltip>
       <TooltipTrigger render={button as ReactElement<Record<string, unknown>>} />
-      <TooltipPopup side='right'>Expand sidebar</TooltipPopup>
+      <TooltipPopup side='right'>{label}</TooltipPopup>
     </Tooltip>
   )
 }
