@@ -15,78 +15,64 @@ permissions:
   contents: read
 
 jobs:
-  # ---- Blocking gates (currently green) -------------------------------------
-  typecheck-api:
-    name: Type check (API)
+  # Everything is orchestrated from the repo root with Turborepo. Turbo builds
+  # workspace packages in dependency order (e.g. @lemma/headless -> web) and
+  # caches results, so there are no per-app `--cwd` commands and no chance of an
+  # app building against a stale/missing workspace dependency.
+  verify:
+    name: Build & type-check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.2.2
+          bun-version: 1.3.14
       - name: Cache bun
         uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install
-      - run: bun run --cwd apps/api typecheck
+      - run: bun install --frozen-lockfile
 
-  build-web:
-    name: Build (web)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.2
-      - name: Cache bun
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install
-      - run: bun run --cwd apps/web build
+      # Build all deployable artifacts in dependency order.
+      - name: Build
+        run: bun run build
 
-  # ---- Advisory gates (pre-existing debt; not yet blocking) ------------------
-  # TODO: drop `continue-on-error` once the repo-wide Biome violations are fixed,
-  # then mark this a required status check in branch protection.
-  lint:
-    name: Lint & format (advisory)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.2
-      - name: Cache bun
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install
-      - run: bun run biome:check
+      # Type-check the API and shared packages. `web` is excluded here because it
+      # has known, pre-existing type errors (see the advisory job below). Turbo
+      # reuses the build above, so dependency declarations are already present.
+      - name: Type-check (API + packages)
+        run: bunx turbo typecheck --filter='!web'
 
-  # TODO: the web type-check has pre-existing project-reference issues; make this
-  # blocking once `bun run --cwd apps/web typecheck` is green.
-  typecheck-web:
-    name: Type check (web, advisory)
+  # Advisory checks: pre-existing debt that we surface on every PR but do not
+  # block on yet. Each step is `continue-on-error` so the job stays green while
+  # still showing failures as annotations. Promote to required checks (and drop
+  # `continue-on-error`) once each is clean.
+  quality:
+    name: Lint & web type-check (advisory)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.2.2
+          bun-version: 1.3.14
       - name: Cache bun
         uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install
-      - run: bun run --cwd apps/web typecheck
+      - run: bun install --frozen-lockfile
+
+      # TODO: clear repo-wide Biome violations, then make this blocking.
+      - name: Lint & format check
+        run: bun run biome:check
+        continue-on-error: true
+
+      # TODO: fix the react-router import in src/hooks/use-nprogress.ts and the
+      # tsconfig project-reference setup that pulls API source into web, then
+      # fold web back into the blocking type-check above.
+      - name: Type-check (web)
+        run: bunx turbo typecheck --filter=web
+        continue-on-error: true

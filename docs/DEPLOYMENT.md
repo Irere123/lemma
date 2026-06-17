@@ -21,12 +21,30 @@ triggers the deploy workflows for whichever app changed (path-filtered).
 
 | Workflow             | Trigger                              | What it does                                            |
 | -------------------- | ------------------------------------ | ------------------------------------------------------- |
-| `ci.yaml`            | PR + push to `staging`/`main`        | Type-check API, build web (blocking); lint + web type-check (advisory) |
+| `ci.yaml`            | PR + push to `staging`/`main`        | `turbo build` + type-check API/packages (blocking); lint + web type-check (advisory) |
 | `deploy-api.yaml`    | push to `staging`/`main` (api paths) | Type-check → apply D1 migrations → `wrangler deploy`     |
-| `deploy-web.yaml`    | push to `staging`/`main` (web paths) | Build → `wrangler deploy`                                |
+| `deploy-web.yaml`    | push to `staging`/`main` (web paths) | `turbo build --filter=web` → `wrangler deploy`           |
 
 The target env is derived from the branch: `main → production`, otherwise
 `staging`.
+
+### Root orchestration via Turborepo
+
+CI never runs per-app `--cwd` commands. Everything goes through Turbo from the
+repo root so workspace packages build in dependency order and nothing builds
+against a stale or missing dependency:
+
+- `bun run build` → `turbo build` builds `@lemma/headless` (its gitignored
+  `dist/` is consumed by `web`) **before** `web`. A bare `vite build` would not,
+  which is the class of breakage this setup avoids.
+- `bunx turbo typecheck --filter='!web'` type-checks the API and shared packages
+  (the blocking gate). `--filter=web` is run separately as an advisory check.
+- The task name is `typecheck` everywhere (`turbo.json` + each workspace), and
+  `typecheck` `dependsOn ^build` so a package is type-checked against its
+  dependencies' emitted declarations.
+- `@lemma/email`'s react-email preview build is exposed as `preview:build` (not
+  `build`) so it stays out of the Turbo build graph — nothing consumes its
+  output (the API imports `@lemma/email` as source), and it is flaky to build.
 
 ## GitHub configuration
 
@@ -145,13 +163,17 @@ bun run dev
 ## Known gaps / follow-ups
 
 - **Lint (Biome) and web type-check are advisory** in CI (`continue-on-error`)
-  because of pre-existing violations. Fix them, then drop `continue-on-error`
-  and mark them required.
-- **CI/CD uses `bun install` (not `--frozen-lockfile`)** because `bun.lock` is
-  currently out of sync with the workspace (catalog deps fail to resolve under
-  a frozen install). Regenerate the lockfile with the pinned bun version
-  (`bun@1.2.2 install`), commit it, then switch the workflows back to
-  `bun install --frozen-lockfile` for reproducible installs.
+  because of pre-existing violations. The web type-check fails on a stray
+  `react-router` import in `src/hooks/use-nprogress.ts` and ~68 `TS6307`
+  project-reference errors (web's `tsc -b` pulls API source in via path aliases
+  without listing it). Fix those, then drop `continue-on-error` and fold
+  `--filter=web` back into the blocking type-check.
+- **Bun is pinned to `1.3.14`** (`package.json` `packageManager` + every
+  `setup-bun` step). Do not downgrade to `1.2.x`: bun `1.2.2` has a `catalog:`
+  resolution bug that tries to `git clone` `@types/react` and fails
+  (`@types/react@catalog: failed to resolve`), which breaks every CI job. CI
+  uses `bun install --frozen-lockfile` for reproducible installs, so regenerate
+  and commit `bun.lock` (`bun install`) whenever dependencies change.
 - The web `production` route is `lemma.irere.dev` while `VITE_PUBLIC_APP_URL`
   is `https://irere.dev` — reconcile these to the real production domain.
 - Consider whether `ENV` should gain a distinct `staging` value (it currently
