@@ -319,7 +319,7 @@ export async function updateOAuthApplication(db: DB, params: UpdateOAuthApplicat
 }
 
 // Update OAuth application approval status
-export async function updateOAuthApplicationstatus(
+export async function updateOAuthApplicationStatus(
   db: DB,
   params: {
     id: string

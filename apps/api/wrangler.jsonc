@@ -20,7 +20,6 @@
         "BASE_URL": "http://localhost:4000",
         "FRONTEND_URL": "http://localhost:3000",
         "BETTER_AUTH_URL": "http://localhost:4000",
-        "ADMIN_USER_ID": "local-admin-user",
         "CLOUDFLARE_ACCOUNT_ID": "00000000000000000000000000000000",
         "R2_BUCKET_URL": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/lemma-local-assets",
         "R2_STORAGE_BASE_URL": "http://localhost:4000/assets",
@@ -53,6 +52,20 @@
           "binding": "CACHE",
           "id": "00000000000000000000000000000000",
           "preview_id": "00000000000000000000000000000000"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "API_RATE_LIMITER",
+          "namespace_id": "2001",
+          // 300 requests / 60s per caller, per Cloudflare location.
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "2002",
+          // Strict: 20 auth/OAuth attempts / 60s per caller, per location.
+          "simple": { "limit": 20, "period": 60 }
         }
       ],
       "queues": {
@@ -124,7 +137,7 @@
         "BETTER_AUTH_URL": "https://api.irere.dev",
         "CLOUDFLARE_ACCOUNT_ID": "c2c7b2ff17bd68a351ee368bddfad7d9",
         "R2_BUCKET_URL": "https://assets.irere.dev",
-        "R2_STORAGE_BASE_URL": "https://assests.irere.dev",
+        "R2_STORAGE_BASE_URL": "https://assets.irere.dev",
         "RESEND_DOMAIN": "updates.irere.dev"
       },
       "d1_databases": [
@@ -146,6 +159,20 @@
         {
           "binding": "CACHE",
           "id": "c4d7e58664054cbfb3335c52b0be2742"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "API_RATE_LIMITER",
+          "namespace_id": "1001",
+          // 300 requests / 60s per caller, per Cloudflare location.
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "1002",
+          // Strict: 20 auth/OAuth attempts / 60s per caller, per location.
+          "simple": { "limit": 20, "period": 60 }
         }
       ],
       "queues": {

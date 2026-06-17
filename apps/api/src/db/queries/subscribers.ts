@@ -1,6 +1,7 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
+
 import type { DB } from '@api/db'
-import { subscribers, type Subscriber } from '@api/db/schema'
+import { type Subscriber, subscribers } from '@api/db/schema'
 import { generateId } from '@api/lib/utils'
 
 // Types
@@ -53,6 +54,50 @@ export const getConfirmedSubscribers = async (db: DB, writerId: string): Promise
     )
 
   return confirmedSubscribers
+}
+
+/**
+ * List subscribers for a writer (most recent first), optionally filtered by state.
+ */
+export const getSubscribersByWriter = async (
+  db: DB,
+  writerId: string,
+  options?: { limit?: number; status?: 'confirmed' | 'pending' | 'unsubscribed' }
+): Promise<Subscriber[]> => {
+  const limit = Math.min(options?.limit ?? 20, 100)
+
+  const filters = [eq(subscribers.writerId, writerId)]
+  if (options?.status === 'confirmed') {
+    filters.push(eq(subscribers.isConfirmed, true), eq(subscribers.isUnsubscribed, false))
+  } else if (options?.status === 'pending') {
+    filters.push(eq(subscribers.isConfirmed, false), eq(subscribers.isUnsubscribed, false))
+  } else if (options?.status === 'unsubscribed') {
+    filters.push(eq(subscribers.isUnsubscribed, true))
+  }
+
+  return db
+    .select()
+    .from(subscribers)
+    .where(and(...filters))
+    .orderBy(desc(subscribers.subscribedAt))
+    .limit(limit)
+}
+
+/**
+ * Get a single subscriber scoped to a writer (ownership-safe lookup).
+ */
+export const getWriterSubscriberById = async (
+  db: DB,
+  id: string,
+  writerId: string
+): Promise<Subscriber | undefined> => {
+  const [subscriber] = await db
+    .select()
+    .from(subscribers)
+    .where(and(eq(subscribers.id, id), eq(subscribers.writerId, writerId)))
+    .limit(1)
+
+  return subscriber
 }
 
 /**

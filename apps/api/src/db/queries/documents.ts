@@ -3,7 +3,6 @@ import { and, desc, eq, lt, ne } from 'drizzle-orm'
 import type { DB } from '@api/db'
 import { type Document, type DocumentStatus, documents } from '@api/db/schema'
 import { slugifyString } from '@api/db/utils/slugify'
-import { env } from '@api/env-runtime'
 import { generateId } from '@api/lib/utils'
 import type { UpsertDocumentData } from '@api/schemas'
 
@@ -127,8 +126,16 @@ export const upsertDocument = async (
   }
 }
 
-export const deleteDocument = async (db: DB, documentId: string): Promise<void> => {
-  await db.delete(documents).where(eq(documents.id, documentId))
+export const deleteDocument = async (
+  db: DB,
+  documentId: string,
+  userId: string
+): Promise<boolean> => {
+  const result = await db
+    .delete(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
+    .returning({ id: documents.id })
+  return result.length > 0
 }
 
 export const getDueScheduledDocuments = async (
@@ -189,34 +196,31 @@ export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
   return userDocuments
 }
 
-export const getAdminPublishedArticles = async (db: DB, limit: number = DEFAULT_PAGE_SIZE) => {
-  const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
-
-  const results = await db
-    .select({
-      id: documents.id,
-      slug: documents.slug,
-      title: documents.title,
-      subtitle: documents.subtitle,
-      status: documents.status,
-      userId: documents.userId,
-      bannerImage: documents.bannerImage,
-      scheduledDate: documents.scheduledDate,
-      publishedDate: documents.publishedDate,
-      createdAt: documents.createdAt,
-      updatedAt: documents.updatedAt,
-    })
-    .from(documents)
-    .where(and(eq(documents.status, 'PUBLISHED'), eq(documents.userId, env.ADMIN_USER_ID)))
-    .orderBy(desc(documents.publishedDate))
-    .limit(safeLimit)
-
-  return results
-}
-
 export const getDocumentById = async (db: DB, id: string) => {
   return db.query.documents.findFirst({
     where: (table, { eq }) => eq(table.id, id),
+  })
+}
+
+/**
+ * Batch-load documents by id (avoids the GraphQL N+1 when resolving
+ * `Campaign.document` across a list of campaigns).
+ */
+export const getDocumentsByIds = async (db: DB, ids: string[]): Promise<Map<string, Document>> => {
+  if (ids.length === 0) return new Map()
+
+  const rows = await db.query.documents.findMany({
+    where: (table, { inArray }) => inArray(table.id, ids),
+  })
+
+  return new Map(rows.map((doc) => [doc.id, doc]))
+}
+
+// User-scoped fetch: only returns the document if it belongs to the caller.
+export const getUserDocumentById = async (db: DB, id: string, userId: string) => {
+  return db.query.documents.findFirst({
+    where: (table, { and: andOp, eq: eqOp }) =>
+      andOp(eqOp(table.id, id), eqOp(table.userId, userId)),
   })
 }
 
@@ -241,11 +245,22 @@ export const updateDocumentBannerImage = async (
   return document
 }
 
+type PublishedArticlesOptions = {
+  limit?: number
+  // Optionally scope the listing to a single writer (e.g. per-writer feeds).
+  writerId?: string
+}
+
 export const getPublishedArticles = async (
   db: DB,
-  limit: number = DEFAULT_PAGE_SIZE
+  options: PublishedArticlesOptions = {}
 ): Promise<Omit<Document, 'markdown'>[]> => {
-  const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
+  const safeLimit = Math.min(options.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
+
+  const filters = [eq(documents.status, 'PUBLISHED')]
+  if (options.writerId) {
+    filters.push(eq(documents.userId, options.writerId))
+  }
 
   const publishedArticles = await db
     .select({
@@ -270,11 +285,22 @@ export const getPublishedArticles = async (
       isFeatured: documents.isFeatured,
     })
     .from(documents)
-    .where(and(eq(documents.status, 'PUBLISHED')))
+    .where(and(...filters))
     .orderBy(desc(documents.publishedDate))
     .limit(safeLimit)
 
   return publishedArticles
+}
+
+// Public fetch: only returns the document if it is PUBLISHED.
+export const getPublishedDocumentById = async (
+  db: DB,
+  id: string
+): Promise<Document | undefined> => {
+  return db.query.documents.findFirst({
+    where: (table, { and: andOp, eq: eqOp }) =>
+      andOp(eqOp(table.id, id), eqOp(table.status, 'PUBLISHED')),
+  })
 }
 
 export const getPublishedArticleBySlug = async (

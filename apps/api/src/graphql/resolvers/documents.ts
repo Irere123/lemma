@@ -10,15 +10,15 @@ import {
   updateDocumentBannerImage,
   upsertDocument,
 } from '@api/db/queries'
-import { documents, type Document, type DocumentStatus } from '@api/db/schema'
+import { type Document, type DocumentStatus, documents } from '@api/db/schema'
 import type { GraphQLContext } from '../context'
 import { requireAuth, requireScope } from '../context'
 import {
   buildConnection,
-  decodeCursor,
-  getLimit,
   type Connection,
   type ConnectionArgs,
+  decodeCursor,
+  getLimit,
 } from '../pagination'
 
 type DocumentFilterInput = {
@@ -145,7 +145,7 @@ export const documentResolvers = {
       context: GraphQLContext
     ): Promise<Document[]> => {
       const limit = Math.min(args.first ?? 20, 100)
-      return getPublishedArticles(context.db, limit) as Promise<Document[]>
+      return getPublishedArticles(context.db, { limit }) as Promise<Document[]>
     },
 
     node: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
@@ -234,7 +234,7 @@ export const documentResolvers = {
         })
       }
 
-      await deleteDocument(db, args.id)
+      await deleteDocument(db, args.id, session!.user.id)
       return true
     },
 

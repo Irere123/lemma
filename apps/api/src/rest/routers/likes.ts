@@ -1,12 +1,17 @@
 import { createRoute, z } from '@hono/zod-openapi'
 import { HTTPException } from 'hono/http-exception'
 
+import { getDocumentById, getDocumentLikeCount, getLikeStatus, toggleLike } from '@api/db/queries'
 import { createRouter } from '@api/lib/utils'
-import { getLikeStatus, toggleLike, getDocumentById, getDocumentLikeCount } from '@api/db/queries'
-import { toggleLikeSchema, toggleLikeResponseSchema, likeStatusResponseSchema } from '@api/schemas'
+import { validateResponse } from '@api/lib/validate-response'
 import { withRequiredScope } from '@api/rest/middleware'
 import { withAuth } from '@api/rest/middleware/auth'
-import { validateResponse } from '@api/lib/validate-response'
+import {
+  errorResponses,
+  likeStatusResponseSchema,
+  toggleLikeResponseSchema,
+  toggleLikeSchema,
+} from '@api/schemas'
 
 const likesRouter = createRouter()
 
@@ -29,6 +34,7 @@ likesRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 429),
     },
   }),
   async (c) => {
@@ -49,6 +55,7 @@ likesRouter.openapi(
     tags: ['Likes'],
     path: '/status/me',
     summary: 'Get like status for authenticated user',
+    security: [{ token: [] }],
     request: {
       query: z.object({ documentId: z.string() }),
     },
@@ -61,6 +68,7 @@ likesRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 401, 403, 429),
     },
     middleware: [withAuth, withRequiredScope('likes.read')],
   }),
@@ -81,6 +89,7 @@ likesRouter.openapi(
     tags: ['Likes'],
     path: '/toggle',
     summary: 'Toggle like on a document',
+    security: [{ token: [] }],
     request: {
       body: {
         content: {
@@ -99,6 +108,7 @@ likesRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 401, 403, 404, 429),
     },
     middleware: [withAuth, withRequiredScope('likes.write')],
   }),

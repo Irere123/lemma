@@ -1,2 +1,2 @@
-export * from './uploads'
 export * from './fetch-with-timeout'
+export * from './uploads'

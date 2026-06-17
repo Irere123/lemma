@@ -6,12 +6,18 @@ import type { Context } from 'hono'
 import { apiKeyCache } from '@api/cache/api-keys-cache'
 import { userCache } from '@api/cache/user-cache'
 import type { DB } from '@api/db'
-import { getApiKeyByToken, getUserById, updatedApiKeyLastUsedAt } from '@api/db/queries'
-import { isValidApiKeyFormat } from '@api/db/utils/api-keys'
+import {
+  getApiKeyByToken,
+  getUserById,
+  updatedApiKeyLastUsedAt,
+  validateAccessToken,
+} from '@api/db/queries'
+import { isOAuthAccessToken, isValidApiKeyFormat } from '@api/db/utils/api-keys'
 import { createAuth } from '@api/lib/auth'
 import { hash } from '@api/lib/encryption'
 import { logger } from '@api/lib/observability'
 import type { Session } from '@api/lib/types'
+import { createLoaders, type GraphQLLoaders } from './dataloaders'
 
 const graphqlLogger = logger.child({ component: 'graphql', subcomponent: 'context' })
 
@@ -20,6 +26,7 @@ export type GraphQLContext = {
   session: Session | null
   scopes: string[]
   isAuthenticated: boolean
+  loaders: GraphQLLoaders
 }
 
 export async function createGraphQLContext(honoContext: Context): Promise<GraphQLContext> {
@@ -42,7 +49,7 @@ export async function createGraphQLContext(honoContext: Context): Promise<GraphQ
         headers: request.headers,
       })
 
-      if (authSession && authSession.user) {
+      if (authSession?.user) {
         session = authSession
         scopes = expandScopes(['apis.all'])
         graphqlLogger.debug('GraphQL context: session authentication', {
@@ -58,7 +65,32 @@ export async function createGraphQLContext(honoContext: Context): Promise<GraphQ
       if (authHeader) {
         const [scheme, token] = authHeader.split(' ')
 
-        if (scheme === 'Bearer' && token && isValidApiKeyFormat(token)) {
+        // OAuth access tokens (lemm_access_token_*). Not cached so revocation and
+        // expiry are always enforced on the live record.
+        if (scheme === 'Bearer' && token && isOAuthAccessToken(token)) {
+          const oauthToken = await validateAccessToken(db, token)
+
+          if (oauthToken?.user) {
+            session = {
+              user: {
+                id: oauthToken.user.id,
+                email: oauthToken.user.email,
+                name: oauthToken.user.name,
+                image: oauthToken.user.image,
+                emailVerified: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              session: {} as any,
+            }
+            scopes = expandScopes(oauthToken.scopes ?? [])
+
+            graphqlLogger.debug('GraphQL context: OAuth access token authentication', {
+              userId: oauthToken.user.id,
+              scopeCount: scopes.length,
+            })
+          }
+        } else if (scheme === 'Bearer' && token && isValidApiKeyFormat(token)) {
           const keyHash = hash(token)
 
           // Check cache first for API key
@@ -115,6 +147,7 @@ export async function createGraphQLContext(honoContext: Context): Promise<GraphQ
       session,
       scopes,
       isAuthenticated: session !== null,
+      loaders: createLoaders(db),
     }
 
     return context

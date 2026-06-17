@@ -18,3 +18,13 @@ export function generateApiKey(): string {
 export function isValidApiKeyFormat(key: string): boolean {
   return key.startsWith('lemma_') && key.length === 70 // lemma_ (6) + 64 hex chars
 }
+
+/**
+ * OAuth access tokens are issued with the `lemm_access_token_` prefix
+ * (distinct from the `lemma_` API-key prefix).
+ * @param token The bearer token to check
+ * @returns True if the token looks like an OAuth access token
+ */
+export function isOAuthAccessToken(token: string): boolean {
+  return token.startsWith('lemm_access_token_')
+}

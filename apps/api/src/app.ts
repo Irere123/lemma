@@ -6,8 +6,9 @@ import { secureHeaders } from 'hono/secure-headers'
 import { env } from './env-runtime'
 import { createYogaServer } from './graphql'
 import { createAuth } from './lib/auth'
-import { getBaseUrl } from './lib/constants'
+import { API_VERSION, getBaseUrl } from './lib/constants'
 import { createRouter } from './lib/utils'
+import { apiRateLimit, authRateLimit } from './rest/middleware'
 import { withDatabase } from './rest/middleware/db'
 import { routers } from './rest/routers'
 import { createTRPCContext } from './trpc/init'
@@ -42,6 +43,13 @@ export function createApp() {
     })
   )
 
+  // Rate limiting (no-op locally when the bindings aren't configured).
+  // Strict limiter on auth/OAuth endpoints; general limiter on the public API.
+  app.use('/auth/*', authRateLimit())
+  app.use('/v1/oauth/*', authRateLimit())
+  app.use('/v1/*', apiRateLimit())
+  app.use('/graphql', apiRateLimit())
+
   app.use(
     '/trpc/*',
     trpcServer({
@@ -55,10 +63,20 @@ export function createApp() {
     return yoga.handle(c.req.raw, { honoContext: c })
   })
 
+  // Liveness/health probe for uptime monitors and platform health checks.
+  // Intentionally dependency-free so it stays green during partial outages.
+  app.get('/health', (c) => {
+    return c.json({
+      status: 'ok',
+      version: API_VERSION,
+      environment: env.ENV,
+    })
+  })
+
   app.doc('/openapi', {
     openapi: '3.1.0',
     info: {
-      version: '0.0.1',
+      version: API_VERSION,
       title: 'Lemma Developer API',
       description: 'Lemma Developer API',
       contact: {
@@ -83,7 +101,7 @@ export function createApp() {
   app.openAPIRegistry.registerComponent('securitySchemes', 'token', {
     type: 'http',
     scheme: 'bearer',
-    description: 'Default authenticaton mechanism',
+    description: 'Default authentication mechanism',
     'x-api-key-example': 'LEMMA.NOW API KEY',
   })
 

@@ -1,9 +1,9 @@
-import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
 import { comments, user } from '@api/db/schema'
 import { generateId } from '@api/lib/utils'
-import type { CreateCommentData, GetCommentsData, CommentWithAuthor } from '@api/schemas'
+import type { CommentWithAuthor, CreateCommentData, GetCommentsData } from '@api/schemas'
 
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 100
@@ -158,6 +158,30 @@ export const getReplyCount = async (db: DB, commentId: string): Promise<number> 
     .where(eq(comments.parentId, commentId))
 
   return result[0]?.count ?? 0
+}
+
+/**
+ * Batch reply counts for many parent comments in a single query (avoids the
+ * GraphQL N+1 when resolving `Comment.replyCount` across a list).
+ */
+export const getReplyCountsByParentIds = async (
+  db: DB,
+  parentIds: string[]
+): Promise<Map<string, number>> => {
+  const map = new Map<string, number>()
+  if (parentIds.length === 0) return map
+
+  const rows = await db
+    .select({ parentId: comments.parentId, count: sql<number>`count(*)` })
+    .from(comments)
+    .where(inArray(comments.parentId, parentIds))
+    .groupBy(comments.parentId)
+
+  for (const row of rows) {
+    if (row.parentId) map.set(row.parentId, row.count)
+  }
+
+  return map
 }
 
 export const getDocumentCommentCount = async (db: DB, documentId: string): Promise<number> => {

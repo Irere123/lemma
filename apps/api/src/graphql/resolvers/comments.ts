@@ -5,24 +5,23 @@ import {
   createComment,
   deleteComment,
   getCommentById,
-  getCommentWithAuthor,
-  getDocumentComments,
   getCommentReplies,
-  getReplyCount,
-  updateComment,
+  getCommentWithAuthor,
   getDocumentById,
+  getDocumentComments,
+  updateComment,
 } from '@api/db/queries'
 import { comments } from '@api/db/schema'
+import type { CommentWithAuthor } from '@api/schemas'
 import type { GraphQLContext } from '../context'
 import { requireAuth, requireScope } from '../context'
 import {
   buildConnection,
-  decodeCursor,
-  getLimit,
   type Connection,
   type ConnectionArgs,
+  decodeCursor,
+  getLimit,
 } from '../pagination'
-import type { CommentWithAuthor } from '@api/schemas'
 
 type CreateCommentInput = {
   documentId: string
@@ -76,16 +75,10 @@ export const commentResolvers = {
 
       const totalCount = await getCommentsTotalCount(db, args.documentId, args.parentId)
 
-      // Add reply counts for top-level comments
-      const commentsWithReplyCounts = await Promise.all(
-        commentsList.map(async (comment) => ({
-          ...comment,
-          replyCount: comment.parentId ? undefined : await getReplyCount(db, comment.id),
-        }))
-      )
-
+      // `Comment.replyCount` is resolved lazily and batched per-request via the
+      // DataLoader, so we don't eagerly compute it here (avoids N+1).
       return buildConnection(
-        commentsWithReplyCounts as any,
+        commentsList as any,
         args.pagination ?? {},
         totalCount,
         (c: any) => c.createdAt?.toISOString() ?? c.id
@@ -220,7 +213,8 @@ export const commentResolvers = {
       if (parent.parentId) {
         return null
       }
-      return getReplyCount(context.db, parent.id)
+      // Batched per-request to avoid N+1 across a list of comments.
+      return context.loaders.replyCount(parent.id)
     },
 
     replies: async (

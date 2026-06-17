@@ -1,5 +1,6 @@
-import { documentStatus } from '@api/db/schema'
 import { z } from '@hono/zod-openapi'
+
+import { documentStatus } from '@api/db/schema'
 
 // Request
 
@@ -41,6 +42,14 @@ export const documentsFilters = z.object({
 export const documentByIdSchema = z.object({
   id: z.string(),
 })
+
+export const getPublishedArticlesSchema = z
+  .object({
+    // Optionally scope the listing to a single writer.
+    writerId: z.string().optional(),
+    limit: z.number().min(1).max(100).optional(),
+  })
+  .optional()
 
 // Responses
 

@@ -6,7 +6,9 @@ export const getPostBySlug = async (slug: string): Promise<IPost> => {
   return response.data
 }
 
-export const getAdminArticles = async (): Promise<{ data: IPost[] }> => {
-  const response = await client.get('/posts/admin/articles')
+export const getPublishedPosts = async (writerId?: string): Promise<{ data: IPost[] }> => {
+  const response = await client.get('/posts', {
+    params: writerId ? { writerId } : undefined,
+  })
   return response.data
 }

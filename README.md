@@ -36,8 +36,8 @@ Our mission: **make thoughts actionable and reusable, not just readable.**
 ### Interfaces
 - REST API  
 - GraphQL API  
-- Webhook support  
 - Programmatic access to all published insights  
+- Webhook support *(planned)*  
 
 ### Publishing & Distribution
 - Newsletter scheduling (email + web)  

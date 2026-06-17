@@ -25,7 +25,7 @@ export type CreateCategoryData = {
 export type UpdateCategoryData = {
   id: string
   name?: string
-  description?: string
+  description?: string | null
   color?: string
   parentId?: string | null
 }

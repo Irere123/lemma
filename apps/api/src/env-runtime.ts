@@ -51,6 +51,10 @@ export type R2BucketBinding = {
   delete: (key: string) => Promise<void>
 }
 
+export type RateLimitBinding = {
+  limit: (options: { key: string }) => Promise<{ success: boolean }>
+}
+
 export type CloudflareBindings = Partial<Environment> & {
   DB?: D1Database
   R2_BUCKET?: R2BucketBinding
@@ -59,6 +63,8 @@ export type CloudflareBindings = Partial<Environment> & {
   NEWSLETTER_QUEUE?: QueueBinding<JobData>
   ANALYTICS_QUEUE?: QueueBinding<JobData>
   SCHEDULED_QUEUE?: QueueBinding<JobData>
+  API_RATE_LIMITER?: RateLimitBinding
+  AUTH_RATE_LIMITER?: RateLimitBinding
 }
 
 let runtimeBindings: CloudflareBindings = {}

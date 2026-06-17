@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
 import { apiKeys } from '@api/db/schema'
@@ -42,7 +42,7 @@ export async function upsertApiKey(db: DB, data: UpsertApiKeyData) {
     const [result] = await db
       .update(apiKeys)
       .set({ name: data.name, scopes: data.scopes })
-      .where(eq(apiKeys.id, data.id))
+      .where(and(eq(apiKeys.id, data.id), eq(apiKeys.userId, data.userId)))
       .returning({ keyHash: apiKeys.keyHash })
 
     // On update we don't return the key, but return keyHash for cache invalidation
@@ -94,12 +94,13 @@ export async function getApiKeysByUser(db: DB, userId: string) {
 
 type DeleteApiKeyParams = {
   id: string
+  userId: string
 }
 
 export async function deleteApiKey(db: DB, params: DeleteApiKeyParams) {
   const [result] = await db
     .delete(apiKeys)
-    .where(eq(apiKeys.id, params.id))
+    .where(and(eq(apiKeys.id, params.id), eq(apiKeys.userId, params.userId)))
     .returning({ keyHash: apiKeys.keyHash })
 
   // Return keyHash for cache invalidation by calling code
