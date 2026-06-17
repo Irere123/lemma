@@ -4,8 +4,13 @@ import { HTTPException } from 'hono/http-exception'
 
 import { apiKeyCache } from '@api/cache/api-keys-cache'
 import { userCache } from '@api/cache/user-cache'
-import { getApiKeyByToken, getUserById, updatedApiKeyLastUsedAt } from '@api/db/queries'
-import { isValidApiKeyFormat } from '@api/db/utils/api-keys'
+import {
+  getApiKeyByToken,
+  getUserById,
+  updatedApiKeyLastUsedAt,
+  validateAccessToken,
+} from '@api/db/queries'
+import { isOAuthAccessToken, isValidApiKeyFormat } from '@api/db/utils/api-keys'
 import { createAuth } from '@api/lib/auth'
 import { hash } from '@api/lib/encryption'
 import { logger } from '@api/lib/observability'
@@ -62,13 +67,40 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
       throw new HTTPException(401, { message: 'Token required' })
     }
 
-    // Handle API keys (start with lemma_ but not lemma_access_token_)
-    if (!token.startsWith('lemma_') || !isValidApiKeyFormat(token)) {
+    const db = c.get('db')
+
+    // Handle OAuth access tokens (lemm_access_token_*). Not cached so revocation
+    // and expiry are always enforced on the live record.
+    if (isOAuthAccessToken(token)) {
+      const oauthToken = await validateAccessToken(db, token)
+
+      if (!oauthToken || !oauthToken.user) {
+        middlewareLogger.warn('Authentication failed: invalid or expired access token')
+        throw new HTTPException(401, { message: 'Invalid or expired access token' })
+      }
+
+      c.set('session', {
+        user: {
+          id: oauthToken.user.id,
+          email: oauthToken.user.email,
+          image: oauthToken.user.image,
+        },
+      })
+      c.set('scopes', expandScopes(oauthToken.scopes ?? []))
+
+      middlewareLogger.debug('OAuth access token authentication successful', {
+        userId: oauthToken.user.id,
+      })
+      await next()
+      return
+    }
+
+    // Handle API keys (lemma_*)
+    if (!isValidApiKeyFormat(token)) {
       middlewareLogger.warn('Authentication failed: invalid token format')
       throw new HTTPException(401, { message: 'Invalid token format' })
     }
 
-    const db = c.get('db')
     const keyHash = hash(token)
 
     // Check cache first for API key
