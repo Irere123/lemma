@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, ne } from 'drizzle-orm'
+import { and, desc, eq, lt, ne, sql } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
 import { type Document, type DocumentStatus, documents } from '@api/db/schema'
@@ -356,4 +356,72 @@ export const getDocumentsByTypeAndStatus = async (
     .limit(safeLimit)
 
   return results
+}
+
+export type DocumentSearchResult = {
+  id: string
+  title: string | null
+  subtitle: string | null
+  // Title with FTS highlight markers (\u0002 … \u0003) around matched terms.
+  titleHighlighted: string | null
+  // Excerpt from the body around the best match, same markers — null when the
+  // match was in the title/subtitle only.
+  snippet: string | null
+}
+
+// Turn a raw user query into a safe FTS5 MATCH expression. We split on anything
+// that isn't a letter/number — which drops FTS operators and punctuation that
+// would otherwise be a syntax error — then prefix-match each token (`term*`) so
+// results refine as the user types. Tokens are implicitly AND-ed.
+const toFtsMatch = (raw: string): string | null => {
+  const tokens = raw.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+  if (tokens.length === 0) return null
+  return tokens.map((token) => `${token}*`).join(' ')
+}
+
+/**
+ * Full-text search across the user's documents (title, subtitle, body) using
+ * the `documents_fts` FTS5 index. Results are ranked by BM25 with the title
+ * weighted highest, and include a highlighted title and a body snippet so the
+ * UI can show *why* each result matched. `char(2)`/`char(3)` are used as the
+ * highlight markers — control characters that never occur in real content, so
+ * the client can split on them without any risk of HTML injection.
+ */
+export const searchUserDocuments = async (
+  db: DB,
+  { userId, query, limit }: { userId: string; query: string; limit: number }
+): Promise<DocumentSearchResult[]> => {
+  const match = toFtsMatch(query)
+  if (!match) return []
+
+  const rows = await db.all<{
+    id: string
+    title: string | null
+    subtitle: string | null
+    title_hl: string | null
+    snippet: string | null
+  }>(sql`
+    SELECT
+      d.id AS id,
+      d.title AS title,
+      d.subtitle AS subtitle,
+      highlight(documents_fts, 0, char(2), char(3)) AS title_hl,
+      snippet(documents_fts, 2, char(2), char(3), '…', 10) AS snippet
+    FROM documents_fts
+    JOIN documents d ON d.rowid = documents_fts.rowid
+    WHERE documents_fts MATCH ${match}
+      AND d.user_id = ${userId}
+    ORDER BY bm25(documents_fts, 10.0, 5.0, 1.0)
+    LIMIT ${limit}
+  `)
+
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    subtitle: row.subtitle,
+    titleHighlighted: row.title_hl,
+    // Only surface the body snippet when it actually contains a highlighted
+    // match; otherwise it's just the start of the body and adds noise.
+    snippet: row.snippet?.includes('\u0002') ? row.snippet : null,
+  }))
 }

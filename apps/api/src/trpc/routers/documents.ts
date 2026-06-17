@@ -5,6 +5,7 @@ import {
   getDocumentById,
   getPublishedArticles,
   getUserDocuments,
+  searchUserDocuments,
   updateDocumentBannerImage,
   upsertDocument,
 } from '@api/db/queries'
@@ -16,6 +17,7 @@ import {
   documentByIdSchema,
   documentsFilters,
   getPublishedArticlesSchema,
+  searchDocumentsSchema,
   sendNewsletterSchema,
   updateBannerImageSchema,
   upsertDocumentSchema,
@@ -80,6 +82,16 @@ export const documentRouter = createTRPCRouter({
         documents: results,
         nextCursor,
       }
+    }),
+
+  searchDocuments: protectedProcedure
+    .input(searchDocumentsSchema)
+    .query(async ({ ctx: { db, user }, input }) => {
+      return searchUserDocuments(db, {
+        userId: user.id,
+        query: input.query,
+        limit: input.limit,
+      })
     }),
 
   sendNewsletter: protectedProcedure

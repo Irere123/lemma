@@ -43,6 +43,11 @@ export const documentByIdSchema = z.object({
   id: z.string(),
 })
 
+export const searchDocumentsSchema = z.object({
+  query: z.string().max(200),
+  limit: z.number().int().min(1).max(50).optional().default(50),
+})
+
 export const getPublishedArticlesSchema = z
   .object({
     // Optionally scope the listing to a single writer.
