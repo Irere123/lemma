@@ -117,6 +117,24 @@ export const getSubscriberByEmail = async (
 }
 
 /**
+ * Get a subscriber scoped to a writer. Emails are unique per writer (not
+ * globally), so subscribe/confirm flows must look up by (writerId, email).
+ */
+export const getSubscriberByWriterAndEmail = async (
+  db: DB,
+  writerId: string,
+  email: string
+): Promise<Subscriber | undefined> => {
+  const [subscriber] = await db
+    .select()
+    .from(subscribers)
+    .where(and(eq(subscribers.writerId, writerId), eq(subscribers.email, email)))
+    .limit(1)
+
+  return subscriber
+}
+
+/**
  * Get subscriber by token
  */
 export const getSubscriberByToken = async (
