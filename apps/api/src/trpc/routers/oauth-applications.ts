@@ -10,7 +10,7 @@ import {
   regenerateClientSecret,
   revokeUserApplicationTokens,
   updateOAuthApplication,
-  updateOAuthApplicationstatus,
+  updateOAuthApplicationStatus,
 } from '@api/db/queries'
 import { sendEmail } from '@api/lib/messaging/email/mailer'
 import {
@@ -25,6 +25,7 @@ import {
 } from '@api/schemas/oauth-applications'
 import { revokeUserApplicationAccessSchema } from '@api/schemas/oauth-flow'
 import { createTRPCRouter, protectedProcedure } from '@api/trpc/init'
+import { TRPCError } from '@trpc/server'
 
 export const oauthApplicationsRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -48,12 +49,12 @@ export const oauthApplicationsRouter = createTRPCRouter({
       // Validate client_id
       const application = await getOAuthApplicationByClientId(db, clientId)
       if (!application || !application.active) {
-        throw new Error('Invalid client_id')
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid client_id' })
       }
 
       // Validate redirect_uri
       if (!application.redirectUris.includes(redirectUri)) {
-        throw new Error('Invalid redirect_uri')
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid redirect_uri' })
       }
 
       // Validate scopes
@@ -61,7 +62,7 @@ export const oauthApplicationsRouter = createTRPCRouter({
       const invalidScopes = requestedScopes.filter((s) => !application.scopes.includes(s))
 
       if (invalidScopes.length > 0) {
-        throw new Error(`Invalid scopes: ${invalidScopes.join(', ')}`)
+        throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid scopes: ${invalidScopes.join(', ')}` })
       }
 
       // Return application info for consent screen
@@ -91,14 +92,14 @@ export const oauthApplicationsRouter = createTRPCRouter({
       // Validate client_id first (needed for both allow and deny)
       const application = await getOAuthApplicationByClientId(db, clientId)
       if (!application || !application.active) {
-        throw new Error('Invalid client_id')
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid client_id' })
       }
 
       // Validate scopes against application's registered scopes (prevent privilege escalation)
       const invalidScopes = scopes.filter((scope) => !application.scopes.includes(scope))
 
       if (invalidScopes.length > 0) {
-        throw new Error(`Invalid scopes: ${invalidScopes.join(', ')}`)
+        throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid scopes: ${invalidScopes.join(', ')}` })
       }
 
       const redirectUrl = new URL(redirectUri)
@@ -115,7 +116,7 @@ export const oauthApplicationsRouter = createTRPCRouter({
 
       // Enforce PKCE for public clients
       if (application.isPublic && !codeChallenge) {
-        throw new Error('PKCE is required for public clients')
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'PKCE is required for public clients' })
       }
 
       // Create authorization code
@@ -128,7 +129,7 @@ export const oauthApplicationsRouter = createTRPCRouter({
       })
 
       if (!authCode) {
-        throw new Error('Failed to create authorization code')
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create authorization code' })
       }
 
       // Send app installation email only if this is the first time authorizing this app
@@ -182,12 +183,12 @@ export const oauthApplicationsRouter = createTRPCRouter({
     const application = await getOAuthApplicationById(db, input.id)
 
     if (!application) {
-      throw new Error('OAuth application not found')
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
     }
 
     // Verify user owns this application
     if (application.createdBy !== user.id) {
-      throw new Error('OAuth application not found')
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
     }
 
     return application
@@ -202,7 +203,7 @@ export const oauthApplicationsRouter = createTRPCRouter({
       // Verify user owns this application before updating
       const existingApp = await getOAuthApplicationById(db, id)
       if (!existingApp || existingApp.createdBy !== user.id) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       const application = await updateOAuthApplication(db, {
@@ -211,7 +212,7 @@ export const oauthApplicationsRouter = createTRPCRouter({
       })
 
       if (!application) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       return application
@@ -225,7 +226,7 @@ export const oauthApplicationsRouter = createTRPCRouter({
       // Verify user owns this application before deleting
       const existingApp = await getOAuthApplicationById(db, input.id)
       if (!existingApp || existingApp.createdBy !== user.id) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       const result = await deleteOAuthApplication(db, {
@@ -233,7 +234,7 @@ export const oauthApplicationsRouter = createTRPCRouter({
       })
 
       if (!result) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       return { success: true }
@@ -247,13 +248,13 @@ export const oauthApplicationsRouter = createTRPCRouter({
       // Verify user owns this application before regenerating secret
       const existingApp = await getOAuthApplicationById(db, input.id)
       if (!existingApp || existingApp.createdBy !== user.id) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       const result = await regenerateClientSecret(db, input.id)
 
       if (!result) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       return result
@@ -288,21 +289,21 @@ export const oauthApplicationsRouter = createTRPCRouter({
       const application = await getOAuthApplicationById(db, input.id)
 
       if (!application) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       // Verify user owns this application before updating status
       if (application.createdBy !== user.id) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
-      const result = await updateOAuthApplicationstatus(db, {
+      const result = await updateOAuthApplicationStatus(db, {
         id: input.id,
         status: input.status,
       })
 
       if (!result) {
-        throw new Error('OAuth application not found')
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'OAuth application not found' })
       }
 
       // Send email notification when status changes to "pending"

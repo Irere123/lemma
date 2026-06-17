@@ -7,6 +7,7 @@ import { createDb, type DB } from '@api/db'
 import type { Environment } from '@api/env'
 import { env } from '@api/env-runtime'
 import { createAuth } from '@api/lib/auth'
+import { isProduction } from '@api/lib/constants'
 
 type TRPCContext = {
   user: User | undefined
@@ -31,6 +32,21 @@ export const createTRPCContext = async (_: unknown, c: Context): Promise<TRPCCon
 
 const t = initTRPC.context<TRPCContext>().create({
   transformer: SuperJSON,
+  errorFormatter({ shape, error }) {
+    const isInternal = error.code === 'INTERNAL_SERVER_ERROR'
+    return {
+      ...shape,
+      message:
+        isInternal && isProduction()
+          ? 'An unexpected error occurred. Please try again later.'
+          : shape.message,
+      data: {
+        ...shape.data,
+        // Never expose stack traces to clients.
+        stack: undefined,
+      },
+    }
+  },
 })
 
 export const createTRPCRouter = t.router
