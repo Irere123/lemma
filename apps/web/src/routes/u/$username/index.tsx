@@ -55,9 +55,11 @@ function RouteComponent() {
   const isOwnProfile = session?.user?.id === profile.id
 
   return (
-    <main className='grid min-h-screen w-full grid-cols-1 md:grid-cols-2'>
-      <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
-      <div className='min-w-0 border-border/70 border-t md:border-t-0 md:border-l'>
+    <main className='flex min-h-screen w-full flex-col md:flex-row'>
+      <aside className='shrink-0 border-border/70 border-b md:sticky md:top-0 md:h-screen md:w-80 md:overflow-y-auto md:border-r md:border-b-0 lg:w-[360px]'>
+        <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
+      </aside>
+      <div className='min-w-0 flex-1'>
         <ProfilePosts username={username} />
       </div>
     </main>

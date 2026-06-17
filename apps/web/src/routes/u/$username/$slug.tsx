@@ -37,7 +37,7 @@ function RouteComponent() {
 
   if (isLoading) {
     return (
-      <main className='mx-auto w-full max-w-[900px] space-y-4 px-4 pt-10 md:px-6'>
+      <main className='mx-auto w-full max-w-2xl space-y-4 px-5 pt-12 md:px-6'>
         <Skeleton className='h-10 w-3/4' />
         <Skeleton className='h-5 w-1/2' />
         <Skeleton className='h-64 w-full rounded-xl' />
@@ -60,40 +60,32 @@ function RouteComponent() {
 
   return (
     <main className='min-h-screen pb-24'>
-      <div className='mx-auto w-full max-w-[900px] px-4 pt-10 md:px-6'>
+      <div className='mx-auto w-full max-w-2xl px-5 pt-12 md:px-6'>
         <Link
           to='/u/$username'
           params={{ username }}
-          className='text-muted-foreground text-sm hover:text-foreground'
+          className='inline-flex text-muted-foreground text-sm transition-colors hover:text-foreground'
         >
           ← Back to @{username}
         </Link>
 
-        {post.bannerImage && (
-          <img
-            src={post.bannerImage}
-            alt={post.title ?? 'Cover'}
-            className='mt-6 h-64 w-full rounded-xl border border-border/70 object-cover'
-          />
-        )}
-
-        <h1 className='mt-6 font-semibold text-4xl leading-[1.1] tracking-tight md:text-5xl'>
+        <h1 className='mt-8 text-balance font-semibold text-4xl leading-[1.08] tracking-tight md:text-[2.85rem]'>
           {post.title || 'Untitled'}
         </h1>
         {post.subtitle && (
-          <p className='mt-3 text-lg text-muted-foreground leading-7'>{post.subtitle}</p>
+          <p className='mt-4 text-pretty text-muted-foreground text-xl leading-8'>{post.subtitle}</p>
         )}
 
-        <div className='mt-6 flex items-center gap-3 border-border/60 border-b pb-6'>
+        <div className='mt-7 flex items-center gap-3 border-border/60 border-b pb-7'>
           {author && (
-            <Link to='/u/$username' params={{ username }} className='flex items-center gap-3'>
-              <Avatar className='size-9'>
+            <Link to='/u/$username' params={{ username }} className='group flex items-center gap-3'>
+              <Avatar className='size-10'>
                 <AvatarImage src={author.image ?? undefined} alt={author.name ?? ''} />
                 <AvatarFallback>{(author.name ?? '?').charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <div className='text-sm'>
-                <p className='font-medium'>{author.name}</p>
-                <p className='text-muted-foreground text-xs'>
+              <div className='text-sm leading-tight'>
+                <p className='font-medium group-hover:underline'>{author.name}</p>
+                <p className='mt-0.5 text-muted-foreground text-xs'>
                   {formatDate(post.publishedDate)}
                   {post.readingTime ? ` · ${post.readingTime}` : ''}
                 </p>
@@ -101,17 +93,25 @@ function RouteComponent() {
             </Link>
           )}
         </div>
+
+        {post.bannerImage && (
+          <img
+            src={post.bannerImage}
+            alt={post.title ?? 'Cover'}
+            className='mt-8 aspect-[16/9] w-full rounded-xl border border-border/70 object-cover'
+          />
+        )}
       </div>
 
-      <article className='mt-8'>
+      <article className='mx-auto mt-10 w-full max-w-2xl px-5 md:px-6'>
         <ArticleContent markdown={post.markdown ?? ''} />
       </article>
 
-      <div className='mx-auto mt-10 w-full max-w-[900px] px-4 md:px-6'>
+      <div className='mx-auto mt-12 w-full max-w-2xl px-5 md:px-6'>
         <LikeButton documentId={post.id} />
       </div>
 
-      <div className='mt-10'>
+      <div className='mt-12'>
         <Comments documentId={post.id} />
       </div>
     </main>

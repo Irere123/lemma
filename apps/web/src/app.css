@@ -214,27 +214,28 @@
   .writer-prose h2,
   .writer-prose h3 {
     font-family: "Open Runde", ui-sans-serif, system-ui, sans-serif;
-    line-height: 1.25;
-    letter-spacing: -0.012em;
+    line-height: 1.2;
+    letter-spacing: -0.014em;
     color: var(--foreground);
+    text-wrap: balance;
   }
 
   .writer-prose h1 {
-    margin-top: 2rem;
+    margin-top: 2.75rem;
     font-size: clamp(1.8rem, 1.4rem + 1.2vw, 2.45rem);
-    font-weight: 600;
+    font-weight: 650;
   }
 
   .writer-prose h2 {
-    margin-top: 1.75rem;
-    font-size: clamp(1.45rem, 1.2rem + 0.7vw, 1.95rem);
-    font-weight: 600;
+    margin-top: 2.5rem;
+    font-size: clamp(1.45rem, 1.2rem + 0.7vw, 1.9rem);
+    font-weight: 650;
   }
 
   .writer-prose h3 {
-    margin-top: 1.35rem;
-    font-size: clamp(1.2rem, 1.06rem + 0.35vw, 1.5rem);
-    font-weight: 600;
+    margin-top: 2rem;
+    font-size: clamp(1.2rem, 1.06rem + 0.35vw, 1.45rem);
+    font-weight: 650;
   }
 
   .writer-prose p.is-editor-empty:first-child::before {
@@ -255,6 +256,37 @@
     margin-inline: auto;
     max-width: 100%;
     height: auto;
+  }
+
+  /* Tighten the top of the article so the first block hugs the header. */
+  .writer-prose > :first-child {
+    margin-top: 0;
+  }
+
+  .writer-prose strong,
+  .writer-prose b {
+    font-weight: 650;
+    color: var(--foreground);
+  }
+
+  .writer-prose em {
+    font-style: italic;
+  }
+
+  /* Themed highlight; inline color styles (set in the editor) still win. */
+  .writer-prose mark {
+    border-radius: 0.25em;
+    padding: 0.06em 0.22em;
+    background-color: color-mix(in oklab, var(--primary) 22%, transparent);
+    color: inherit;
+  }
+
+  .writer-prose blockquote {
+    font-size: 1.05em;
+  }
+
+  .writer-prose blockquote p {
+    margin-top: 0.6em;
   }
 }
 

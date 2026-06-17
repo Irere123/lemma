@@ -98,7 +98,7 @@ export function Comments({ documentId }: { documentId: string }) {
   const comments = (data?.comments ?? []) as CommentItem[]
 
   return (
-    <section className='mx-auto w-full max-w-[900px] px-4 md:px-6'>
+    <section className='mx-auto w-full max-w-2xl px-5 md:px-6'>
       <h2 className='mb-4 font-semibold text-lg'>
         Comments {comments.length > 0 && <span className='text-muted-foreground'>({comments.length})</span>}
       </h2>

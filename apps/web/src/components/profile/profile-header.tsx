@@ -63,7 +63,7 @@ export function ProfileHeader({
   const social = profile.socialLinks ?? {}
 
   return (
-    <div className='mx-auto flex w-full max-w-md flex-col gap-5 px-6 py-10'>
+    <div className='flex w-full flex-col gap-5 px-6 py-8'>
       <Link to='/' className='font-bold text-2xl tracking-tight'>
         Lemma
       </Link>
