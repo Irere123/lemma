@@ -1,9 +1,12 @@
 import { TRPCError } from '@trpc/server'
+import { z } from 'zod'
 
 import {
   deleteDocument,
   getDocumentById,
+  getPublishedArticleBySlug,
   getPublishedArticles,
+  getUserById,
   getUserDocuments,
   searchUserDocuments,
   updateDocumentBannerImage,
@@ -35,6 +38,28 @@ export const documentRouter = createTRPCRouter({
     .input(documentByIdSchema)
     .query(async ({ ctx: { db }, input }) => {
       return getDocumentById(db, input.id)
+    }),
+
+  // Public reader: a PUBLISHED post by slug (or id fallback) with an author
+  // byline. Returns null when the post is missing or not yet published.
+  getPublishedBySlug: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ ctx: { db }, input }) => {
+      const doc = await getPublishedArticleBySlug(db, input.slug)
+      if (!doc) return null
+
+      const author = doc.userId ? await getUserById(db, doc.userId) : undefined
+      return {
+        ...doc,
+        author: author
+          ? {
+              id: author.id,
+              name: author.name,
+              username: author.username,
+              image: author.image,
+            }
+          : null,
+      }
     }),
 
   upsertDocument: protectedProcedure

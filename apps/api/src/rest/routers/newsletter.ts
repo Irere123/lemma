@@ -3,8 +3,8 @@ import { HTTPException } from 'hono/http-exception'
 
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import {
-  getSubscriberByEmail,
   getSubscriberByToken,
+  getSubscriberByWriterAndEmail,
   upsertSubscriber,
 } from '@api/db/queries/subscribers'
 import { unsubscribeEvents } from '@api/db/schema'
@@ -58,7 +58,7 @@ newsletterRouter.openapi(
     const session = c.get('session')
     const input = c.req.valid('json') as { email: string; sendConfirmation?: boolean }
 
-    const existing = await getSubscriberByEmail(db, input.email)
+    const existing = await getSubscriberByWriterAndEmail(db, session.user.id, input.email)
 
     if (existing) {
       // If already subscribed but not confirmed, resend confirmation

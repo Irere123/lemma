@@ -5,9 +5,11 @@ import { apiKeysRouter } from './api-keys'
 import { campaignsRouter } from './campaigns'
 import { commentsRouter } from './comments'
 import { documentRouter } from './documents'
+import { followsRouter } from './follows'
 import { likesRouter } from './likes'
 import { newsletterRouter } from './newsletter'
 import { oauthApplicationsRouter } from './oauth-applications'
+import { profileRouter } from './profile'
 import { workspacesRouter } from './workspaces'
 
 export const appRouter = createTRPCRouter({
@@ -19,6 +21,8 @@ export const appRouter = createTRPCRouter({
   campaigns: campaignsRouter,
   workspaces: workspacesRouter,
   oauthApplications: oauthApplicationsRouter,
+  profile: profileRouter,
+  follows: followsRouter,
 })
 
 // export type definition of API

@@ -1,7 +1,7 @@
 import { and, desc, eq, lt, ne, sql } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
-import { type Document, type DocumentStatus, documents } from '@api/db/schema'
+import { type Document, type DocumentStatus, documentLikes, documents } from '@api/db/schema'
 import { slugifyString } from '@api/db/utils/slugify'
 import { generateId } from '@api/lib/utils'
 import type { UpsertDocumentData } from '@api/schemas'
@@ -249,18 +249,28 @@ type PublishedArticlesOptions = {
   limit?: number
   // Optionally scope the listing to a single writer (e.g. per-writer feeds).
   writerId?: string
+  // 'latest' (default) orders by publish date; 'popular' by like count.
+  sort?: 'latest' | 'popular'
 }
+
+export type PublishedArticle = Omit<Document, 'markdown'> & { likeCount: number }
 
 export const getPublishedArticles = async (
   db: DB,
   options: PublishedArticlesOptions = {}
-): Promise<Omit<Document, 'markdown'>[]> => {
+): Promise<PublishedArticle[]> => {
   const safeLimit = Math.min(options.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
 
   const filters = [eq(documents.status, 'PUBLISHED')]
   if (options.writerId) {
     filters.push(eq(documents.userId, options.writerId))
   }
+
+  const likeCount = sql<number>`count(${documentLikes.id})`.as('like_count')
+  const orderBy =
+    options.sort === 'popular'
+      ? [desc(likeCount), desc(documents.publishedDate)]
+      : [desc(documents.publishedDate)]
 
   const publishedArticles = await db
     .select({
@@ -283,10 +293,13 @@ export const getPublishedArticles = async (
       readingTime: documents.readingTime,
       wordCount: documents.wordCount,
       isFeatured: documents.isFeatured,
+      likeCount,
     })
     .from(documents)
+    .leftJoin(documentLikes, eq(documentLikes.documentId, documents.id))
     .where(and(...filters))
-    .orderBy(desc(documents.publishedDate))
+    .groupBy(documents.id)
+    .orderBy(...orderBy)
     .limit(safeLimit)
 
   return publishedArticles

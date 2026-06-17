@@ -4,6 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { emailOTP, oneTimeToken } from 'better-auth/plugins'
 
 import { createDb } from '@api/db'
+import { ensureUniqueUsername } from '@api/db/queries/users'
 import * as schema from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { sendEmail } from '@api/lib/messaging/email/mailer'
@@ -21,6 +22,25 @@ export const createAuth = () => {
     }),
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [...env.ALLOWED_API_ORIGINS.split(',')],
+    user: {
+      additionalFields: {
+        username: { type: 'string', required: false },
+        bio: { type: 'string', required: false },
+        website: { type: 'string', required: false },
+        location: { type: 'string', required: false },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (newUser) => {
+            const base = newUser.name?.trim() || newUser.email.split('@')[0] || 'user'
+            const username = await ensureUniqueUsername(db, base)
+            return { data: { ...newUser, username } }
+          },
+        },
+      },
+    },
     advanced: {
       cookiePrefix: 'lemma',
       crossSubDomainCookies: {

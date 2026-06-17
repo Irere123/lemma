@@ -145,7 +145,9 @@ export const documentResolvers = {
       context: GraphQLContext
     ): Promise<Document[]> => {
       const limit = Math.min(args.first ?? 20, 100)
-      return getPublishedArticles(context.db, { limit }) as Promise<Document[]>
+      // getPublishedArticles omits `markdown` and adds `likeCount`; GraphQL
+      // field resolvers don't read those, so the shape cast is safe.
+      return getPublishedArticles(context.db, { limit }) as unknown as Promise<Document[]>
     },
 
     node: async (_: unknown, args: { id: string }, context: GraphQLContext) => {

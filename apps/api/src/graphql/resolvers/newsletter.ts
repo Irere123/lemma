@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import { subscribers, type Subscriber } from '@api/db/schema'
 import { generateId } from '@api/lib/utils'
@@ -22,10 +22,11 @@ type ConfirmSubscriptionInput = {
 }
 
 async function getSubscriberByEmail(db: any, email: string, writerId: string) {
+  // Emails are unique per writer, so scope the lookup to this writer.
   const [subscriber] = await db
     .select()
     .from(subscribers)
-    .where(eq(subscribers.email, email))
+    .where(and(eq(subscribers.email, email), eq(subscribers.writerId, writerId)))
     .limit(1)
 
   return subscriber
