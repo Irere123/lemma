@@ -168,11 +168,12 @@ bun run dev
   project-reference errors (web's `tsc -b` pulls API source in via path aliases
   without listing it). Fix those, then drop `continue-on-error` and fold
   `--filter=web` back into the blocking type-check.
-- **CI/CD uses `bun install` (not `--frozen-lockfile`)** because `bun.lock` is
-  currently out of sync with the workspace (catalog deps fail to resolve under
-  a frozen install). Regenerate the lockfile with the pinned bun version
-  (`bun@1.2.2 install`), commit it, then switch the workflows back to
-  `bun install --frozen-lockfile` for reproducible installs.
+- **Bun is pinned to `1.3.14`** (`package.json` `packageManager` + every
+  `setup-bun` step). Do not downgrade to `1.2.x`: bun `1.2.2` has a `catalog:`
+  resolution bug that tries to `git clone` `@types/react` and fails
+  (`@types/react@catalog: failed to resolve`), which breaks every CI job. CI
+  uses `bun install --frozen-lockfile` for reproducible installs, so regenerate
+  and commit `bun.lock` (`bun install`) whenever dependencies change.
 - The web `production` route is `lemma.irere.dev` while `VITE_PUBLIC_APP_URL`
   is `https://irere.dev` — reconcile these to the real production domain.
 - Consider whether `ENV` should gain a distinct `staging` value (it currently
