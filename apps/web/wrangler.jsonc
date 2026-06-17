@@ -21,20 +21,10 @@
         "VITE_PUBLIC_APP_URL": "http://localhost:3000"
       }
     },
+    // Single deployed environment. Despite the `staging` key it carries the
+    // production config (the `brainos` worker on lemma.irere.dev) because that
+    // is what customers use.
     "staging": {
-      "name": "brain-staging",
-      "routes": [
-        {
-          "pattern": "staging.irere.dev",
-          "custom_domain": true
-        }
-      ],
-      "vars": {
-        "VITE_PUBLIC_BACKEND_URL": "https://sapi.irere.dev",
-        "VITE_PUBLIC_APP_URL": "https://staging.irere.dev"
-      }
-    },
-    "production": {
       "name": "brainos",
       "routes": [
         {

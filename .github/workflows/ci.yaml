@@ -2,13 +2,13 @@ name: CI/CD
 
 on:
   pull_request:
-    branches: [staging, main]
+    branches: [staging]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
       - 'LICENSE'
   push:
-    branches: [staging, main]
+    branches: [staging]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -20,8 +20,6 @@ permissions:
 jobs:
   ci:
     name: Build & type-check
-    # Skip on pushes to main: that tree already passed CI on staging before promotion.
-    if: ${{ github.event_name == 'pull_request' || github.ref_name == 'staging' }}
     runs-on: ubuntu-latest
     concurrency:
       group: ci-${{ github.ref }}
@@ -59,7 +57,7 @@ jobs:
   changes:
     name: Detect changed apps
     needs: ci
-    if: ${{ always() && github.event_name == 'push' && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     outputs:
       api: ${{ steps.filter.outputs.api }}
@@ -80,16 +78,15 @@ jobs:
               - 'bun.lock'
 
   deploy-api:
-    name: Deploy API (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    name: Deploy API
     needs: changes
     if: ${{ needs.changes.outputs.api == 'true' }}
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: staging
     concurrency:
-      group: deploy-api-${{ github.ref_name }}
+      group: deploy-api
       cancel-in-progress: false
     env:
-      TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
@@ -105,23 +102,22 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
 
-      - name: Apply D1 migrations (${{ env.TARGET_ENV }})
-        run: bun run --cwd apps/api migrate:${{ env.TARGET_ENV }}
+      - name: Apply D1 migrations
+        run: bun run --cwd apps/api migrate:staging
 
-      - name: Deploy (${{ env.TARGET_ENV }})
-        run: bun run --cwd apps/api deploy:${{ env.TARGET_ENV }}
+      - name: Deploy
+        run: bun run --cwd apps/api deploy:staging
 
   deploy-web:
-    name: Deploy web (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    name: Deploy web
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: staging
     concurrency:
-      group: deploy-web-${{ github.ref_name }}
+      group: deploy-web
       cancel-in-progress: false
     env:
-      TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
@@ -137,9 +133,12 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
 
+      # Build from the repo root so Turbo builds workspace deps in order
+      # (@lemma/headless -> web). A bare `vite build` would not rebuild
+      # @lemma/headless' dist (which is gitignored), so it must go through Turbo.
       - name: Build (web + workspace deps)
         run: bunx turbo build --filter=web
 
-      - name: Deploy (${{ env.TARGET_ENV }})
+      - name: Deploy
         working-directory: apps/web
-        run: bunx wrangler deploy --env ${{ env.TARGET_ENV }}
+        run: bunx wrangler deploy --env staging

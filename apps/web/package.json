@@ -5,9 +5,8 @@
   "scripts": {
     "build": "vite build",
     "cf-typegen": "wrangler types",
-    "deploy": "bun run build && wrangler deploy --env production",
+    "deploy": "bun run build && wrangler deploy --env staging",
     "deploy:staging": "bun run build && wrangler deploy --env staging",
-    "deploy:production": "bun run build && wrangler deploy --env production",
     "dev": "vite dev",
     "check-types": "tsc --noEmit",
     "postinstall": "npm run cf-typegen",
