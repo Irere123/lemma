@@ -1,27 +1,28 @@
 import { createRoute, z } from '@hono/zod-openapi'
 import { HTTPException } from 'hono/http-exception'
 
-import { createRouter } from '@api/lib/utils'
 import {
   createComment,
   deleteComment,
   getCommentById,
-  getCommentWithAuthor,
-  getDocumentComments,
   getCommentReplies,
+  getCommentWithAuthor,
+  getDocumentById,
+  getDocumentComments,
   getReplyCount,
   updateComment,
-  getDocumentById,
 } from '@api/db/queries'
-import {
-  createCommentSchema,
-  getCommentsSchema,
-  commentsResponseSchema,
-  commentResponseSchema,
-} from '@api/schemas'
+import { createRouter } from '@api/lib/utils'
+import { validateResponse } from '@api/lib/validate-response'
 import { withRequiredScope } from '@api/rest/middleware'
 import { withAuth } from '@api/rest/middleware/auth'
-import { validateResponse } from '@api/lib/validate-response'
+import {
+  commentResponseSchema,
+  commentsResponseSchema,
+  createCommentSchema,
+  errorResponses,
+  getCommentsSchema,
+} from '@api/schemas'
 
 const commentsRouter = createRouter()
 
@@ -44,6 +45,7 @@ commentsRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 429),
     },
   }),
   async (c) => {
@@ -94,6 +96,7 @@ commentsRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 429),
     },
   }),
   async (c) => {
@@ -119,6 +122,7 @@ commentsRouter.openapi(
     tags: ['Comments'],
     path: '/',
     summary: 'Create a new comment',
+    security: [{ token: [] }],
     request: {
       body: {
         content: {
@@ -137,6 +141,7 @@ commentsRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 401, 403, 404, 429),
     },
     middleware: [withAuth, withRequiredScope('comments.write')],
   }),
@@ -176,6 +181,7 @@ commentsRouter.openapi(
     tags: ['Comments'],
     path: '/:id',
     summary: 'Update a comment',
+    security: [{ token: [] }],
     request: {
       params: z.object({ id: z.string() }),
       body: {
@@ -195,6 +201,7 @@ commentsRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 401, 403, 404, 429),
     },
     middleware: [withAuth, withRequiredScope('comments.write')],
   }),
@@ -223,6 +230,7 @@ commentsRouter.openapi(
     tags: ['Comments'],
     path: '/:id',
     summary: 'Delete a comment',
+    security: [{ token: [] }],
     request: {
       params: z.object({ id: z.string() }),
     },
@@ -235,6 +243,7 @@ commentsRouter.openapi(
           },
         },
       },
+      ...errorResponses(401, 403, 404, 429),
     },
     middleware: [withAuth, withRequiredScope('comments.write')],
   }),

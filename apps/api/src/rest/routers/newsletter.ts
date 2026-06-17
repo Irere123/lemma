@@ -1,4 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi'
+import { HTTPException } from 'hono/http-exception'
 
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import {
@@ -6,22 +7,23 @@ import {
   getSubscriberByToken,
   upsertSubscriber,
 } from '@api/db/queries/subscribers'
-import { createRouter, generateId } from '@api/lib/utils'
-import { withAuth } from '@api/rest/middleware/auth'
-import { enqueueWelcomeEmail, enqueueConfirmationEmail } from '@api/jobs/producers'
 import { unsubscribeEvents } from '@api/db/schema'
+import { enqueueConfirmationEmail, enqueueWelcomeEmail } from '@api/jobs/producers'
+import { createRouter, generateId } from '@api/lib/utils'
+import { withRequiredScope } from '@api/rest/middleware'
+import { withAuth } from '@api/rest/middleware/auth'
+import { errorResponses } from '@api/schemas'
 
 const newsletterRouter = createRouter()
 
 // Subscribe
-// Protected
-// Send the api key or auth cookie when calling this endpoint
+// Protected: the authenticated writer adds a subscriber to their own list.
 newsletterRouter.openapi(
   createRoute({
     method: 'post',
     path: '/subscribe',
     tags: ['Newsletter'],
-    summary: 'Subscribe to newsletter (protected)',
+    summary: 'Subscribe an email to your newsletter',
     security: [{ token: [] }],
     request: {
       body: {
@@ -47,11 +49,9 @@ newsletterRouter.openapi(
           },
         },
       },
-      409: { description: 'Already subscribed' },
-      404: { description: 'Writer newsletter settings not found' },
-      500: { description: 'Internal error' },
+      ...errorResponses(400, 401, 403, 404, 409, 429),
     },
-    middleware: [withAuth],
+    middleware: [withAuth, withRequiredScope('subscribers.write')],
   }),
   async (c) => {
     const db = c.get('db')
@@ -82,53 +82,48 @@ newsletterRouter.openapi(
         }
         return c.json({ success: true, message: 'Confirmation email resent' })
       }
-      return c.json({ error: 'Already joined the newsletter.' }, 409)
+      throw new HTTPException(409, { message: 'Already joined the newsletter.' })
     }
 
-    try {
-      const token = generateId('st')
-      const writerSettings = await getWriterNewsletterSettings(db, session.user.id)
+    const token = generateId('st')
+    const writerSettings = await getWriterNewsletterSettings(db, session.user.id)
 
-      if (!writerSettings) {
-        return c.json({ error: 'Writer newsletter settings not found' }, 404)
-      }
+    if (!writerSettings) {
+      throw new HTTPException(404, { message: 'Writer newsletter settings not found' })
+    }
 
-      const subCreated = await upsertSubscriber(db, {
-        email: input.email,
-        token,
-        writerId: session.user.id,
-      })
+    const subCreated = await upsertSubscriber(db, {
+      email: input.email,
+      token,
+      writerId: session.user.id,
+    })
 
-      // Send welcome email via job queue
-      if (input.sendConfirmation !== false && subCreated) {
-        await enqueueWelcomeEmail(
-          {
-            subscriberId: subCreated.id,
-            email: subCreated.email,
-            token: subCreated.token,
-            writerId: session.user.id,
-            writerSettings: {
-              id: writerSettings.id,
-              newsletterName: writerSettings.newsletterName,
-              fromName: writerSettings.fromName,
-              logoUrl: writerSettings.logoUrl,
-              brandColor: writerSettings.brandColor,
-              confirmationUrl: writerSettings.confirmationUrl,
-            },
+    // Send welcome email via job queue
+    if (input.sendConfirmation !== false && subCreated) {
+      await enqueueWelcomeEmail(
+        {
+          subscriberId: subCreated.id,
+          email: subCreated.email,
+          token: subCreated.token,
+          writerId: session.user.id,
+          writerSettings: {
+            id: writerSettings.id,
+            newsletterName: writerSettings.newsletterName,
+            fromName: writerSettings.fromName,
+            logoUrl: writerSettings.logoUrl,
+            brandColor: writerSettings.brandColor,
+            confirmationUrl: writerSettings.confirmationUrl,
           },
-          { delay: 0, priority: 9 }
-        )
-      }
-
-      return c.json({ success: true, message: 'Subscribed successfully' })
-    } catch (error) {
-      console.error('Subscription error:', error)
-      return c.json({ error: 'Something went wrong' }, 500)
+        },
+        { delay: 0, priority: 9 }
+      )
     }
+
+    return c.json({ success: true, message: 'Subscribed successfully' })
   }
 )
 
-// Unsubscribe
+// Unsubscribe (public — invoked from email links via token)
 newsletterRouter.openapi(
   createRoute({
     method: 'post',
@@ -157,8 +152,7 @@ newsletterRouter.openapi(
           },
         },
       },
-      404: { description: 'Subscription not found' },
-      500: { description: 'Internal error' },
+      ...errorResponses(400, 404, 429),
     },
   }),
   async (c) => {
@@ -167,38 +161,33 @@ newsletterRouter.openapi(
 
     const sub = await getSubscriberByToken(db, input.token)
     if (!sub) {
-      return c.json({ error: 'Subscription not found' }, 404)
+      throw new HTTPException(404, { message: 'Subscription not found' })
     }
 
-    try {
-      // Update subscriber status
-      await upsertSubscriber(db, {
-        id: sub.id,
-        isUnsubscribed: true,
-        unsubscribedAt: new Date(),
-        email: sub.email,
-        token: sub.token,
-        writerId: sub.writerId,
-      })
+    // Update subscriber status
+    await upsertSubscriber(db, {
+      id: sub.id,
+      isUnsubscribed: true,
+      unsubscribedAt: new Date(),
+      email: sub.email,
+      token: sub.token,
+      writerId: sub.writerId,
+    })
 
-      // Record unsubscribe event for analytics
-      await db.insert(unsubscribeEvents).values({
-        id: generateId('unsub'),
-        subscriberId: sub.id,
-        campaignId: input.campaignId || null,
-        unsubscribedAt: new Date(),
-        reason: input.reason || null,
-      })
+    // Record unsubscribe event for analytics
+    await db.insert(unsubscribeEvents).values({
+      id: generateId('unsub'),
+      subscriberId: sub.id,
+      campaignId: input.campaignId || null,
+      unsubscribedAt: new Date(),
+      reason: input.reason || null,
+    })
 
-      return c.json({ success: true })
-    } catch (error) {
-      console.error('Unsubscribe error:', error)
-      return c.json({ error: 'Something went wrong' }, 500)
-    }
+    return c.json({ success: true })
   }
 )
 
-// Confirm subscription
+// Confirm subscription (public — invoked from email links via token)
 newsletterRouter.openapi(
   createRoute({
     method: 'post',
@@ -226,8 +215,7 @@ newsletterRouter.openapi(
           },
         },
       },
-      404: { description: 'Subscription not found' },
-      500: { description: 'Internal error' },
+      ...errorResponses(400, 404, 429),
     },
   }),
   async (c) => {
@@ -236,28 +224,23 @@ newsletterRouter.openapi(
 
     const sub = await getSubscriberByToken(db, input.token)
     if (!sub) {
-      return c.json({ error: 'Subscription not found' }, 404)
+      throw new HTTPException(404, { message: 'Subscription not found' })
     }
 
     if (sub.isConfirmed) {
       return c.json({ success: true, message: 'Already confirmed' })
     }
 
-    try {
-      await upsertSubscriber(db, {
-        id: sub.id,
-        isConfirmed: true,
-        confirmedAt: new Date(),
-        email: sub.email,
-        token: sub.token,
-        writerId: sub.writerId,
-      })
+    await upsertSubscriber(db, {
+      id: sub.id,
+      isConfirmed: true,
+      confirmedAt: new Date(),
+      email: sub.email,
+      token: sub.token,
+      writerId: sub.writerId,
+    })
 
-      return c.json({ success: true, message: 'Subscription confirmed' })
-    } catch (error) {
-      console.error('Confirmation error:', error)
-      return c.json({ error: 'Something went wrong' }, 500)
-    }
+    return c.json({ success: true, message: 'Subscription confirmed' })
   }
 )
 
@@ -287,7 +270,7 @@ newsletterRouter.openapi(
           },
         },
       },
-      404: { description: 'Subscription not found' },
+      ...errorResponses(404, 429),
     },
   }),
   async (c) => {
@@ -296,7 +279,7 @@ newsletterRouter.openapi(
 
     const sub = await getSubscriberByToken(db, token)
     if (!sub) {
-      return c.json({ error: 'Subscription not found' }, 404)
+      throw new HTTPException(404, { message: 'Subscription not found' })
     }
 
     return c.json({

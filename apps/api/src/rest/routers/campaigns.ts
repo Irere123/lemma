@@ -1,21 +1,23 @@
 import { createRoute, z } from '@hono/zod-openapi'
+import { HTTPException } from 'hono/http-exception'
 
-import { createRouter, generateId } from '@api/lib/utils'
-import { withAuth } from '@api/rest/middleware/auth'
 import {
   createCampaign,
-  updateCampaign,
-  getCampaignById,
-  getCampaignsByUser,
   deleteCampaign,
+  getCampaignById,
   getCampaignStats,
+  getCampaignsByUser,
   getClicksByLink,
   getSubscriberStats,
+  updateCampaign,
 } from '@api/db/queries/campaigns'
 import { getDocumentById } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import { slugifyString } from '@api/db/utils/slugify'
 import { enqueueNewsletter, scheduleNewsletter } from '@api/jobs/producers'
+import { createRouter, generateId } from '@api/lib/utils'
+import { withRequiredScope } from '@api/rest/middleware'
+import { errorResponses } from '@api/schemas'
 
 const campaignsRouter = createRouter()
 
@@ -47,6 +49,15 @@ const campaignStatsSchema = z.object({
   unsubscribeRate: z.number(),
 })
 
+// Fetch a campaign and assert the caller owns it, or throw 404.
+async function getOwnedCampaign(db: any, id: string, userId: string) {
+  const campaign = await getCampaignById(db, id)
+  if (!campaign || campaign.userId !== userId) {
+    throw new HTTPException(404, { message: 'Campaign not found' })
+  }
+  return campaign
+}
+
 // List campaigns
 campaignsRouter.openapi(
   createRoute({
@@ -71,8 +82,9 @@ campaignsRouter.openapi(
           },
         },
       },
+      ...errorResponses(401, 403, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.read')],
   }),
   async (c) => {
     const db = c.get('db')
@@ -80,7 +92,7 @@ campaignsRouter.openapi(
     const query = c.req.valid('query')
 
     const campaigns = await getCampaignsByUser(db, session.user.id, {
-      limit: query.limit ? parseInt(query.limit, 10) : 20,
+      limit: query.limit ? Number.parseInt(query.limit, 10) : 20,
     })
 
     return c.json({ data: campaigns })
@@ -109,20 +121,16 @@ campaignsRouter.openapi(
           },
         },
       },
-      404: { description: 'Campaign not found' },
+      ...errorResponses(401, 403, 404, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.read')],
   }),
   async (c) => {
     const db = c.get('db')
     const session = c.get('session')
     const { id } = c.req.valid('param')
 
-    const campaign = await getCampaignById(db, id)
-
-    if (!campaign || campaign.userId !== session.user.id) {
-      return c.json({ error: 'Campaign not found' }, 404)
-    }
+    const campaign = await getOwnedCampaign(db, id, session.user.id)
 
     return c.json(campaign)
   }
@@ -159,8 +167,9 @@ campaignsRouter.openapi(
           },
         },
       },
+      ...errorResponses(400, 401, 403, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.write')],
   }),
   async (c) => {
     const db = c.get('db')
@@ -217,9 +226,9 @@ campaignsRouter.openapi(
           },
         },
       },
-      404: { description: 'Campaign or document not found' },
+      ...errorResponses(400, 401, 403, 404, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.write')],
   }),
   async (c) => {
     const db = c.get('db')
@@ -227,19 +236,16 @@ campaignsRouter.openapi(
     const { id } = c.req.valid('param')
     const { documentId } = c.req.valid('json')
 
-    const campaign = await getCampaignById(db, id)
-    if (!campaign || campaign.userId !== session.user.id) {
-      return c.json({ error: 'Campaign not found' }, 404)
-    }
+    await getOwnedCampaign(db, id, session.user.id)
 
     const document = await getDocumentById(db, documentId)
     if (!document) {
-      return c.json({ error: 'Document not found' }, 404)
+      throw new HTTPException(404, { message: 'Document not found' })
     }
 
     const writerSettings = await getWriterNewsletterSettings(db, session.user.id)
     if (!writerSettings) {
-      return c.json({ error: 'Newsletter settings not configured' }, 400)
+      throw new HTTPException(400, { message: 'Newsletter settings not configured' })
     }
 
     // Update status
@@ -291,10 +297,9 @@ campaignsRouter.openapi(
           },
         },
       },
-      400: { description: 'Invalid scheduled time' },
-      404: { description: 'Campaign not found' },
+      ...errorResponses(400, 401, 403, 404, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.write')],
   }),
   async (c) => {
     const db = c.get('db')
@@ -302,14 +307,11 @@ campaignsRouter.openapi(
     const { id } = c.req.valid('param')
     const { documentId, scheduledAt } = c.req.valid('json')
 
-    const campaign = await getCampaignById(db, id)
-    if (!campaign || campaign.userId !== session.user.id) {
-      return c.json({ error: 'Campaign not found' }, 404)
-    }
+    await getOwnedCampaign(db, id, session.user.id)
 
     const scheduledDate = new Date(scheduledAt)
     if (scheduledDate <= new Date()) {
-      return c.json({ error: 'Scheduled time must be in the future' }, 400)
+      throw new HTTPException(400, { message: 'Scheduled time must be in the future' })
     }
 
     // Update campaign
@@ -353,19 +355,16 @@ campaignsRouter.openapi(
           },
         },
       },
-      404: { description: 'Campaign not found' },
+      ...errorResponses(401, 403, 404, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.read')],
   }),
   async (c) => {
     const db = c.get('db')
     const session = c.get('session')
     const { id } = c.req.valid('param')
 
-    const campaign = await getCampaignById(db, id)
-    if (!campaign || campaign.userId !== session.user.id) {
-      return c.json({ error: 'Campaign not found' }, 404)
-    }
+    await getOwnedCampaign(db, id, session.user.id)
 
     const stats = await getCampaignStats(db, id)
     return c.json(stats)
@@ -403,19 +402,16 @@ campaignsRouter.openapi(
           },
         },
       },
-      404: { description: 'Campaign not found' },
+      ...errorResponses(401, 403, 404, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.read')],
   }),
   async (c) => {
     const db = c.get('db')
     const session = c.get('session')
     const { id } = c.req.valid('param')
 
-    const campaign = await getCampaignById(db, id)
-    if (!campaign || campaign.userId !== session.user.id) {
-      return c.json({ error: 'Campaign not found' }, 404)
-    }
+    await getOwnedCampaign(db, id, session.user.id)
 
     const clicks = await getClicksByLink(db, id)
     return c.json({ data: clicks })
@@ -446,19 +442,16 @@ campaignsRouter.openapi(
           },
         },
       },
-      404: { description: 'Campaign not found' },
+      ...errorResponses(401, 403, 404, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('campaigns.write')],
   }),
   async (c) => {
     const db = c.get('db')
     const session = c.get('session')
     const { id } = c.req.valid('param')
 
-    const campaign = await getCampaignById(db, id)
-    if (!campaign || campaign.userId !== session.user.id) {
-      return c.json({ error: 'Campaign not found' }, 404)
-    }
+    await getOwnedCampaign(db, id, session.user.id)
 
     await deleteCampaign(db, id)
     return c.json({ success: true })
@@ -487,8 +480,9 @@ campaignsRouter.openapi(
           },
         },
       },
+      ...errorResponses(401, 403, 429),
     },
-    middleware: [withAuth],
+    middleware: [withRequiredScope('subscribers.read')],
   }),
   async (c) => {
     const db = c.get('db')

@@ -5,7 +5,6 @@ const EnvSchema = z.object({
   ENV: z.enum(['local', 'production']),
   ALLOWED_API_ORIGINS: z.string(),
   LEMMA_ENCRYPTION_KEY: z.string(),
-  ADMIN_USER_ID: z.string(),
 
   // observability (optional)
   SENTRY_DSN: z.string().optional(),

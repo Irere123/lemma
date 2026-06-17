@@ -1,14 +1,16 @@
 import { createRoute, z } from '@hono/zod-openapi'
+import { HTTPException } from 'hono/http-exception'
 
 import { env } from '@api/env-runtime'
 import { storage } from '@api/lib/storage'
 import { createRouter, generateId } from '@api/lib/utils'
 import { validateResponse } from '@api/lib/validate-response'
+import { withRequiredScope } from '@api/rest/middleware'
 import {
   deleteUploadResponseSchema,
   deleteUploadSchema,
   directUploadResponseSchema,
-  preSignedUrlErrorResponseSchema,
+  errorResponses,
   preSignedUrlResponseSchema,
   preSignedUrlSchema,
 } from '@api/schemas'
@@ -56,6 +58,8 @@ uploadsRouter.openapi(
     path: '/',
     tags: ['Uploads'],
     summary: 'Upload a file directly to Cloudflare R2',
+    security: [{ token: [] }],
+    middleware: [withRequiredScope('uploads.write')],
     request: {
       body: {
         content: {
@@ -78,22 +82,7 @@ uploadsRouter.openapi(
           },
         },
       },
-      400: {
-        description: 'Bad request',
-        content: {
-          'application/json': {
-            schema: preSignedUrlErrorResponseSchema,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: preSignedUrlErrorResponseSchema,
-          },
-        },
-      },
+      ...errorResponses(400, 401, 403, 429),
     },
   }),
   async (c) => {
@@ -105,44 +94,17 @@ uploadsRouter.openapi(
     const file = Array.isArray(formFile) ? formFile[0] : formFile
 
     if (!(file instanceof File)) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'A file must be provided',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        400
-      )
+      throw new HTTPException(400, { message: 'A file must be provided' })
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'File size exceeds the maximum allowed size',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        400
-      )
+      throw new HTTPException(400, { message: 'File size exceeds the maximum allowed size' })
     }
 
     const contentType = file.type || 'application/octet-stream'
 
     if (!isValidImageType(contentType)) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'Invalid file type',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        400
-      )
+      throw new HTTPException(400, { message: 'Invalid file type' })
     }
 
     const extension = getExtensionFromMimeType(contentType)
@@ -151,38 +113,25 @@ uploadsRouter.openapi(
     const uploadedAt = new Date().toISOString()
     const uploadedBy = session.user.id
 
-    try {
-      const uploadResult = await storage.upload(key, file, {
-        contentType,
-      })
+    const uploadResult = await storage.upload(key, file, {
+      contentType,
+    })
 
-      return c.json(
-        validateResponse(
-          {
-            url: uploadResult.url,
-            key,
-            filename: key,
-            originalFilename,
-            contentType,
-            fileSize: file.size,
-            uploadedBy,
-            uploadedAt,
-          },
-          directUploadResponseSchema
-        )
+    return c.json(
+      validateResponse(
+        {
+          url: uploadResult.url,
+          key,
+          filename: key,
+          originalFilename,
+          contentType,
+          fileSize: file.size,
+          uploadedBy,
+          uploadedAt,
+        },
+        directUploadResponseSchema
       )
-    } catch (error) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'Failed to upload file',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        500
-      )
-    }
+    )
   }
 )
 
@@ -192,6 +141,8 @@ uploadsRouter.openapi(
     path: '/delete',
     tags: ['Uploads'],
     summary: 'Delete an uploaded file',
+    security: [{ token: [] }],
+    middleware: [withRequiredScope('uploads.write')],
     request: {
       body: {
         content: {
@@ -210,22 +161,7 @@ uploadsRouter.openapi(
           },
         },
       },
-      400: {
-        description: 'Bad request',
-        content: {
-          'application/json': {
-            schema: preSignedUrlErrorResponseSchema,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: preSignedUrlErrorResponseSchema,
-          },
-        },
-      },
+      ...errorResponses(400, 401, 403, 429),
     },
   }),
   async (c) => {
@@ -233,42 +169,20 @@ uploadsRouter.openapi(
     const resolvedKey = resolveDeleteKey({ key, fileUrl })
 
     if (!resolvedKey) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'Invalid key or file URL',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        400
-      )
+      throw new HTTPException(400, { message: 'Invalid key or file URL' })
     }
 
-    try {
-      await storage.delete(resolvedKey)
+    await storage.delete(resolvedKey)
 
-      return c.json(
-        validateResponse(
-          {
-            success: true,
-            key: resolvedKey,
-          },
-          deleteUploadResponseSchema
-        )
+    return c.json(
+      validateResponse(
+        {
+          success: true,
+          key: resolvedKey,
+        },
+        deleteUploadResponseSchema
       )
-    } catch (_error) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'Failed to delete file',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        500
-      )
-    }
+    )
   }
 )
 
@@ -278,6 +192,8 @@ uploadsRouter.openapi(
     path: '/pre-signed-url',
     tags: ['Uploads'],
     summary: 'Generate a pre-signed URL to upload a file',
+    security: [{ token: [] }],
+    middleware: [withRequiredScope('uploads.write')],
     request: {
       body: {
         content: {
@@ -296,22 +212,7 @@ uploadsRouter.openapi(
           },
         },
       },
-      400: {
-        description: 'Bad request',
-        content: {
-          'application/json': {
-            schema: preSignedUrlErrorResponseSchema,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: preSignedUrlErrorResponseSchema,
-          },
-        },
-      },
+      ...errorResponses(400, 401, 403, 429),
     },
   }),
   async (c) => {
@@ -319,69 +220,38 @@ uploadsRouter.openapi(
     const { fileSize, contentType, filename } = c.req.valid('json')
 
     if (fileSize > MAX_FILE_SIZE) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'File size exceeds the maximum allowed size',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        400
-      )
+      throw new HTTPException(400, { message: 'File size exceeds the maximum allowed size' })
     }
 
     if (!isValidImageType(contentType)) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'Invalid file type',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        400
-      )
+      throw new HTTPException(400, { message: 'Invalid file type' })
     }
 
     const key = generateId('file')
     const uploadedAt = new Date().toISOString()
     const uploadedBy = session.user.id
 
-    try {
-      const signedUpload = await storage.getSignedUploadUrl({
-        key,
-        contentType,
-        expiresIn: 3600,
-      })
+    const signedUpload = await storage.getSignedUploadUrl({
+      key,
+      contentType,
+      expiresIn: 3600,
+    })
 
-      return c.json(
-        validateResponse(
-          {
-            preSignedUrl: signedUpload.url,
-            filename: key,
-            fileSize,
-            contentType,
-            expiresIn: signedUpload.expiresIn,
-            originalFilename: filename,
-            uploadedBy,
-            uploadedAt,
-          },
-          preSignedUrlResponseSchema
-        )
+    return c.json(
+      validateResponse(
+        {
+          preSignedUrl: signedUpload.url,
+          filename: key,
+          fileSize,
+          contentType,
+          expiresIn: signedUpload.expiresIn,
+          originalFilename: filename,
+          uploadedBy,
+          uploadedAt,
+        },
+        preSignedUrlResponseSchema
       )
-    } catch (error) {
-      return c.json(
-        validateResponse(
-          {
-            success: false,
-            error: 'Failed to generate pre-signed URL',
-          },
-          preSignedUrlErrorResponseSchema
-        ),
-        500
-      )
-    }
+    )
   }
 )
 

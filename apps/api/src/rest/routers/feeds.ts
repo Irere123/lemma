@@ -20,10 +20,10 @@ feedsRouter.openapi(
     method: 'get',
     path: '/rss.xml',
     tags: ['Feeds'],
-    summary: 'Get RSS feed of published articles',
+    summary: "Get RSS feed of a writer's published articles",
     request: {
       query: z.object({
-        writerId: z.string().optional(),
+        writerId: z.string(),
         limit: z.string().optional(),
       }),
     },
@@ -43,12 +43,10 @@ feedsRouter.openapi(
     const db = c.get('db')
     const query = c.req.valid('query')
     const limit = query.limit ? Number.parseInt(query.limit, 10) : 20
-
-    // Get admin user's articles for now (can be extended for multi-writer)
-    const writerId = query.writerId || env.ADMIN_USER_ID
+    const writerId = query.writerId
 
     const [articles, writerSettings] = await Promise.all([
-      getPublishedArticles(db, limit),
+      getPublishedArticles(db, { writerId, limit }),
       getWriterNewsletterSettings(db, writerId),
     ])
 
@@ -71,10 +69,10 @@ feedsRouter.openapi(
     method: 'get',
     path: '/atom.xml',
     tags: ['Feeds'],
-    summary: 'Get Atom feed of published articles',
+    summary: "Get Atom feed of a writer's published articles",
     request: {
       query: z.object({
-        writerId: z.string().optional(),
+        writerId: z.string(),
         limit: z.string().optional(),
       }),
     },
@@ -94,10 +92,10 @@ feedsRouter.openapi(
     const db = c.get('db')
     const query = c.req.valid('query')
     const limit = query.limit ? Number.parseInt(query.limit, 10) : 20
-    const writerId = query.writerId || env.ADMIN_USER_ID
+    const writerId = query.writerId
 
     const [articles, writerSettings] = await Promise.all([
-      getPublishedArticles(db, limit),
+      getPublishedArticles(db, { writerId, limit }),
       getWriterNewsletterSettings(db, writerId),
     ])
 
@@ -181,10 +179,10 @@ feedsRouter.openapi(
     method: 'get',
     path: '/feed.json',
     tags: ['Feeds'],
-    summary: 'Get JSON feed of published articles',
+    summary: "Get JSON feed of a writer's published articles",
     request: {
       query: z.object({
-        writerId: z.string().optional(),
+        writerId: z.string(),
         limit: z.string().optional(),
       }),
     },
@@ -209,10 +207,10 @@ feedsRouter.openapi(
     const db = c.get('db')
     const query = c.req.valid('query')
     const limit = query.limit ? Number.parseInt(query.limit, 10) : 20
-    const writerId = query.writerId || env.ADMIN_USER_ID
+    const writerId = query.writerId
 
     const [articles, writerSettings] = await Promise.all([
-      getPublishedArticles(db, limit),
+      getPublishedArticles(db, { writerId, limit }),
       getWriterNewsletterSettings(db, writerId),
     ])
 

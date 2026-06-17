@@ -1,7 +1,9 @@
+import { TRPCError } from '@trpc/server'
+
 import {
   deleteDocument,
-  getAdminPublishedArticles,
   getDocumentById,
+  getPublishedArticles,
   getUserDocuments,
   updateDocumentBannerImage,
   upsertDocument,
@@ -13,17 +15,19 @@ import {
   deleteDocumentSchema,
   documentByIdSchema,
   documentsFilters,
+  getPublishedArticlesSchema,
   sendNewsletterSchema,
   updateBannerImageSchema,
   upsertDocumentSchema,
 } from '@api/schemas/documents'
-import { TRPCError } from '@trpc/server'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../init'
 
 export const documentRouter = createTRPCRouter({
-  getAdminPublishedArticles: publicProcedure.query(async ({ ctx: { db } }) => {
-    return getAdminPublishedArticles(db)
-  }),
+  getPublishedArticles: publicProcedure
+    .input(getPublishedArticlesSchema)
+    .query(async ({ ctx: { db }, input }) => {
+      return getPublishedArticles(db, { writerId: input?.writerId, limit: input?.limit })
+    }),
 
   getDocumentById: publicProcedure
     .input(documentByIdSchema)
@@ -53,7 +57,11 @@ export const documentRouter = createTRPCRouter({
   deleteDocument: protectedProcedure
     .input(deleteDocumentSchema)
     .mutation(async ({ ctx, input }) => {
-      return deleteDocument(ctx.db, input.id)
+      const deleted = await deleteDocument(ctx.db, input.id, ctx.user.id)
+      if (!deleted) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      }
+      return { success: true }
     }),
 
   getUserDocuments: protectedProcedure
