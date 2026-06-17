@@ -28,14 +28,16 @@ export const apiKeysRouter = createTRPCRouter({
         data,
       }
     }),
-  delete: protectedProcedure.input(deleteApiKeySchema).mutation(async ({ ctx: { db }, input }) => {
-    const keyHash = await deleteApiKey(db, input)
+  delete: protectedProcedure
+    .input(deleteApiKeySchema)
+    .mutation(async ({ ctx: { db, user }, input }) => {
+      const keyHash = await deleteApiKey(db, { id: input.id, userId: user.id })
 
-    // Invalidate cache if key was deleted
-    if (keyHash) {
-      await apiKeyCache.delete(keyHash)
-    }
+      // Invalidate cache if key was deleted
+      if (keyHash) {
+        await apiKeyCache.delete(keyHash)
+      }
 
-    return keyHash
-  }),
+      return keyHash
+    }),
 })
