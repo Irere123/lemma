@@ -12,6 +12,7 @@ function RouteComponent() {
 
   const links = [
     { label: 'Account', to: '/app/settings/account' },
+    { label: 'Profile', to: '/app/settings/profile' },
     { label: 'API Keys', to: '/app/settings/api-keys' },
     { label: 'Apps', to: '/app/settings/apps' },
   ] as const

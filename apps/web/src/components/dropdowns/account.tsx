@@ -6,10 +6,14 @@ import {
   IconMessageCircle,
   IconUserCircle,
 } from '@tabler/icons-react'
-import { Link } from '@tanstack/react-router'
+import { useMutation } from '@tanstack/react-query'
+import { Link, useNavigate } from '@tanstack/react-router'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
+import { useEffect } from 'react'
 
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
+import { signOut, useSession } from '@/lib/auth-client'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '../ui/button'
 
 export function AccountDropdown({
@@ -25,6 +29,25 @@ export function AccountDropdown({
   side?: ComponentProps<typeof MenuPopup>['side']
   align?: ComponentProps<typeof MenuPopup>['align']
 }) {
+  const { data: session, refetch } = useSession()
+  const navigate = useNavigate()
+  const trpc = useTRPC()
+  const username = session?.user?.username ?? null
+
+  const ensureUsername = useMutation(
+    trpc.profile.ensureUsername.mutationOptions({
+      onSuccess: () => refetch(),
+    })
+  )
+
+  // Backfill a handle for accounts created before handles existed, so the
+  // profile link works for everyone.
+  useEffect(() => {
+    if (session?.user && !session.user.username && !ensureUsername.isPending) {
+      ensureUsername.mutate(undefined)
+    }
+  }, [session?.user, ensureUsername])
+
   const trigger = children ? (
     <button type='button' className={triggerClassName}>
       {children}
@@ -40,8 +63,9 @@ export function AccountDropdown({
       <MenuTrigger render={trigger as ReactElement<Record<string, unknown>>} />
       <MenuPopup align={align} side={side} sideOffset={4} className='min-w-54!'>
         <MenuItem
+          disabled={!username}
           render={
-            <Link to='/u/$username' params={{ username: 'profile' }}>
+            <Link to='/u/$username' params={{ username: username ?? '' }}>
               <IconUserCircle />
               Profile
             </Link>
@@ -59,7 +83,11 @@ export function AccountDropdown({
           <IconMessageCircle />
           Feedback
         </MenuItem>
-        <MenuItem>
+        <MenuItem
+          onClick={() => {
+            void signOut().then(() => navigate({ to: '/login' }))
+          }}
+        >
           <IconLogout /> Logout
         </MenuItem>
       </MenuPopup>

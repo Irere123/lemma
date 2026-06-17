@@ -14,10 +14,12 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as WriteDocIdRouteImport } from './routes/write/$docId'
-import { Route as UUsernameRouteImport } from './routes/u/$username'
 import { Route as AppSearchRouteImport } from './routes/app/search'
 import { Route as AppSettingsRouteRouteImport } from './routes/app/settings/route'
+import { Route as UUsernameIndexRouteImport } from './routes/u/$username/index'
 import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
+import { Route as UUsernameSlugRouteImport } from './routes/u/$username/$slug'
+import { Route as AppSettingsProfileRouteImport } from './routes/app/settings/profile'
 import { Route as AppSettingsAppsRouteImport } from './routes/app/settings/apps'
 import { Route as AppSettingsApiKeysRouteImport } from './routes/app/settings/api-keys'
 import { Route as AppSettingsAccountRouteImport } from './routes/app/settings/account'
@@ -48,11 +50,6 @@ const WriteDocIdRoute = WriteDocIdRouteImport.update({
   path: '/write/$docId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UUsernameRoute = UUsernameRouteImport.update({
-  id: '/u/$username',
-  path: '/u/$username',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppSearchRoute = AppSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -63,9 +60,24 @@ const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const UUsernameIndexRoute = UUsernameIndexRouteImport.update({
+  id: '/u/$username/',
+  path: '/u/$username/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppSettingsRouteRoute,
+} as any)
+const UUsernameSlugRoute = UUsernameSlugRouteImport.update({
+  id: '/u/$username/$slug',
+  path: '/u/$username/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsProfileRoute = AppSettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppSettingsRouteRoute,
 } as any)
 const AppSettingsAppsRoute = AppSettingsAppsRouteImport.update({
@@ -95,27 +107,31 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
-  '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
   '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/profile': typeof AppSettingsProfileRoute
+  '/u/$username/$slug': typeof UUsernameSlugRoute
   '/app/settings/': typeof AppSettingsIndexRoute
+  '/u/$username': typeof UUsernameIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/search': typeof AppSearchRoute
-  '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app': typeof AppIndexRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
   '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/profile': typeof AppSettingsProfileRoute
+  '/u/$username/$slug': typeof UUsernameSlugRoute
   '/app/settings': typeof AppSettingsIndexRoute
+  '/u/$username': typeof UUsernameIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,14 +140,16 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
-  '/u/$username': typeof UUsernameRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/app/documents/': typeof AppDocumentsRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
   '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/profile': typeof AppSettingsProfileRoute
+  '/u/$username/$slug': typeof UUsernameSlugRoute
   '/app/settings/': typeof AppSettingsIndexRoute
+  '/u/$username/': typeof UUsernameIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,27 +159,31 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/settings'
     | '/app/search'
-    | '/u/$username'
     | '/write/$docId'
     | '/app/'
     | '/app/documents'
     | '/app/settings/account'
     | '/app/settings/api-keys'
     | '/app/settings/apps'
+    | '/app/settings/profile'
+    | '/u/$username/$slug'
     | '/app/settings/'
+    | '/u/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/app/search'
-    | '/u/$username'
     | '/write/$docId'
     | '/app'
     | '/app/documents'
     | '/app/settings/account'
     | '/app/settings/api-keys'
     | '/app/settings/apps'
+    | '/app/settings/profile'
+    | '/u/$username/$slug'
     | '/app/settings'
+    | '/u/$username'
   id:
     | '__root__'
     | '/'
@@ -169,22 +191,25 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/settings'
     | '/app/search'
-    | '/u/$username'
     | '/write/$docId'
     | '/app/'
     | '/app/documents/'
     | '/app/settings/account'
     | '/app/settings/api-keys'
     | '/app/settings/apps'
+    | '/app/settings/profile'
+    | '/u/$username/$slug'
     | '/app/settings/'
+    | '/u/$username/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
-  UUsernameRoute: typeof UUsernameRoute
   WriteDocIdRoute: typeof WriteDocIdRoute
+  UUsernameSlugRoute: typeof UUsernameSlugRoute
+  UUsernameIndexRoute: typeof UUsernameIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -224,13 +249,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WriteDocIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/u/$username': {
-      id: '/u/$username'
-      path: '/u/$username'
-      fullPath: '/u/$username'
-      preLoaderRoute: typeof UUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/search': {
       id: '/app/search'
       path: '/search'
@@ -245,11 +263,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/u/$username/': {
+      id: '/u/$username/'
+      path: '/u/$username'
+      fullPath: '/u/$username'
+      preLoaderRoute: typeof UUsernameIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/settings/': {
       id: '/app/settings/'
       path: '/'
       fullPath: '/app/settings/'
       preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
+    }
+    '/u/$username/$slug': {
+      id: '/u/$username/$slug'
+      path: '/u/$username/$slug'
+      fullPath: '/u/$username/$slug'
+      preLoaderRoute: typeof UUsernameSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/settings/profile': {
+      id: '/app/settings/profile'
+      path: '/profile'
+      fullPath: '/app/settings/profile'
+      preLoaderRoute: typeof AppSettingsProfileRouteImport
       parentRoute: typeof AppSettingsRouteRoute
     }
     '/app/settings/apps': {
@@ -287,6 +326,7 @@ interface AppSettingsRouteRouteChildren {
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsApiKeysRoute: typeof AppSettingsApiKeysRoute
   AppSettingsAppsRoute: typeof AppSettingsAppsRoute
+  AppSettingsProfileRoute: typeof AppSettingsProfileRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
@@ -294,6 +334,7 @@ const AppSettingsRouteRouteChildren: AppSettingsRouteRouteChildren = {
   AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsApiKeysRoute: AppSettingsApiKeysRoute,
   AppSettingsAppsRoute: AppSettingsAppsRoute,
+  AppSettingsProfileRoute: AppSettingsProfileRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 
@@ -322,8 +363,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   LoginRoute: LoginRoute,
-  UUsernameRoute: UUsernameRoute,
   WriteDocIdRoute: WriteDocIdRoute,
+  UUsernameSlugRoute: UUsernameSlugRoute,
+  UUsernameIndexRoute: UUsernameIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
