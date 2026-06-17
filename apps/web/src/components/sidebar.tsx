@@ -1,5 +1,7 @@
 import {
   IconAlignJustified,
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarLeftExpand,
   IconLoader2,
   IconPlus,
   IconSearch,
@@ -7,52 +9,149 @@ import {
   IconUserCircle,
 } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import type { ReactElement, ReactNode } from 'react'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 import { useSession } from '@/lib/auth-client'
 import { cn, getUntitledTitle } from '@/lib/utils'
 import { useDocumentStore } from '@/stores/document-store'
+import { useSidebarStore } from '@/stores/sidebar-store'
 import { useTRPC } from '@/trpc/client'
 import { AccountDropdown } from './dropdowns/account'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Skeleton } from './ui/skeleton'
 import { Tooltip, TooltipPopup, TooltipTrigger } from './ui/tooltip'
 
+// Single, predictable rule for highlighting a link. Leaf routes match exactly
+// so `/app` no longer lights up on `/app/search` or `/app/settings`; parent
+// routes (e.g. `/app/settings`) also match their nested children.
+function useIsActive(href: string, exact: boolean) {
+  const pathname = useLocation({ select: (location) => location.pathname })
+  if (exact) return pathname === href
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
 export function Sidebar() {
   const { data: session, isPending } = useSession()
+  const expanded = useSidebarStore((state) => state.expanded)
+  const toggle = useSidebarStore((state) => state.toggle)
+
+  // Persisted state is read on the client only (see sidebar-store) to keep SSR
+  // and the first paint deterministic. Rehydrate once mounted.
+  useEffect(() => {
+    useSidebarStore.persist.rehydrate()
+  }, [])
+
+  const widthClass = expanded ? 'w-60' : 'w-16'
 
   return (
-    <nav
-      aria-label='Primary'
-      className='sticky top-0 z-50 hidden h-screen w-16 shrink-0 flex-col gap-3 border-neutral-200 border-r bg-background px-2 md:flex'
-    >
-      <div className='flex items-center justify-center border-neutral-200 border-b py-3'>
-        <AccountDropdown />
-      </div>
-      <div className='flex flex-1 flex-col items-center gap-2'>
-        <SidebarLink href='/app' icon={<IconAlignJustified size={20} />} label='Library' />
-        <SidebarLink href='/app/search' icon={<IconSearch size={20} />} label='Search' />
-        <SidebarCreateDocumentButton />
-        <SidebarLink href='/u/profile' icon={<IconUserCircle size={20} />} label='Profile' />
-        <SidebarLink href='/app/settings' icon={<IconSettings size={20} />} label='Settings' />
-      </div>
-      <div className='flex items-center justify-center gap-2 py-3'>
-        {isPending ? (
-          <Skeleton className='rounded-full size-9' />
-        ) : (
-          <Avatar className='rounded-full size-9'>
-            <AvatarImage alt='User' src={session?.user?.image ?? undefined} />
-            <AvatarFallback>{session?.user?.name?.charAt(0)}</AvatarFallback>
-          </Avatar>
+    <>
+      {/*
+        In-flow spacer that reserves the sidebar's footprint and pushes the page
+        content. It is empty, so animating its width is cheap — the browser never
+        has to reflow the sidebar's own items frame-by-frame (those live in the
+        fixed panel below, whose width animation only touches its small subtree).
+      */}
+      <div
+        aria-hidden
+        className={cn(
+          'hidden shrink-0 transition-[width] duration-200 ease-out motion-reduce:transition-none md:block',
+          widthClass
         )}
-      </div>
-    </nav>
+      />
+      <nav
+        aria-label='Primary'
+        data-expanded={expanded ? 'true' : undefined}
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 hidden flex-col gap-2 overflow-hidden border-neutral-200 border-r bg-background px-2 py-2 transition-[width] duration-200 ease-out motion-reduce:transition-none md:flex',
+          widthClass
+        )}
+      >
+        <div
+          className={cn(
+            'flex h-10 items-center border-neutral-200 border-b pb-2',
+            expanded ? 'justify-between px-1' : 'justify-center'
+          )}
+        >
+          {expanded && (
+            <span className='truncate font-semibold text-base tracking-tight'>Lemma</span>
+          )}
+          <AccountDropdown />
+        </div>
+
+        <div
+          className={cn('flex flex-1 flex-col gap-1', expanded ? 'items-stretch' : 'items-center')}
+        >
+          <SidebarLink
+            href='/app'
+            exact
+            icon={<IconAlignJustified size={20} />}
+            label='Library'
+            expanded={expanded}
+          />
+          <SidebarLink
+            href='/app/search'
+            exact
+            icon={<IconSearch size={20} />}
+            label='Search'
+            expanded={expanded}
+          />
+          <SidebarCreateDocumentButton expanded={expanded} />
+          <SidebarLink
+            href='/u/profile'
+            exact
+            icon={<IconUserCircle size={20} />}
+            label='Profile'
+            expanded={expanded}
+          />
+          <SidebarLink
+            href='/app/settings'
+            icon={<IconSettings size={20} />}
+            label='Settings'
+            expanded={expanded}
+          />
+        </div>
+
+        <div className={cn('flex flex-col gap-1', expanded ? 'items-stretch' : 'items-center')}>
+          <SidebarToggle expanded={expanded} onToggle={toggle} />
+          <div
+            className={cn(
+              'mt-1 flex items-center border-neutral-200 border-t pt-2',
+              expanded ? 'gap-2 px-1' : 'justify-center'
+            )}
+          >
+            {isPending ? (
+              <Skeleton className='size-9 shrink-0 rounded-full' />
+            ) : (
+              <Avatar className='size-9 shrink-0 rounded-full'>
+                <AvatarImage alt='User' src={session?.user?.image ?? undefined} />
+                <AvatarFallback>{session?.user?.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+            )}
+            {expanded && (
+              <div className='min-w-0 flex-1'>
+                <p className='truncate font-medium text-foreground text-sm'>
+                  {session?.user?.name}
+                </p>
+                <p className='truncate text-muted-foreground text-xs'>{session?.user?.email}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+    </>
   )
 }
 
-export function SidebarCreateDocumentButton({ className }: { className?: string }) {
+export function SidebarCreateDocumentButton({
+  className,
+  expanded = false,
+}: {
+  className?: string
+  expanded?: boolean
+}) {
   const navigate = useNavigate()
   const trpc = useTRPC()
   const upsertDocumentInStore = useDocumentStore((state) => state.upsertDocument)
@@ -95,20 +194,28 @@ export function SidebarCreateDocumentButton({ className }: { className?: string 
     <button
       type='button'
       className={cn(
-        'flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60',
+        itemClassName(expanded),
+        'disabled:cursor-not-allowed disabled:opacity-60',
         className
       )}
       onClick={handleCreateDocument}
       disabled={createDocumentMutation.isPending}
       aria-label='Create new document'
     >
-      {createDocumentMutation.isPending ? (
-        <IconLoader2 size={20} className='animate-spin' />
-      ) : (
-        <IconPlus size={20} />
-      )}
+      <span className='flex size-10 shrink-0 items-center justify-center'>
+        {createDocumentMutation.isPending ? (
+          <IconLoader2 size={20} className='animate-spin' />
+        ) : (
+          <IconPlus size={20} />
+        )}
+      </span>
+      {expanded && <span className='truncate text-sm'>New document</span>}
     </button>
   )
+
+  if (expanded) {
+    return button
+  }
 
   return (
     <Tooltip>
@@ -118,30 +225,87 @@ export function SidebarCreateDocumentButton({ className }: { className?: string 
   )
 }
 
+function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  const button = (
+    <button
+      type='button'
+      onClick={onToggle}
+      aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+      aria-expanded={expanded}
+      className={itemClassName(expanded)}
+    >
+      <span className='flex size-10 shrink-0 items-center justify-center'>
+        {expanded ? (
+          <IconLayoutSidebarLeftCollapse size={20} />
+        ) : (
+          <IconLayoutSidebarLeftExpand size={20} />
+        )}
+      </span>
+      {expanded && <span className='truncate text-sm'>Collapse</span>}
+    </button>
+  )
+
+  if (expanded) {
+    return button
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger render={button as ReactElement<Record<string, unknown>>} />
+      <TooltipPopup side='right'>Expand sidebar</TooltipPopup>
+    </Tooltip>
+  )
+}
+
+// Shared geometry so links, the create button, and the toggle stay perfectly
+// aligned in both the collapsed rail and the expanded panel.
+function itemClassName(expanded: boolean, isActive = false) {
+  return cn(
+    'group/item relative flex h-10 items-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+    expanded ? 'w-full justify-start rounded-lg pr-3' : 'size-10 justify-center rounded-full',
+    isActive && 'bg-muted font-medium text-foreground'
+  )
+}
+
 const SidebarLink = ({
   icon,
   href,
   label,
+  exact = false,
+  expanded,
   className,
 }: {
   icon: ReactNode
   href: string
   label: string
+  exact?: boolean
+  expanded: boolean
   className?: string
 }) => {
+  const isActive = useIsActive(href, exact)
+
   const link = (
     <Link
       to={href}
       aria-label={label}
-      className={cn(
-        'flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        className
-      )}
-      activeProps={{ className: 'bg-muted text-foreground' }}
+      aria-current={isActive ? 'page' : undefined}
+      data-active={isActive ? 'true' : undefined}
+      className={cn(itemClassName(expanded, isActive), className)}
     >
-      {icon}
+      <span className='flex size-10 shrink-0 items-center justify-center'>{icon}</span>
+      {expanded && <span className='truncate text-sm'>{label}</span>}
+      {expanded && isActive && (
+        <span
+          aria-hidden
+          className='absolute top-1/2 left-1 h-5 w-0.5 -translate-y-1/2 rounded-full bg-foreground'
+        />
+      )}
     </Link>
   )
+
+  if (expanded) {
+    return link
+  }
 
   return (
     <Tooltip>
