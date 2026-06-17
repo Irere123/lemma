@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router'
-import { Settings } from 'lucide-react'
+import { Search, Settings } from 'lucide-react'
 import { useCallback, useEffect, useRef } from 'react'
 
+import { CommandPalette } from '@/components/command-palette'
 import { Sidebar, SidebarCreateDocumentButton } from '@/components/sidebar'
 import { getSession } from '@/lib/auth.server'
 import { useSession } from '@/lib/auth-client'
 import { buildSeoHead } from '@/lib/seo'
+import { useCommandPaletteStore } from '@/stores/command-palette'
 import { type Document, documentStore, useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
 
@@ -50,6 +52,7 @@ function RouteComponent() {
     trpc.documents.getUserDocuments.queryOptions({})
   )
   const setDocuments = useDocumentStore((state) => state.setDocuments)
+  const openCommandPalette = useCommandPaletteStore((state) => state.setOpen)
   const isPageLoadedRef = useRef(false)
 
   const setupStore = useCallback(async () => {
@@ -106,6 +109,7 @@ function RouteComponent() {
 
   return (
     <main className='flex min-h-screen flex-1 bg-background'>
+      <CommandPalette />
       <Sidebar />
       <div className='flex min-w-0 flex-1 flex-col'>
         <header className='sticky top-0 z-40 flex items-center justify-between border-border/70 border-b bg-background/95 px-3 py-2 backdrop-blur md:hidden'>
@@ -115,10 +119,18 @@ function RouteComponent() {
             </Link>
           </div>
           <div className='flex items-center gap-1'>
+            <button
+              type='button'
+              aria-label='Search'
+              onClick={() => openCommandPalette(true)}
+              className='inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.96]'
+            >
+              <Search className='size-4' />
+            </button>
             <SidebarCreateDocumentButton className='size-9' />
             <Link
               aria-label='Settings'
-              className='inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+              className='inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.96]'
               to='/app/settings'
             >
               <Settings className='size-4' />

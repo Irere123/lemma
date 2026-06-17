@@ -8,17 +8,15 @@ import {
   IconSelector,
   IconSettings,
 } from '@tabler/icons-react'
-import { useMutation } from '@tanstack/react-query'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import type { ReactElement, ReactNode } from 'react'
 import { useEffect } from 'react'
-import { toast } from 'sonner'
 
+import { useCreateDocument } from '@/hooks/use-create-document'
 import { useSession } from '@/lib/auth-client'
-import { cn, getUntitledTitle } from '@/lib/utils'
-import { useDocumentStore } from '@/stores/document-store'
+import { cn } from '@/lib/utils'
+import { useCommandPaletteStore } from '@/stores/command-palette'
 import { useSidebarStore } from '@/stores/sidebar-store'
-import { useTRPC } from '@/trpc/client'
 import { AccountDropdown } from './dropdowns/account'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Skeleton } from './ui/skeleton'
@@ -91,13 +89,7 @@ export function Sidebar() {
             label='Library'
             expanded={expanded}
           />
-          <SidebarLink
-            href='/app/search'
-            exact
-            icon={<IconSearch size={20} />}
-            label='Search'
-            expanded={expanded}
-          />
+          <SidebarSearchButton expanded={expanded} />
           <SidebarCreateDocumentButton expanded={expanded} />
           <SidebarLink
             href='/app/settings'
@@ -120,7 +112,7 @@ export function Sidebar() {
               side='top'
               align='start'
               triggerClassName={cn(
-                'group/item flex items-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+                'group/item flex items-center text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.96]',
                 expanded
                   ? 'w-full gap-2 rounded-lg p-1 text-left'
                   : 'size-10 justify-center rounded-full'
@@ -158,43 +150,7 @@ export function SidebarCreateDocumentButton({
   className?: string
   expanded?: boolean
 }) {
-  const navigate = useNavigate()
-  const trpc = useTRPC()
-  const upsertDocumentInStore = useDocumentStore((state) => state.upsertDocument)
-
-  const createDocumentMutation = useMutation(
-    trpc.documents.upsertDocument.mutationOptions({
-      onSuccess: async (document) => {
-        if (!document?.id) {
-          toast.error('Failed to create document')
-          return
-        }
-
-        upsertDocumentInStore(document as any)
-
-        await navigate({
-          to: '/write/$docId',
-          params: {
-            docId: document.id,
-          },
-        })
-      },
-      onError: (error) => {
-        toast.error(error.message || 'Failed to create document')
-      },
-    })
-  )
-
-  const handleCreateDocument = () => {
-    if (createDocumentMutation.isPending) {
-      return
-    }
-
-    createDocumentMutation.mutate({
-      title: getUntitledTitle(''),
-      markdown: '',
-    })
-  }
+  const { createDocument, isPending } = useCreateDocument()
 
   const button = (
     <button
@@ -204,16 +160,12 @@ export function SidebarCreateDocumentButton({
         'disabled:cursor-not-allowed disabled:opacity-60',
         className
       )}
-      onClick={handleCreateDocument}
-      disabled={createDocumentMutation.isPending}
+      onClick={createDocument}
+      disabled={isPending}
       aria-label='Create new document'
     >
       <span className='flex size-10 shrink-0 items-center justify-center'>
-        {createDocumentMutation.isPending ? (
-          <IconLoader2 size={20} className='animate-spin' />
-        ) : (
-          <IconPlus size={20} />
-        )}
+        {isPending ? <IconLoader2 size={20} className='animate-spin' /> : <IconPlus size={20} />}
       </span>
       {expanded && <span className='truncate text-sm'>New document</span>}
     </button>
@@ -243,7 +195,7 @@ function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: ()
       onClick={onToggle}
       aria-label={label}
       aria-expanded={expanded}
-      className='group/item flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background'
+      className='group/item flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.96]'
     >
       {expanded ? (
         <IconLayoutSidebarLeftCollapse size={20} />
@@ -261,11 +213,49 @@ function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: ()
   )
 }
 
+// Opens the command palette instead of navigating. Mirrors the link styling so
+// it sits naturally among the nav items, with a ⌘K hint when expanded.
+function SidebarSearchButton({ expanded }: { expanded: boolean }) {
+  const setOpen = useCommandPaletteStore((state) => state.setOpen)
+
+  const button = (
+    <button
+      type='button'
+      onClick={() => setOpen(true)}
+      aria-label='Search'
+      className={itemClassName(expanded)}
+    >
+      <span className='flex size-10 shrink-0 items-center justify-center'>
+        <IconSearch size={20} />
+      </span>
+      {expanded && (
+        <>
+          <span className='flex-1 truncate text-left text-sm'>Search</span>
+          <kbd className='pointer-events-none rounded border bg-muted px-1.5 py-0.5 font-medium font-sans text-[10px] text-muted-foreground'>
+            ⌘K
+          </kbd>
+        </>
+      )}
+    </button>
+  )
+
+  if (expanded) {
+    return button
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger render={button as ReactElement<Record<string, unknown>>} />
+      <TooltipPopup side='right'>Search</TooltipPopup>
+    </Tooltip>
+  )
+}
+
 // Shared geometry so links, the create button, and the toggle stay perfectly
 // aligned in both the collapsed rail and the expanded panel.
 function itemClassName(expanded: boolean, isActive = false) {
   return cn(
-    'group/item relative flex h-10 items-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+    'group/item flex h-10 items-center text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.96]',
     expanded ? 'w-full justify-start rounded-lg pr-3' : 'size-10 justify-center rounded-full',
     isActive && 'bg-muted font-medium text-foreground'
   )
@@ -298,12 +288,6 @@ const SidebarLink = ({
     >
       <span className='flex size-10 shrink-0 items-center justify-center'>{icon}</span>
       {expanded && <span className='truncate text-sm'>{label}</span>}
-      {expanded && isActive && (
-        <span
-          aria-hidden
-          className='absolute top-1/2 left-1 h-5 w-0.5 -translate-y-1/2 rounded-full bg-foreground'
-        />
-      )}
     </Link>
   )
 
