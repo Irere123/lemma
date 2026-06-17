@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "wrangler dev --env local --port 4000",
     "cf-typegen": "cross-env CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false wrangler types --env local",
+    "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
     "generate-migration": "drizzle-kit generate",
     "typecheck": "tsc --noEmit",
     "migrate:local": "wrangler d1 migrations apply lemma-local --env local --local",
+    "migrate:staging": "wrangler d1 migrations apply lemma-staging --env staging --remote",
     "migrate:production": "wrangler d1 migrations apply lemma-production --env production --remote"
   },
   "dependencies": {

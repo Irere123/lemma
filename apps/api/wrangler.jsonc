@@ -119,6 +119,120 @@
         ]
       }
     },
+    "staging": {
+      "name": "lemma-api-staging",
+      "triggers": {
+        "crons": ["*/5 * * * *"]
+      },
+      "routes": [
+        {
+          "pattern": "sapi.irere.dev",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        // `ENV` only accepts "local" | "production" (see src/env.ts). Staging is
+        // an HTTPS prod-mirror, so it runs with production behavior (secure
+        // cookies, masked errors). Extend the enum if you want a distinct mode.
+        "ENV": "production",
+        "ALLOWED_API_ORIGINS": "https://staging.irere.dev",
+        "BASE_URL": "https://sapi.irere.dev",
+        "FRONTEND_URL": "https://staging.irere.dev",
+        "BETTER_AUTH_URL": "https://sapi.irere.dev",
+        "CLOUDFLARE_ACCOUNT_ID": "c2c7b2ff17bd68a351ee368bddfad7d9",
+        "R2_BUCKET_URL": "https://assets.irere.dev",
+        "R2_STORAGE_BASE_URL": "https://assets.irere.dev",
+        "RESEND_DOMAIN": "updates.irere.dev"
+        // Secrets (BETTER_AUTH_SECRET, LEMMA_ENCRYPTION_KEY, R2_ACCESS_KEY_ID,
+        // R2_SECRET_ACCESS_KEY, RESEND_API_KEY, GOOGLE_CLIENT_ID,
+        // GOOGLE_CLIENT_SECRET) are set via `wrangler secret put ... --env staging`.
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "lemma-staging",
+          // TODO: `wrangler d1 create lemma-staging` then paste the id here.
+          "database_id": "REPLACE_WITH_STAGING_D1_ID",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2_BUCKET",
+          "bucket_name": "lemma-staging-assets",
+          "remote": true
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "CACHE",
+          // TODO: `wrangler kv namespace create CACHE-staging` then paste the id.
+          "id": "REPLACE_WITH_STAGING_KV_ID"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "API_RATE_LIMITER",
+          "namespace_id": "3001",
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "3002",
+          "simple": { "limit": 20, "period": 60 }
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "EMAIL_QUEUE",
+            "queue": "lemma-staging-email"
+          },
+          {
+            "binding": "NEWSLETTER_QUEUE",
+            "queue": "lemma-staging-newsletter"
+          },
+          {
+            "binding": "ANALYTICS_QUEUE",
+            "queue": "lemma-staging-analytics"
+          },
+          {
+            "binding": "SCHEDULED_QUEUE",
+            "queue": "lemma-staging-scheduled"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "lemma-staging-email",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-email-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-staging-newsletter",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-newsletter-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-staging-analytics",
+            "max_batch_size": 25,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-analytics-dlq",
+            "retry_delay": 60
+          },
+          {
+            "queue": "lemma-staging-scheduled",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "lemma-staging-scheduled-dlq",
+            "retry_delay": 60
+          }
+        ]
+      }
+    },
     "production": {
       "name": "lemma-api",
       "triggers": {
