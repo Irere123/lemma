@@ -14,21 +14,35 @@ export const createTable = sqliteTableCreator((name) => name)
 // AUTHENTICATION & USER MANAGEMENT
 // ============================================================================
 
-export const user = sqliteTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: integer('email_verified', { mode: 'boolean' })
-    .$defaultFn(() => false)
-    .notNull(),
-  image: text('image'),
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .$defaultFn(() => /* @__PURE__ */ new Date())
-    .notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
-    .$defaultFn(() => /* @__PURE__ */ new Date())
-    .notNull(),
-})
+export const user = sqliteTable(
+  'user',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    emailVerified: integer('email_verified', { mode: 'boolean' })
+      .$defaultFn(() => false)
+      .notNull(),
+    image: text('image'),
+    username: text('username').unique(),
+    bio: text('bio'),
+    website: text('website'),
+    location: text('location'),
+    socialLinks: text('social_links', { mode: 'json' }).$type<{
+      twitter?: string
+      github?: string
+      linkedin?: string
+      website?: string
+    }>(),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index('user_username_idx').on(table.username)]
+)
 
 export const session = sqliteTable('session', {
   id: text('id').primaryKey(),
@@ -274,6 +288,29 @@ export const documentLikes = createTable(
 export type DocumentLike = typeof documentLikes.$inferSelect
 export type DocumentLikeInsert = typeof documentLikes.$inferInsert
 
+// Social graph: user -> user follows (unique per follower + following)
+export const follows = createTable(
+  'follows',
+  {
+    id: text('id').primaryKey(),
+    followerId: text('follower_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    followingId: text('following_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index('follows_following_id_idx').on(table.followingId),
+    index('follows_follower_id_idx').on(table.followerId),
+    unique('follows_unique').on(table.followerId, table.followingId),
+  ]
+)
+
+export type Follow = typeof follows.$inferSelect
+export type FollowInsert = typeof follows.$inferInsert
+
 // ============================================================================
 // NEWSLETTER & EMAIL
 // ============================================================================
@@ -282,7 +319,7 @@ export const subscribers = createTable(
   'subscribers',
   {
     id: text().primaryKey(),
-    email: text().notNull().unique(),
+    email: text().notNull(),
     token: text().notNull().unique(),
     writerId: text('writer_id').references(() => user.id, {
       onDelete: 'cascade',
@@ -298,7 +335,8 @@ export const subscribers = createTable(
     index('token_idx').on(table.token),
     index('confirmed_idx').on(table.isConfirmed),
     index('writer_id_idx').on(table.writerId),
-    unique('sub_constraint').on(table.email, table.token),
+    // One subscriber email per writer (supports subscribing to many writers).
+    unique('sub_writer_email').on(table.writerId, table.email),
   ]
 )
 
