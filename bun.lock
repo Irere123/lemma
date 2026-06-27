@@ -20,6 +20,7 @@
         "@hono/trpc-server": "^0.4.0",
         "@hono/zod-openapi": "^1.1.0",
         "@lemma/common": "workspace:*",
+        "@lemma/content": "workspace:*",
         "@lemma/email": "workspace:*",
         "@react-email/render": "^1.1.3",
         "@scalar/hono-api-reference": "^0.9.16",
@@ -58,6 +59,7 @@
         "@hookform/resolvers": "^5.2.1",
         "@lemma/api": "workspace:*",
         "@lemma/common": "workspace:*",
+        "@lemma/content": "workspace:*",
         "@lemma/headless": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -75,6 +77,7 @@
         "@tanstack/react-start": "^1.132.32",
         "@tanstack/react-table": "^8.21.3",
         "@tiptap/core": "catalog:",
+        "@tiptap/extension-table": "3.19.0",
         "@trpc/client": "^11.6.0",
         "@trpc/tanstack-react-query": "^11.6.0",
         "@vitejs/plugin-react": "^5.0.3",
@@ -131,6 +134,12 @@
       "devDependencies": {
         "@types/bun": "latest",
       },
+      "peerDependencies": {
+        "typescript": "^5.0.0",
+      },
+    },
+    "packages/content": {
+      "name": "@lemma/content",
       "peerDependencies": {
         "typescript": "^5.0.0",
       },
@@ -582,6 +591,8 @@
 
     "@lemma/common": ["@lemma/common@workspace:packages/common"],
 
+    "@lemma/content": ["@lemma/content@workspace:packages/content"],
+
     "@lemma/email": ["@lemma/email@workspace:packages/email"],
 
     "@lemma/headless": ["@lemma/headless@workspace:packages/headless"],
@@ -1027,6 +1038,8 @@
     "@tiptap/extension-placeholder": ["@tiptap/extension-placeholder@3.19.0", "", { "peerDependencies": { "@tiptap/extensions": "^3.19.0" } }, "sha512-i15OfgyI4IDCYAcYSKUMnuZkYuUInfanjf9zquH8J2BETiomf/jZldVCp/QycMJ8DOXZ38fXDc99wOygnSNySg=="],
 
     "@tiptap/extension-strike": ["@tiptap/extension-strike@3.19.0", "", { "peerDependencies": { "@tiptap/core": "^3.19.0" } }, "sha512-xYpabHsv7PccLUBQaP8AYiFCnYbx6P93RHPd0lgNwhdOjYFd931Zy38RyoxPHAgbYVmhf1iyx7lpuLtBnhS5dA=="],
+
+    "@tiptap/extension-table": ["@tiptap/extension-table@3.19.0", "", { "peerDependencies": { "@tiptap/core": "^3.19.0", "@tiptap/pm": "^3.19.0" } }, "sha512-Lg8DlkkDUMYE/CcGOxoCWF98B2i7VWh+AGgqlF+XWrHjhlKHfENLRXm1a0vWuyyP3NknRYILoaaZ1s7QzmXKRA=="],
 
     "@tiptap/extension-task-item": ["@tiptap/extension-task-item@3.19.0", "", { "peerDependencies": { "@tiptap/extension-list": "^3.19.0" } }, "sha512-1il70SoaoEA5jKr2QS30CpZoB7EzdSLugROMBPRUPc0feIBKAf6yUPhxlFyU4ez/uT4Pazsf1HAgHI3AOr+MtQ=="],
 

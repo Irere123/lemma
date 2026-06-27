@@ -1,0 +1,12 @@
+{
+  "name": "@lemma/content",
+  "private": true,
+  "type": "module",
+  "description": "Canonical content model + serializers (JSON → HTML / text) shared by web, api, and email. Zero runtime deps, DOM-free, Worker-safe.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
