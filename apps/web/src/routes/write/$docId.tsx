@@ -1,3 +1,4 @@
+import type { JSONContent } from '@lemma/headless'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -9,7 +10,6 @@ import { BackNavigationButton } from '@/components/navigation/back-navigation-bu
 import { Button } from '@/components/ui/button'
 import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
 import { getSession } from '@/lib/auth.server'
-import { type CustomBlockToken, extractCustomBlocksFromMarkdown } from '@/lib/custom-blocks'
 import { buildSeoHead } from '@/lib/seo'
 import { useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
@@ -35,7 +35,7 @@ export const Route = createFileRoute('/write/$docId')({
 
 type DraftState = {
   bannerImage: string | null
-  customBlocks: CustomBlockToken[]
+  content: JSONContent | null
   markdown: string
   publishedDate: Date | null
   status: 'DRAFT' | 'PUBLISHED'
@@ -80,10 +80,10 @@ function RouteComponent() {
     title: '',
     subtitle: '',
     bannerImage: null,
+    content: null,
     markdown: '',
     publishedDate: null,
     status: 'DRAFT',
-    customBlocks: [],
   })
 
   const { mutateAsync: upsertDocument, isPending: isUpsertLoading } = useMutation(
@@ -97,6 +97,7 @@ function RouteComponent() {
         title: draftRef.current.title.trim() || null,
         subtitle: draftRef.current.subtitle.trim() || null,
         bannerImage: draftRef.current.bannerImage,
+        content: draftRef.current.content,
         markdown: draftRef.current.markdown,
         publishedDate: draftRef.current.publishedDate,
         status: draftRef.current.status,
@@ -199,6 +200,8 @@ function RouteComponent() {
     const nextStatus = document.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
     const nextMarkdown =
       typeof document.markdown === 'string' ? document.markdown : draftRef.current.markdown
+    const nextContent =
+      (document as { content?: JSONContent | null }).content ?? draftRef.current.content
 
     setTitle(nextTitle)
     setSubtitle(nextSubtitle)
@@ -211,10 +214,10 @@ function RouteComponent() {
       title: nextTitle,
       subtitle: nextSubtitle,
       bannerImage: nextBannerImage,
+      content: nextContent,
       publishedDate: nextPublishedDate,
       status: nextStatus,
       markdown: nextMarkdown,
-      customBlocks: extractCustomBlocksFromMarkdown(nextMarkdown),
     }
   }, [docId, document, fetchedDocument])
 
@@ -390,7 +393,10 @@ function RouteComponent() {
   }
 
   const editorKey = `${docId}:${fetchedDocument ? 'server' : 'store'}`
-  const editorInitialContent = typeof document.markdown === 'string' ? document.markdown : ''
+  // Prefer canonical JSON; fall back to legacy markdown (editor upgrades it on save).
+  const documentContent = (document as { content?: JSONContent | null }).content ?? null
+  const editorInitialContent: JSONContent | string =
+    documentContent ?? (typeof document.markdown === 'string' ? document.markdown : '')
 
   return (
     <WriteRoomShell
@@ -428,20 +434,20 @@ function RouteComponent() {
         }}
         onContentChange={(value: WriterEditorUpdate) => {
           const markdown = value.markdown
-          const customBlocks = extractCustomBlocksFromMarkdown(markdown)
+          const content = value.json
 
           if (!hydratedDocumentRef.current) {
             draftRef.current = {
               ...draftRef.current,
+              content,
               markdown,
-              customBlocks,
             }
             return
           }
 
           queueDraftUpdate({
+            content,
             markdown,
-            customBlocks,
           })
         }}
       />

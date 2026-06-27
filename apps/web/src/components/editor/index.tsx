@@ -36,6 +36,7 @@ import { slashCommand, suggestionItems } from './slash-command'
 const extensions = [...defaultExtensions, slashCommand]
 
 export type WriterEditorUpdate = {
+  json: JSONContent
   markdown: string
   words: number
 }
@@ -291,6 +292,7 @@ const AdvancedEditor = ({
               const words = editor.storage.characterCount.words()
               setWordsCount(words)
               onContentChange?.({
+                json: editor.getJSON(),
                 markdown: getAllContent(editor),
                 words,
               })
@@ -299,6 +301,7 @@ const AdvancedEditor = ({
               const words = editor.storage.characterCount.words()
               setWordsCount(words)
               onContentChange?.({
+                json: editor.getJSON(),
                 markdown: getAllContent(editor),
                 words,
               })

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
-import { ArticleContent } from '@/components/profile/article-content'
+import { ArticleBody } from '@/components/profile/article-content'
 import { ArticleStats, Comments, LikeButton } from '@/components/profile/article-engagement'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,9 +31,11 @@ function RouteComponent() {
   const { username, slug } = Route.useParams()
   const trpc = useTRPC()
 
-  const { data: post, isLoading, isError } = useQuery(
-    trpc.documents.getPublishedBySlug.queryOptions({ slug }, { retry: false })
-  )
+  const {
+    data: post,
+    isLoading,
+    isError,
+  } = useQuery(trpc.documents.getPublishedBySlug.queryOptions({ slug }, { retry: false }))
 
   if (isLoading) {
     return (
@@ -73,7 +75,9 @@ function RouteComponent() {
           {post.title || 'Untitled'}
         </h1>
         {post.subtitle && (
-          <p className='mt-4 text-pretty text-muted-foreground text-xl leading-8'>{post.subtitle}</p>
+          <p className='mt-4 text-pretty text-muted-foreground text-xl leading-8'>
+            {post.subtitle}
+          </p>
         )}
 
         <div className='mt-7 flex items-center justify-between gap-4 border-border/60 border-b pb-7'>
@@ -109,7 +113,7 @@ function RouteComponent() {
       </div>
 
       <article className='mx-auto mt-10 w-full max-w-2xl px-5 md:px-6'>
-        <ArticleContent markdown={post.markdown ?? ''} />
+        <ArticleBody html={post.html} markdown={post.markdown} />
       </article>
 
       <div className='mx-auto mt-12 w-full max-w-2xl px-5 md:px-6'>
