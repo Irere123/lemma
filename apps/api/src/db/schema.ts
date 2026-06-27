@@ -1,3 +1,4 @@
+import type { ContentDoc } from '@lemma/content'
 import {
   foreignKey,
   index,
@@ -105,7 +106,12 @@ export const documents = createTable(
     subtitle: text('subtitle'),
     status: text('status', { enum: documentStatus }),
     userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+    // Canonical content (Tiptap JSON); markdown/html below are derived from it.
+    content: text('content', { mode: 'json' }).$type<ContentDoc>(),
     markdown: text('markdown'),
+    html: text('html'),
+    excerpt: text('excerpt'),
+    contentVersion: integer('content_version').default(1),
     bannerImage: text('banner_image'),
     scheduledDate: integer('scheduled_date', { mode: 'timestamp' }),
     publishedDate: integer('published_date', { mode: 'timestamp' }),

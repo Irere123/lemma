@@ -19,6 +19,7 @@
     "@hono/trpc-server": "^0.4.0",
     "@hono/zod-openapi": "^1.1.0",
     "@lemma/common": "workspace:*",
+    "@lemma/content": "workspace:*",
     "@lemma/email": "workspace:*",
     "@react-email/render": "^1.1.3",
     "@scalar/hono-api-reference": "^0.9.16",

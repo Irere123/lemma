@@ -1,3 +1,4 @@
+import { type ContentDoc, renderToHTML, summarize } from '@lemma/content'
 import { and, desc, eq, lt, ne, sql } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
@@ -23,6 +24,30 @@ const resolveMarkdownForSave = (data: UpsertDocumentData): string | undefined =>
   }
 
   return undefined
+}
+
+type DerivedContent = {
+  content: ContentDoc | null
+  html: string
+  excerpt: string
+  wordCount: string
+  readingTime: string
+}
+
+// Cache everything derived from content JSON so reads never have to render.
+const deriveFromContent = (content: ContentDoc | null): DerivedContent => {
+  if (!content) {
+    return { content: null, html: '', excerpt: '', wordCount: '0', readingTime: '' }
+  }
+
+  const summary = summarize(content)
+  return {
+    content,
+    html: renderToHTML(content),
+    excerpt: summary.excerpt,
+    wordCount: String(summary.words),
+    readingTime: summary.words > 0 ? summary.readingTime : '',
+  }
 }
 
 async function ensureUniqueSlug(db: DB, base: string, excludeId?: string): Promise<string> {
@@ -80,8 +105,16 @@ export const upsertDocument = async (
     }
 
     if (markdownForSave !== undefined) {
-      // Keep markdown as the canonical editor representation.
       updateValues.markdown = markdownForSave
+    }
+
+    if (Object.hasOwn(data, 'content')) {
+      const derived = deriveFromContent((data.content ?? null) as ContentDoc | null)
+      updateValues.content = derived.content
+      updateValues.html = derived.html
+      updateValues.excerpt = derived.excerpt
+      updateValues.wordCount = derived.wordCount
+      updateValues.readingTime = derived.readingTime
     }
 
     if (Object.hasOwn(data, 'title')) {
@@ -102,6 +135,7 @@ export const upsertDocument = async (
     const base = slugifyString(data.title ?? generateId())
     const safeBase = base || generateId()
     const slug = await ensureUniqueSlug(db, safeBase)
+    const derived = deriveFromContent((data.content ?? null) as ContentDoc | null)
 
     const [document] = await db
       .insert(documents)
@@ -112,7 +146,12 @@ export const upsertDocument = async (
         title: data.title ?? null,
         subtitle: data.subtitle ?? null,
         status: data.status ?? 'DRAFT',
+        content: derived.content,
         markdown: markdownForSave ?? '',
+        html: derived.html,
+        excerpt: derived.excerpt,
+        wordCount: derived.wordCount,
+        readingTime: derived.readingTime,
         bannerImage: data.bannerImage ?? null,
         scheduledDate: data.scheduledDate ?? null,
         publishedDate: data.publishedDate ?? null,
@@ -253,7 +292,11 @@ type PublishedArticlesOptions = {
   sort?: 'latest' | 'popular'
 }
 
-export type PublishedArticle = Omit<Document, 'markdown'> & { likeCount: number }
+// List rows omit heavy body fields (markdown/content/html) and contentVersion.
+export type PublishedArticle = Omit<
+  Document,
+  'markdown' | 'content' | 'html' | 'contentVersion'
+> & { likeCount: number }
 
 export const getPublishedArticles = async (
   db: DB,
@@ -292,6 +335,7 @@ export const getPublishedArticles = async (
       ogImage: documents.ogImage,
       readingTime: documents.readingTime,
       wordCount: documents.wordCount,
+      excerpt: documents.excerpt,
       isFeatured: documents.isFeatured,
       likeCount,
     })
@@ -338,7 +382,7 @@ export const getDocumentsByTypeAndStatus = async (
   db: DB,
   data: GetDocumentsByTypeAndStatusData,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Omit<Document, 'markdown'>[]> => {
+): Promise<Omit<Document, 'markdown' | 'content' | 'html' | 'contentVersion'>[]> => {
   const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
 
   const results = await db
@@ -361,6 +405,7 @@ export const getDocumentsByTypeAndStatus = async (
       ogImage: documents.ogImage,
       readingTime: documents.readingTime,
       wordCount: documents.wordCount,
+      excerpt: documents.excerpt,
       isFeatured: documents.isFeatured,
     })
     .from(documents)
