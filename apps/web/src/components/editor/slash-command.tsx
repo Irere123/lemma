@@ -1,31 +1,26 @@
 import { Command, createSuggestionItems, renderItems } from '@lemma/headless'
+import type { Editor } from '@tiptap/core'
 import {
-  Blocks,
   CheckSquare,
   Code,
   Heading1,
   Heading2,
   Heading3,
   ImageIcon,
+  Lightbulb,
   List,
   ListOrdered,
   MessageSquarePlus,
+  Table as TableIcon,
   Text,
   TextQuote,
 } from 'lucide-react'
 
-import { createCustomBlockToken } from '@/lib/custom-blocks'
+// @lemma/headless inlines @tiptap types, so its editor type misses web-only command
+// augmentations; re-type through @tiptap/core Editor to recover them (setCallout, insertTable).
+const chain = (editor: unknown) => (editor as unknown as Editor).chain().focus()
 
 export const suggestionItems = createSuggestionItems([
-  {
-    title: 'Send Feedback',
-    description: 'Let us know how we can improve.',
-    icon: <MessageSquarePlus size={18} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).run()
-      window.open('/feedback', '_blank')
-    },
-  },
   {
     title: 'Text',
     description: 'Just start typing with plain text.',
@@ -33,15 +28,6 @@ export const suggestionItems = createSuggestionItems([
     icon: <Text size={18} />,
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').run()
-    },
-  },
-  {
-    title: 'To-do List',
-    description: 'Track tasks with a to-do list.',
-    searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'],
-    icon: <CheckSquare size={18} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).toggleTaskList().run()
     },
   },
   {
@@ -90,6 +76,15 @@ export const suggestionItems = createSuggestionItems([
     },
   },
   {
+    title: 'To-do List',
+    description: 'Track tasks with a to-do list.',
+    searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'],
+    icon: <CheckSquare size={18} />,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleTaskList().run()
+    },
+  },
+  {
     title: 'Quote',
     description: 'Capture a quote.',
     searchTerms: ['blockquote'],
@@ -104,12 +99,30 @@ export const suggestionItems = createSuggestionItems([
         .run(),
   },
   {
+    title: 'Callout',
+    description: 'Highlight a note in a colored box.',
+    searchTerms: ['note', 'info', 'warning', 'tip', 'aside'],
+    icon: <Lightbulb size={18} />,
+    command: ({ editor, range }) => {
+      chain(editor).deleteRange(range).setCallout().run()
+    },
+  },
+  {
     title: 'Code',
     description: 'Capture a code snippet.',
     searchTerms: ['codeblock'],
     icon: <Code size={18} />,
     command: ({ editor, range }) =>
       editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
+  },
+  {
+    title: 'Table',
+    description: 'Insert a 3×3 table.',
+    searchTerms: ['grid', 'rows', 'columns'],
+    icon: <TableIcon size={18} />,
+    command: ({ editor, range }) => {
+      chain(editor).deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+    },
   },
   {
     title: 'Image',
@@ -124,37 +137,13 @@ export const suggestionItems = createSuggestionItems([
     },
   },
   {
-    title: 'Custom Block',
-    description: 'Insert a markdown token for a future custom block.',
-    searchTerms: ['block', 'embed', 'cta', 'button', 'substack'],
-    icon: <Blocks size={18} />,
+    title: 'Send Feedback',
+    description: 'Let us know how we can improve.',
+    searchTerms: ['feedback', 'help', 'support'],
+    icon: <MessageSquarePlus size={18} />,
     command: ({ editor, range }) => {
-      const type = window.prompt('Block type (button, embed, callout)', 'button')?.trim()
-      if (!type) return
-
-      const rawAttrs = window.prompt(
-        'Block attributes JSON (optional)',
-        type === 'button'
-          ? '{"label":"Subscribe","url":"https://example.com"}'
-          : '{"url":"https://example.com"}'
-      )
-      if (rawAttrs == null) return
-
-      let attrs: Record<string, unknown> = {}
-      if (rawAttrs.trim().length > 0) {
-        try {
-          attrs = JSON.parse(rawAttrs) as Record<string, unknown>
-        } catch {
-          window.alert('Invalid JSON. Block attributes were ignored.')
-        }
-      }
-
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .insertContent(`${createCustomBlockToken(type, attrs)}\n`)
-        .run()
+      editor.chain().focus().deleteRange(range).run()
+      window.open('/feedback', '_blank')
     },
   },
 ])

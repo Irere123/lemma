@@ -288,6 +288,83 @@
   .writer-prose blockquote p {
     margin-top: 0.6em;
   }
+
+  /* Callout — editor renders the emoji via [data-emoji]::before, the reader via .callout-icon. */
+  .callout {
+    position: relative;
+    margin: 1.5rem 0;
+    padding: 0.9rem 1rem 0.9rem 2.85rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .callout[data-emoji]::before,
+  .callout-icon {
+    position: absolute;
+    top: 0.8rem;
+    left: 0.95rem;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    user-select: none;
+  }
+
+  .callout[data-emoji]::before {
+    content: attr(data-emoji);
+  }
+
+  .callout > :first-child,
+  .callout-body > :first-child {
+    margin-top: 0;
+  }
+
+  .callout[data-emoji] > * + *,
+  .callout-body > * + * {
+    margin-top: 0.75em;
+  }
+
+  /* Tables — styled for both editor (.writer-prose) and reader output. */
+  .writer-table-wrap,
+  .tableWrapper {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+
+  .writer-prose table,
+  .writer-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+  }
+
+  .writer-prose :is(th, td),
+  .writer-table :is(th, td) {
+    position: relative;
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .writer-prose th,
+  .writer-table th {
+    background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+    font-weight: 600;
+  }
+
+  .writer-prose .selectedCell {
+    background-color: color-mix(in oklab, var(--primary) 12%, transparent);
+  }
+
+  .writer-prose .column-resize-handle {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    bottom: -2px;
+    width: 4px;
+    background-color: var(--primary);
+    pointer-events: none;
+  }
 }
 
 @layer utilities {

@@ -19,9 +19,11 @@ import {
   Youtube,
 } from '@lemma/headless'
 import type { AnyExtension } from '@tiptap/core'
-
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
 import { cx } from 'class-variance-authority'
 import { common, createLowlight } from 'lowlight'
+
+import { Callout } from './nodes/callout'
 
 //TODO I am using cx here to get tailwind autocomplete working, idk if someone else can write a regex to just capture the class key in objects
 //You can overwrite the placeholder with your own configuration
@@ -136,6 +138,11 @@ const mathematics = Mathematics.configure({
 
 const characterCount = CharacterCount.configure()
 
+const table = Table.configure({
+  resizable: true,
+  HTMLAttributes: { class: cx('writer-table') },
+})
+
 const markdownExtension = MarkdownExtension.configure({
   html: true,
   tightLists: true,
@@ -167,6 +174,12 @@ export const defaultExtensions = [
   HighlightExtension,
   TextStyle,
   Color,
+
+  Callout,
+  table,
+  TableRow,
+  TableHeader,
+  TableCell,
 
   GlobalDragHandle,
 ] as AnyExtension[]
