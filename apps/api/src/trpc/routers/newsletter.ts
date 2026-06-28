@@ -20,6 +20,7 @@ import { unsubscribeEvents } from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { enqueueConfirmationEmail, enqueueWelcomeEmail } from '@api/jobs/producers'
 import { generateId } from '@api/lib/utils'
+import { notifyCampaignEngagement, notifyWriterStatsChanged } from '@api/realtime/notify'
 import { newsletterSettingsSchema } from '@api/schemas/newsletter'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@api/trpc/init'
 
@@ -96,6 +97,9 @@ async function subscribeToWriter(
       { delay: 0, priority: 9 }
     )
   }
+
+  // Push the new subscriber count to the writer's open dashboards.
+  await notifyWriterStatsChanged(writerId)
 
   return { success: true, message: 'Subscribed successfully' }
 }
@@ -245,6 +249,9 @@ export const newsletterRouter = createTRPCRouter({
           reason: input.reason || null,
         })
 
+        if (sub.writerId) await notifyWriterStatsChanged(sub.writerId)
+        if (input.campaignId) await notifyCampaignEngagement(input.campaignId, 'unsubscribe')
+
         return { success: true }
       } catch (error) {
         console.error('Unsubscribe error:', error)
@@ -280,6 +287,8 @@ export const newsletterRouter = createTRPCRouter({
           token: sub.token,
           writerId: sub.writerId as string,
         })
+
+        if (sub.writerId) await notifyWriterStatsChanged(sub.writerId)
 
         return { success: true, message: 'Subscription confirmed' }
       } catch (error) {
@@ -367,13 +376,17 @@ export const newsletterRouter = createTRPCRouter({
         throw new TRPCError({ code: 'CONFLICT', message: 'That email is already on your list.' })
       }
 
-      return upsertSubscriber(ctx.db, {
+      const created = await upsertSubscriber(ctx.db, {
         email: input.email,
         token: generateId('st'),
         writerId: ctx.user.id,
         isConfirmed: true,
         confirmedAt: new Date(),
       })
+
+      await notifyWriterStatsChanged(ctx.user.id)
+
+      return created
     }),
 
   // Permanently remove a subscriber from the writer's list.
@@ -386,6 +399,7 @@ export const newsletterRouter = createTRPCRouter({
       }
 
       await deleteSubscriber(ctx.db, input.id)
+      await notifyWriterStatsChanged(ctx.user.id)
       return { success: true }
     }),
 })

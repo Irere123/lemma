@@ -7,6 +7,7 @@ import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
 import { env } from '@api/env-runtime'
 import { sendBatchEmails, sendEmail } from '@api/lib/messaging/email/mailer'
 import { logger } from '@api/lib/observability'
+import { notifyCampaignStart } from '@api/realtime/notify'
 import { enqueueNewsletterBatch } from '../producers'
 import type {
   EmailJobData,
@@ -183,6 +184,8 @@ async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<
 
   if (subscribers.length === 0) {
     workerLogger.warn('No subscribers to send newsletter to', { campaignId, writerId })
+    // Nothing to send: tell the progress DO so it flips the campaign to SENT.
+    await notifyCampaignStart(campaignId, 0, 0)
     return
   }
 
@@ -190,6 +193,11 @@ async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<
   for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
     batches.push(subscribers.slice(i, i + BATCH_SIZE))
   }
+
+  // Seed the progress DO with the total work *before* enqueuing batches, so it
+  // knows `totalBatches` ahead of any batchCompleted report (no race, and it can
+  // detect completion).
+  await notifyCampaignStart(campaignId, subscribers.length, batches.length)
 
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i]

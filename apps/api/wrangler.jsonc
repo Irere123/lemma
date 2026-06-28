@@ -53,6 +53,24 @@
           "preview_id": "00000000000000000000000000000000"
         }
       ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "CAMPAIGN_PROGRESS",
+            "class_name": "CampaignProgress"
+          },
+          {
+            "name": "WRITER_STATS",
+            "class_name": "WriterStats"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["CampaignProgress", "WriterStats"]
+        }
+      ],
       "queues": {
         "producers": [
           {
@@ -147,6 +165,24 @@
         {
           "binding": "CACHE",
           "id": "c4d7e58664054cbfb3335c52b0be2742"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "CAMPAIGN_PROGRESS",
+            "class_name": "CampaignProgress"
+          },
+          {
+            "name": "WRITER_STATS",
+            "class_name": "WriterStats"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["CampaignProgress", "WriterStats"]
         }
       ],
       "queues": {

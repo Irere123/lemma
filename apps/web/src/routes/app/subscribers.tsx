@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useSubscriberStatsRealtime } from '@/hooks/use-subscriber-stats-realtime'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 
@@ -59,6 +60,11 @@ function RouteComponent() {
   const { data: subscribers, isLoading } = useQuery(subscribersQuery)
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: [['newsletter']] })
+
+  // Live subscriber counts (Durable Object). On any change, refresh the list so
+  // the table reflects new/confirmed/unsubscribed people without a manual reload.
+  const { stats: liveStats } = useSubscriberStatsRealtime(() => invalidate())
+  const effectiveStats = liveStats ?? stats
 
   const resend = useMutation(
     trpc.newsletter.resendConfirmation.mutationOptions({
@@ -103,10 +109,10 @@ function RouteComponent() {
   }
 
   const statCards = [
-    { label: 'Total', value: stats?.total },
-    { label: 'Confirmed', value: stats?.confirmed },
-    { label: 'Pending', value: stats?.pending },
-    { label: 'Unsubscribed', value: stats?.unsubscribed },
+    { label: 'Total', value: effectiveStats?.total },
+    { label: 'Confirmed', value: effectiveStats?.confirmed },
+    { label: 'Pending', value: effectiveStats?.pending },
+    { label: 'Unsubscribed', value: effectiveStats?.unsubscribed },
   ]
 
   return (

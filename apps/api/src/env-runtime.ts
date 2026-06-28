@@ -1,5 +1,7 @@
 import { type Environment, parseEnv } from './env'
 import type { JobData } from './jobs/types'
+import type { CampaignProgress } from './realtime/campaign-progress'
+import type { WriterStats } from './realtime/writer-stats'
 
 export type QueueSendOptions = {
   delaySeconds?: number
@@ -59,6 +61,8 @@ export type CloudflareBindings = Partial<Environment> & {
   NEWSLETTER_QUEUE?: QueueBinding<JobData>
   ANALYTICS_QUEUE?: QueueBinding<JobData>
   SCHEDULED_QUEUE?: QueueBinding<JobData>
+  CAMPAIGN_PROGRESS?: DurableObjectNamespace<CampaignProgress>
+  WRITER_STATS?: DurableObjectNamespace<WriterStats>
 }
 
 let runtimeBindings: CloudflareBindings = {}
