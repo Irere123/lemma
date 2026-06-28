@@ -5,7 +5,10 @@
   "main": "index.js",
   "devDependencies": {
     "@biomejs/biome": "2.3.10",
+    "@commitlint/cli": "21.1.0",
+    "@commitlint/config-conventional": "21.1.0",
     "concurrently": "^9.2.0",
+    "husky": "9.1.7",
     "turbo": "^2.7.2"
   },
   "description": "",
@@ -18,7 +21,8 @@
     "typecheck": "turbo typecheck",
     "format": "biome format --write",
     "lint": "biome lint",
-    "biome:check": "biome check"
+    "biome:check": "biome check",
+    "prepare": "husky"
   },
   "workspaces": {
     "packages": [
