@@ -1,10 +1,12 @@
 import { IconArrowLeft, IconLoader2, IconSend } from '@tabler/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 
 import { CampaignStatusBadge } from '@/components/newsletter/campaign-status-badge'
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -14,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useCampaignRealtime } from '@/hooks/use-campaign-realtime'
 import { useTRPC } from '@/trpc/client'
 
 export const Route = createFileRoute('/app/newsletters/$campaignId')({
@@ -42,6 +45,20 @@ function RouteComponent() {
   const { data: campaign, isLoading } = useQuery(campaignQuery)
 
   const { data: stats } = useQuery(trpc.campaigns.stats.queryOptions({ campaignId }))
+
+  // Live send progress + engagement, streamed from the campaign's Durable Object.
+  const { snapshot, connected } = useCampaignRealtime(campaignId)
+
+  // When realtime reports the send finished or new engagement, pull the
+  // authoritative status/stats from the server so badges and counts settle.
+  const lastSyncRef = useRef<string>('')
+  useEffect(() => {
+    if (!snapshot) return
+    const signature = `${snapshot.status}:${snapshot.clicks}:${snapshot.unsubscribes}`
+    if (signature === lastSyncRef.current) return
+    lastSyncRef.current = signature
+    queryClient.invalidateQueries({ queryKey: [['campaigns']] })
+  }, [snapshot, queryClient])
 
   const send = useMutation(
     trpc.campaigns.send.mutationOptions({
@@ -83,14 +100,17 @@ function RouteComponent() {
 
   const canSend = campaign.status === 'DRAFT' && !!campaign.documentId
 
+  const isSending = snapshot?.status === 'sending'
+  const progressPct =
+    snapshot && snapshot.totalRecipients > 0
+      ? Math.min(100, Math.round((snapshot.sentCount / snapshot.totalRecipients) * 100))
+      : 0
+
   const statCards = [
-    { label: 'Total clicks', value: stats?.totalClicks },
-    { label: 'Unique clicks', value: stats?.uniqueClicks },
-    { label: 'Unsubscribes', value: stats?.totalUnsubscribes },
-    {
-      label: 'Click rate',
-      value: stats ? `${Math.round((stats.clickRate ?? 0) * 10) / 10}%` : undefined,
-    },
+    { label: 'Delivered', value: snapshot?.sentCount ?? stats?.totalSent },
+    { label: 'Opens', value: snapshot?.opens },
+    { label: 'Clicks', value: stats?.totalClicks ?? snapshot?.clicks },
+    { label: 'Unsubscribes', value: stats?.totalUnsubscribes ?? snapshot?.unsubscribes },
   ]
 
   return (
@@ -135,6 +155,34 @@ function RouteComponent() {
           </Button>
         )}
       </div>
+
+      {isSending && snapshot && (
+        <div className='mt-6 rounded-xl border bg-card p-4'>
+          <div className='flex items-center justify-between gap-3'>
+            <div className='flex items-center gap-2'>
+              <span className='relative flex size-2'>
+                {connected && (
+                  <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75' />
+                )}
+                <span
+                  className={`relative inline-flex size-2 rounded-full ${connected ? 'bg-emerald-500' : 'bg-muted-foreground'}`}
+                />
+              </span>
+              <p className='font-medium text-sm'>
+                {connected ? 'Sending…' : 'Sending… (reconnecting)'}
+              </p>
+            </div>
+            <p className='text-muted-foreground text-sm tabular-nums'>
+              {snapshot.sentCount.toLocaleString()} / {snapshot.totalRecipients.toLocaleString()}{' '}
+              recipients
+            </p>
+          </div>
+          <Progress className='mt-3' value={progressPct} />
+          <p className='mt-2 text-muted-foreground text-xs tabular-nums'>
+            Batch {snapshot.batchesDone} of {snapshot.totalBatches}
+          </p>
+        </div>
+      )}
 
       <div className='mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4'>
         {statCards.map((card) => (

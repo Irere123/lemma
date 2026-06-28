@@ -82,6 +82,28 @@ export const getCampaignById = async (db: DB, id: string): Promise<Campaign | un
   return campaign
 }
 
+/**
+ * Mark a campaign delivered once every batch has been sent. Driven by the
+ * CampaignProgress Durable Object, which is the only place that knows when the
+ * whole fan-out of batch jobs has finished. Also records the delivered count so
+ * `totalSent` (and therefore click/unsubscribe rates) are accurate.
+ */
+export const markCampaignSent = async (
+  db: DB,
+  campaignId: string,
+  totalSent: number
+): Promise<void> => {
+  await db
+    .update(campaigns)
+    .set({
+      status: 'SENT',
+      sentAt: new Date(),
+      totalSent: String(totalSent),
+      updatedAt: new Date(),
+    })
+    .where(eq(campaigns.id, campaignId))
+}
+
 export const getCampaignsByUser = async (
   db: DB,
   userId: string,
@@ -175,8 +197,8 @@ export const getCampaignStats = async (db: DB, campaignId: string): Promise<Camp
   const uniqueClicks = clicksResult[0]?.unique || 0
   const totalUnsubscribes = unsubsResult[0]?.count || 0
 
-  // TODO: Track total sent in campaign table
-  const totalSent = 0
+  // `totalSent` is written by the CampaignProgress DO when the send completes.
+  const totalSent = Number(campaign?.totalSent ?? 0) || 0
 
   return {
     campaignId,
@@ -220,16 +242,21 @@ export const getCampaignStatsByIds = async (
     .where(inArray(unsubscribeEvents.campaignId, campaignIds))
     .groupBy(unsubscribeEvents.campaignId)
 
+  const sentRows = await db
+    .select({ id: campaigns.id, totalSent: campaigns.totalSent })
+    .from(campaigns)
+    .where(inArray(campaigns.id, campaignIds))
+
   const clicksByCampaign = new Map(clicksRows.map((r) => [r.campaignId, r]))
   const unsubsByCampaign = new Map(unsubRows.map((r) => [r.campaignId, r.count]))
+  const sentByCampaign = new Map(sentRows.map((r) => [r.id, Number(r.totalSent ?? 0) || 0]))
 
   for (const campaignId of campaignIds) {
     const clicks = clicksByCampaign.get(campaignId)
     const totalClicks = clicks?.total ?? 0
     const uniqueClicks = clicks?.unique ?? 0
     const totalUnsubscribes = unsubsByCampaign.get(campaignId) ?? 0
-    // TODO: Track total sent in campaign table (mirrors getCampaignStats).
-    const totalSent = 0
+    const totalSent = sentByCampaign.get(campaignId) ?? 0
 
     map.set(campaignId, {
       campaignId,

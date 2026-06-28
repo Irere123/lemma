@@ -12,6 +12,7 @@ import { env } from '@api/env-runtime'
 import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
 import { logger } from '@api/lib/observability'
 import { generateId } from '@api/lib/utils'
+import { notifyBatchCompleted } from '@api/realtime/notify'
 import { enqueueNewsletter, scheduleNewsletter } from '../producers'
 import type {
   NewsletterJobData,
@@ -98,6 +99,8 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
 
   if (batchSubscribers.length === 0) {
     workerLogger.warn('No subscribers found in batch', { batchIndex, campaignId })
+    // Still count the batch as done so the progress DO can reach completion.
+    await notifyBatchCompleted(campaignId, batchIndex, 0)
     return
   }
 
@@ -121,6 +124,10 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
 
   if (recipients.length === 0) {
     workerLogger.info('Newsletter batch already delivered, skipping', { batchIndex, campaignId })
+    // Claims already exist for this whole batch (all-or-nothing per attempt), so
+    // it was delivered on a prior run — report the full batch size; the DO
+    // dedupes by batchIndex.
+    await notifyBatchCompleted(campaignId, batchIndex, batchSubscribers.length)
     return
   }
 
@@ -189,6 +196,10 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
     )
     throw error
   }
+
+  // Report progress to the campaign's DO (advances the live progress bar and, on
+  // the final batch, flips the campaign to SENT).
+  await notifyBatchCompleted(campaignId, batchIndex, recipients.length)
 
   workerLogger.info('Newsletter batch completed', {
     campaignId,

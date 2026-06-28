@@ -2,6 +2,7 @@ import { createDb } from '@api/db'
 import { clickEvents } from '@api/db/schema'
 import { logger } from '@api/lib/observability'
 import { generateId } from '@api/lib/utils'
+import { notifyCampaignEngagement } from '@api/realtime/notify'
 import { eq, sql } from 'drizzle-orm'
 
 import type {
@@ -68,6 +69,8 @@ async function processClickTracking(data: TrackClickJob, db: any): Promise<void>
     ipAddress,
   })
 
+  if (campaignId) await notifyCampaignEngagement(campaignId, 'click')
+
   workerLogger.debug('Click tracked', { subscriberId, linkId, campaignId })
 }
 
@@ -75,6 +78,8 @@ async function processOpenTracking(data: TrackOpenJob, db: any): Promise<void> {
   // Open tracking typically uses a tracking pixel
   // This is a placeholder for open event storage
   // You may want to create an 'open_events' table similar to click_events
+  if (data.campaignId) await notifyCampaignEngagement(data.campaignId, 'open')
+
   workerLogger.debug('Open tracked', {
     subscriberId: data.subscriberId,
     campaignId: data.campaignId,

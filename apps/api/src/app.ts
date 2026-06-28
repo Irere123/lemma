@@ -3,7 +3,9 @@ import { Scalar } from '@scalar/hono-api-reference'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 
-import { env } from './env-runtime'
+import { createDb } from './db'
+import { getCampaignById } from './db/queries/campaigns'
+import { env, getRuntimeBindings } from './env-runtime'
 import { createYogaServer } from './graphql'
 import { createAuth } from './lib/auth'
 import { API_VERSION, getBaseUrl } from './lib/constants'
@@ -101,6 +103,45 @@ export function createApp() {
 
   app.on(['POST', 'GET'], '/auth/*', (c) => {
     return createAuth().handler(c.req.raw)
+  })
+
+  // --- Realtime WebSocket channels (backed by Durable Objects) ---
+  // Cookie-authenticated, then forwarded to the owning DO. Browsers can't set
+  // WebSocket headers, so auth rides on the session cookie like the rest of the API.
+
+  app.get('/realtime/campaigns/:campaignId', async (c) => {
+    if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') {
+      return c.text('Expected websocket', 426)
+    }
+
+    const session = await createAuth().api.getSession({ headers: c.req.raw.headers })
+    if (!session?.user) return c.text('Unauthorized', 401)
+
+    const campaignId = c.req.param('campaignId')
+    const { db } = createDb()
+    const campaign = await getCampaignById(db, campaignId)
+    if (!campaign || campaign.userId !== session.user.id) return c.text('Not found', 404)
+
+    const namespace = getRuntimeBindings().CAMPAIGN_PROGRESS
+    if (!namespace) return c.text('Realtime unavailable', 503)
+
+    return namespace.getByName(campaignId).fetch(c.req.raw)
+  })
+
+  app.get('/realtime/subscribers', async (c) => {
+    if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') {
+      return c.text('Expected websocket', 426)
+    }
+
+    const session = await createAuth().api.getSession({ headers: c.req.raw.headers })
+    if (!session?.user) return c.text('Unauthorized', 401)
+
+    const namespace = getRuntimeBindings().WRITER_STATS
+    if (!namespace) return c.text('Realtime unavailable', 503)
+
+    const stub = namespace.getByName(session.user.id)
+    await stub.ensure(session.user.id)
+    return stub.fetch(c.req.raw)
   })
 
   app.route('/v1', routers)
