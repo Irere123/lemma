@@ -3,10 +3,12 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconLoader2,
+  IconMail,
   IconPlus,
   IconSearch,
   IconSelector,
   IconSettings,
+  IconUsers,
 } from '@tabler/icons-react'
 import { Link, useLocation } from '@tanstack/react-router'
 import type { ReactElement, ReactNode } from 'react'
@@ -91,6 +93,18 @@ export function Sidebar() {
             expanded={expanded}
           />
           <SidebarCreateDocumentButton expanded={expanded} />
+          <SidebarLink
+            href='/app/newsletters'
+            icon={<IconMail size={20} />}
+            label='Newsletters'
+            expanded={expanded}
+          />
+          <SidebarLink
+            href='/app/subscribers'
+            icon={<IconUsers size={20} />}
+            label='Subscribers'
+            expanded={expanded}
+          />
           <SidebarLink
             href='/app/settings'
             icon={<IconSettings size={20} />}

@@ -9,22 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as WriteDocIdRouteImport } from './routes/write/$docId'
+import { Route as SubscribeConfirmRouteImport } from './routes/subscribe/confirm'
+import { Route as AppSubscribersRouteImport } from './routes/app/subscribers'
 import { Route as AppSearchRouteImport } from './routes/app/search'
 import { Route as AppSettingsRouteRouteImport } from './routes/app/settings/route'
 import { Route as UUsernameIndexRouteImport } from './routes/u/$username/index'
 import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
+import { Route as AppNewslettersIndexRouteImport } from './routes/app/newsletters/index'
 import { Route as UUsernameSlugRouteImport } from './routes/u/$username/$slug'
 import { Route as AppSettingsProfileRouteImport } from './routes/app/settings/profile'
+import { Route as AppSettingsNewsletterRouteImport } from './routes/app/settings/newsletter'
 import { Route as AppSettingsAppsRouteImport } from './routes/app/settings/apps'
 import { Route as AppSettingsApiKeysRouteImport } from './routes/app/settings/api-keys'
 import { Route as AppSettingsAccountRouteImport } from './routes/app/settings/account'
+import { Route as AppNewslettersCampaignIdRouteImport } from './routes/app/newsletters/$campaignId'
 import { Route as AppDocumentsRouteImport } from './routes/app/documents.'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -50,6 +61,16 @@ const WriteDocIdRoute = WriteDocIdRouteImport.update({
   path: '/write/$docId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubscribeConfirmRoute = SubscribeConfirmRouteImport.update({
+  id: '/subscribe/confirm',
+  path: '/subscribe/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSubscribersRoute = AppSubscribersRouteImport.update({
+  id: '/subscribers',
+  path: '/subscribers',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppSearchRoute = AppSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -70,6 +91,11 @@ const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppSettingsRouteRoute,
 } as any)
+const AppNewslettersIndexRoute = AppNewslettersIndexRouteImport.update({
+  id: '/newsletters/',
+  path: '/newsletters/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const UUsernameSlugRoute = UUsernameSlugRouteImport.update({
   id: '/u/$username/$slug',
   path: '/u/$username/$slug',
@@ -78,6 +104,11 @@ const UUsernameSlugRoute = UUsernameSlugRouteImport.update({
 const AppSettingsProfileRoute = AppSettingsProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppSettingsRouteRoute,
+} as any)
+const AppSettingsNewsletterRoute = AppSettingsNewsletterRouteImport.update({
+  id: '/newsletter',
+  path: '/newsletter',
   getParentRoute: () => AppSettingsRouteRoute,
 } as any)
 const AppSettingsAppsRoute = AppSettingsAppsRouteImport.update({
@@ -95,6 +126,12 @@ const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppSettingsRouteRoute,
 } as any)
+const AppNewslettersCampaignIdRoute =
+  AppNewslettersCampaignIdRouteImport.update({
+    id: '/newsletters/$campaignId',
+    path: '/newsletters/$campaignId',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
 const AppDocumentsRoute = AppDocumentsRouteImport.update({
   id: '/documents/',
   path: '/documents/',
@@ -105,31 +142,43 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
+  '/app/subscribers': typeof AppSubscribersRoute
+  '/subscribe/confirm': typeof SubscribeConfirmRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/app/documents': typeof AppDocumentsRoute
+  '/app/newsletters/$campaignId': typeof AppNewslettersCampaignIdRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
   '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/newsletter': typeof AppSettingsNewsletterRoute
   '/app/settings/profile': typeof AppSettingsProfileRoute
   '/u/$username/$slug': typeof UUsernameSlugRoute
+  '/app/newsletters': typeof AppNewslettersIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/u/$username': typeof UUsernameIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/app/search': typeof AppSearchRoute
+  '/app/subscribers': typeof AppSubscribersRoute
+  '/subscribe/confirm': typeof SubscribeConfirmRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app': typeof AppIndexRoute
   '/app/documents': typeof AppDocumentsRoute
+  '/app/newsletters/$campaignId': typeof AppNewslettersCampaignIdRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
   '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/newsletter': typeof AppSettingsNewsletterRoute
   '/app/settings/profile': typeof AppSettingsProfileRoute
   '/u/$username/$slug': typeof UUsernameSlugRoute
+  '/app/newsletters': typeof AppNewslettersIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/u/$username': typeof UUsernameIndexRoute
 }
@@ -138,16 +187,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
   '/app/search': typeof AppSearchRoute
+  '/app/subscribers': typeof AppSubscribersRoute
+  '/subscribe/confirm': typeof SubscribeConfirmRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/app/documents/': typeof AppDocumentsRoute
+  '/app/newsletters/$campaignId': typeof AppNewslettersCampaignIdRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
   '/app/settings/apps': typeof AppSettingsAppsRoute
+  '/app/settings/newsletter': typeof AppSettingsNewsletterRoute
   '/app/settings/profile': typeof AppSettingsProfileRoute
   '/u/$username/$slug': typeof UUsernameSlugRoute
+  '/app/newsletters/': typeof AppNewslettersIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/u/$username/': typeof UUsernameIndexRoute
 }
@@ -157,31 +212,43 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/unsubscribe'
     | '/app/settings'
     | '/app/search'
+    | '/app/subscribers'
+    | '/subscribe/confirm'
     | '/write/$docId'
     | '/app/'
     | '/app/documents'
+    | '/app/newsletters/$campaignId'
     | '/app/settings/account'
     | '/app/settings/api-keys'
     | '/app/settings/apps'
+    | '/app/settings/newsletter'
     | '/app/settings/profile'
     | '/u/$username/$slug'
+    | '/app/newsletters'
     | '/app/settings/'
     | '/u/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/unsubscribe'
     | '/app/search'
+    | '/app/subscribers'
+    | '/subscribe/confirm'
     | '/write/$docId'
     | '/app'
     | '/app/documents'
+    | '/app/newsletters/$campaignId'
     | '/app/settings/account'
     | '/app/settings/api-keys'
     | '/app/settings/apps'
+    | '/app/settings/newsletter'
     | '/app/settings/profile'
     | '/u/$username/$slug'
+    | '/app/newsletters'
     | '/app/settings'
     | '/u/$username'
   id:
@@ -189,16 +256,22 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/unsubscribe'
     | '/app/settings'
     | '/app/search'
+    | '/app/subscribers'
+    | '/subscribe/confirm'
     | '/write/$docId'
     | '/app/'
     | '/app/documents/'
+    | '/app/newsletters/$campaignId'
     | '/app/settings/account'
     | '/app/settings/api-keys'
     | '/app/settings/apps'
+    | '/app/settings/newsletter'
     | '/app/settings/profile'
     | '/u/$username/$slug'
+    | '/app/newsletters/'
     | '/app/settings/'
     | '/u/$username/'
   fileRoutesById: FileRoutesById
@@ -207,6 +280,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
+  SubscribeConfirmRoute: typeof SubscribeConfirmRoute
   WriteDocIdRoute: typeof WriteDocIdRoute
   UUsernameSlugRoute: typeof UUsernameSlugRoute
   UUsernameIndexRoute: typeof UUsernameIndexRoute
@@ -214,6 +289,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -249,6 +331,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WriteDocIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subscribe/confirm': {
+      id: '/subscribe/confirm'
+      path: '/subscribe/confirm'
+      fullPath: '/subscribe/confirm'
+      preLoaderRoute: typeof SubscribeConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/subscribers': {
+      id: '/app/subscribers'
+      path: '/subscribers'
+      fullPath: '/app/subscribers'
+      preLoaderRoute: typeof AppSubscribersRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/search': {
       id: '/app/search'
       path: '/search'
@@ -277,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsIndexRouteImport
       parentRoute: typeof AppSettingsRouteRoute
     }
+    '/app/newsletters/': {
+      id: '/app/newsletters/'
+      path: '/newsletters'
+      fullPath: '/app/newsletters'
+      preLoaderRoute: typeof AppNewslettersIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/u/$username/$slug': {
       id: '/u/$username/$slug'
       path: '/u/$username/$slug'
@@ -289,6 +392,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/app/settings/profile'
       preLoaderRoute: typeof AppSettingsProfileRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
+    }
+    '/app/settings/newsletter': {
+      id: '/app/settings/newsletter'
+      path: '/newsletter'
+      fullPath: '/app/settings/newsletter'
+      preLoaderRoute: typeof AppSettingsNewsletterRouteImport
       parentRoute: typeof AppSettingsRouteRoute
     }
     '/app/settings/apps': {
@@ -312,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsAccountRouteImport
       parentRoute: typeof AppSettingsRouteRoute
     }
+    '/app/newsletters/$campaignId': {
+      id: '/app/newsletters/$campaignId'
+      path: '/newsletters/$campaignId'
+      fullPath: '/app/newsletters/$campaignId'
+      preLoaderRoute: typeof AppNewslettersCampaignIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/documents/': {
       id: '/app/documents/'
       path: '/documents'
@@ -326,6 +443,7 @@ interface AppSettingsRouteRouteChildren {
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsApiKeysRoute: typeof AppSettingsApiKeysRoute
   AppSettingsAppsRoute: typeof AppSettingsAppsRoute
+  AppSettingsNewsletterRoute: typeof AppSettingsNewsletterRoute
   AppSettingsProfileRoute: typeof AppSettingsProfileRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
@@ -334,6 +452,7 @@ const AppSettingsRouteRouteChildren: AppSettingsRouteRouteChildren = {
   AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsApiKeysRoute: AppSettingsApiKeysRoute,
   AppSettingsAppsRoute: AppSettingsAppsRoute,
+  AppSettingsNewsletterRoute: AppSettingsNewsletterRoute,
   AppSettingsProfileRoute: AppSettingsProfileRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
@@ -344,15 +463,21 @@ const AppSettingsRouteRouteWithChildren =
 interface AppRouteRouteChildren {
   AppSettingsRouteRoute: typeof AppSettingsRouteRouteWithChildren
   AppSearchRoute: typeof AppSearchRoute
+  AppSubscribersRoute: typeof AppSubscribersRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
+  AppNewslettersCampaignIdRoute: typeof AppNewslettersCampaignIdRoute
+  AppNewslettersIndexRoute: typeof AppNewslettersIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppSettingsRouteRoute: AppSettingsRouteRouteWithChildren,
   AppSearchRoute: AppSearchRoute,
+  AppSubscribersRoute: AppSubscribersRoute,
   AppIndexRoute: AppIndexRoute,
   AppDocumentsRoute: AppDocumentsRoute,
+  AppNewslettersCampaignIdRoute: AppNewslettersCampaignIdRoute,
+  AppNewslettersIndexRoute: AppNewslettersIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
@@ -363,6 +488,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
+  SubscribeConfirmRoute: SubscribeConfirmRoute,
   WriteDocIdRoute: WriteDocIdRoute,
   UUsernameSlugRoute: UUsernameSlugRoute,
   UUsernameIndexRoute: UUsernameIndexRoute,
