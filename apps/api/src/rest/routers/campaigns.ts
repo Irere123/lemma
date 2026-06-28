@@ -21,7 +21,6 @@ import { errorResponses } from '@api/schemas'
 
 const campaignsRouter = createRouter()
 
-// Campaign schema
 const campaignSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -58,7 +57,6 @@ async function getOwnedCampaign(db: any, id: string, userId: string) {
   return campaign
 }
 
-// List campaigns
 campaignsRouter.openapi(
   createRoute({
     method: 'get',
@@ -99,7 +97,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Get campaign by ID
 campaignsRouter.openapi(
   createRoute({
     method: 'get',
@@ -136,7 +133,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Create campaign
 campaignsRouter.openapi(
   createRoute({
     method: 'post',
@@ -192,7 +188,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Send campaign
 campaignsRouter.openapi(
   createRoute({
     method: 'post',
@@ -248,10 +243,8 @@ campaignsRouter.openapi(
       throw new HTTPException(400, { message: 'Newsletter settings not configured' })
     }
 
-    // Update status
     await updateCampaign(db, { id, status: 'SENDING' })
 
-    // Enqueue
     await enqueueNewsletter({
       campaignId: id,
       documentId,
@@ -262,7 +255,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Schedule campaign
 campaignsRouter.openapi(
   createRoute({
     method: 'post',
@@ -314,14 +306,12 @@ campaignsRouter.openapi(
       throw new HTTPException(400, { message: 'Scheduled time must be in the future' })
     }
 
-    // Update campaign
     await updateCampaign(db, {
       id,
       scheduledAt: scheduledDate,
       status: 'SCHEDULED',
     })
 
-    // Schedule the job
     await scheduleNewsletter({
       campaignId: id,
       documentId,
@@ -333,7 +323,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Get campaign stats
 campaignsRouter.openapi(
   createRoute({
     method: 'get',
@@ -371,7 +360,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Get link clicks breakdown
 campaignsRouter.openapi(
   createRoute({
     method: 'get',
@@ -418,7 +406,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Delete campaign
 campaignsRouter.openapi(
   createRoute({
     method: 'delete',
@@ -458,7 +445,6 @@ campaignsRouter.openapi(
   }
 )
 
-// Subscriber stats endpoint
 campaignsRouter.openapi(
   createRoute({
     method: 'get',

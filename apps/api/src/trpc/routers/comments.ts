@@ -54,7 +54,6 @@ export const commentsRouter = createTRPCRouter({
       return { count: total }
     }),
 
-  // Get replies for a comment
   getReplies: publicProcedure
     .input(getCommentRepliesSchema)
     .query(async ({ ctx: { db }, input }) => {
@@ -74,9 +73,7 @@ export const commentsRouter = createTRPCRouter({
       }
     }),
 
-  // Create a comment (authenticated)
   create: protectedProcedure.input(createCommentSchema).mutation(async ({ ctx, input }) => {
-    // Verify document exists
     const document = await getDocumentById(ctx.db, input.documentId)
     if (!document) {
       throw new TRPCError({
@@ -106,7 +103,6 @@ export const commentsRouter = createTRPCRouter({
     return getCommentWithAuthor(ctx.db, comment.id)
   }),
 
-  // Update a comment (only owner)
   update: protectedProcedure.input(updateCommentSchema).mutation(async ({ ctx, input }) => {
     const comment = await updateComment(ctx.db, input.id, ctx.user.id, input.content)
 
@@ -120,7 +116,6 @@ export const commentsRouter = createTRPCRouter({
     return getCommentWithAuthor(ctx.db, comment.id)
   }),
 
-  // Delete a comment (only owner)
   delete: protectedProcedure.input(deleteCommentSchema).mutation(async ({ ctx, input }) => {
     const deleted = await deleteComment(ctx.db, input.id, ctx.user.id)
 

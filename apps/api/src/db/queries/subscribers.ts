@@ -4,7 +4,6 @@ import type { DB } from '@api/db'
 import { type Subscriber, subscribers } from '@api/db/schema'
 import { generateId } from '@api/lib/utils'
 
-// Types
 export type UpsertSubscriber = {
   id?: string
   email: string

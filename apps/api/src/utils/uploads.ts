@@ -1,9 +1,7 @@
-// Helper function to validate image MIME type
 export function isValidImageType(mimeType: string): boolean {
   return mimeType.startsWith('image/')
 }
 
-// Helper function to get file extension from MIME type
 export function getExtensionFromMimeType(mimeType: string): string {
   const mimeToExt: Record<string, string> = {
     'image/jpeg': '.jpg',

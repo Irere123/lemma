@@ -7,7 +7,6 @@ import { slugifyString } from '@api/db/utils/slugify'
 import { generateId } from '@api/lib/utils'
 import type { UpsertDocumentData } from '@api/schemas'
 
-// Default page size for pagination
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 100
 
@@ -200,7 +199,6 @@ type UserDocumentsData = {
 export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
   const limit = Math.min(data.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
 
-  // Build filter conditions dynamically
   const filters = [eq(documents.userId, data.userId)]
 
   if (data.status) {

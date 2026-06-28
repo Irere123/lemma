@@ -11,10 +11,6 @@ import {
 
 export const createTable = sqliteTableCreator((name) => name)
 
-// ============================================================================
-// AUTHENTICATION & USER MANAGEMENT
-// ============================================================================
-
 export const user = sqliteTable(
   'user',
   {
@@ -89,10 +85,6 @@ export const verification = sqliteTable('verification', {
   ),
 })
 
-// ============================================================================
-// DOCUMENTS & CONTENT MANAGEMENT
-// ============================================================================
-
 // Note: Status values stored as text. Historical typo in the PG enum name
 // ('document_staus') is irrelevant on SQLite — the column is a plain text enum.
 export const documentStatus = ['DRAFT', 'PUBLISHED'] as const
@@ -144,7 +136,6 @@ export type Document = typeof documents.$inferSelect
 export type DocumentInsert = typeof documents.$inferInsert
 export type DocumentStatus = (typeof documentStatus)[number]
 
-// Categories
 export const categories = createTable(
   'categories',
   {
@@ -191,7 +182,6 @@ export const documentCategories = createTable(
 export type DocumentCategory = typeof documentCategories.$inferSelect
 export type DocumentCategoryInsert = typeof documentCategories.$inferInsert
 
-// Tags
 export const tags = createTable(
   'tags',
   {
@@ -234,10 +224,6 @@ export const documentTags = createTable(
 
 export type DocumentTag = typeof documentTags.$inferSelect
 export type DocumentTagInsert = typeof documentTags.$inferInsert
-
-// ============================================================================
-// COMMENTS & LIKES
-// ============================================================================
 
 // Comments with nested reply support (adjacency list pattern)
 export const comments = createTable(
@@ -317,10 +303,6 @@ export const follows = createTable(
 export type Follow = typeof follows.$inferSelect
 export type FollowInsert = typeof follows.$inferInsert
 
-// ============================================================================
-// NEWSLETTER & EMAIL
-// ============================================================================
-
 export const subscribers = createTable(
   'subscribers',
   {
@@ -374,10 +356,6 @@ export const newsletterSettings = createTable(
 
 export type NewsletterSettings = typeof newsletterSettings.$inferSelect
 export type NewsletterSettingsInsert = typeof newsletterSettings.$inferInsert
-
-// ============================================================================
-// CAMPAIGNS & ANALYTICS
-// ============================================================================
 
 export const campaignStatus = [
   'DRAFT',
@@ -533,10 +511,6 @@ export const newsletterDeliveries = createTable(
 export type NewsletterDelivery = typeof newsletterDeliveries.$inferSelect
 export type NewsletterDeliveryInsert = typeof newsletterDeliveries.$inferInsert
 
-// ============================================================================
-// WORKSPACES & MULTI-TENANCY
-// ============================================================================
-
 export const workspaceRole = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER'] as const
 
 export const workspaces = createTable(
@@ -625,10 +599,6 @@ export const workspaceInvites = createTable(
 export type WorkspaceInvite = typeof workspaceInvites.$inferSelect
 export type WorkspaceInviteInsert = typeof workspaceInvites.$inferInsert
 
-// ============================================================================
-// API KEYS
-// ============================================================================
-
 export const apiKeys = sqliteTable(
   'api_keys',
   {
@@ -655,11 +625,6 @@ export const apiKeys = sqliteTable(
   ]
 )
 
-// ============================================================================
-// OAUTH
-// ============================================================================
-
-// OAuth applications
 export const oauthApplications = sqliteTable(
   'oauth_applications',
   {
@@ -693,7 +658,6 @@ export const oauthApplications = sqliteTable(
   ]
 )
 
-// OAuth Authorization codes
 export const oauthAuthorizationCodes = sqliteTable(
   'oauth_authorization_codes',
   {
@@ -728,7 +692,6 @@ export const oauthAuthorizationCodes = sqliteTable(
   ]
 )
 
-// OAuth Access Tokens
 export const oauthAccessTokens = sqliteTable(
   'oauth_access_tokens',
   {

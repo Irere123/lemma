@@ -54,7 +54,6 @@ export async function processScheduledJob(
 async function processDocumentPublish(data: PublishScheduledDocumentJob, db: any): Promise<void> {
   const { documentId } = data
 
-  // Update document status to PUBLISHED
   const [updatedDocument] = await db
     .update(documents)
     .set({
@@ -102,7 +101,6 @@ async function processScheduledNewsletter(
     status: 'SENDING',
   })
 
-  // Enqueue the newsletter for immediate sending
   await enqueueNewsletter({
     campaignId,
     documentId,

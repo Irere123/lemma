@@ -53,8 +53,8 @@ function jsonError(c: Context, status: number, message: string, details?: unknow
  * internal details on 5xx in production, and reports server errors to Sentry.
  */
 export const onError: ErrorHandler = (err, c) => {
-  // Honor explicitly-constructed responses (e.g. the rate limiter's 429 with
-  // Retry-After) so we don't drop headers callers set on purpose.
+  // Honor explicitly-constructed responses (e.g. a handler that sets custom
+  // headers on its 4xx) so we don't drop headers callers set on purpose.
   if (err instanceof HTTPException) {
     if (err.res) return err.res
     return jsonError(c, err.status, err.message || codeForStatus(err.status))

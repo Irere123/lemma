@@ -33,7 +33,6 @@ export function encrypt(text: string): string {
 
   const authTag = cipher.getAuthTag()
 
-  // Concatenate IV, auth tag, and encrypted data
   const encryptedPayload = Buffer.concat([iv, authTag, Buffer.from(encrypted, 'hex')]).toString(
     'base64'
   )
@@ -50,7 +49,6 @@ export function decrypt(encryptedPayload: string): string {
   const key = getKey()
   const dataBuffer = Buffer.from(encryptedPayload, 'base64')
 
-  // Extract IV, auth tag, and encrypted data
   const iv = dataBuffer.subarray(0, IV_LENGTH)
   const authTag = dataBuffer.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH)
   const encryptedText = dataBuffer.subarray(IV_LENGTH + AUTH_TAG_LENGTH)

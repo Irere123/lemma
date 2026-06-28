@@ -1,4 +1,3 @@
-// Email Job Types
 export type EmailJobType =
   | 'send-single-email'
   | 'send-batch-email'
@@ -74,7 +73,6 @@ export type EmailJobData =
   | SendConfirmationEmailJob
   | SendNewsletterJob
 
-// Newsletter Job Types
 export type NewsletterJobType = 'process-newsletter-batch' | 'schedule-newsletter' | 'send-ab-test'
 
 export interface ProcessNewsletterBatchJob {
@@ -110,7 +108,6 @@ export interface SendABTestJob {
 
 export type NewsletterJobData = ProcessNewsletterBatchJob | ScheduleNewsletterJob | SendABTestJob
 
-// Analytics Job Types
 export type AnalyticsJobType = 'track-click' | 'track-open' | 'aggregate-campaign-stats'
 
 export interface TrackClickJob {
@@ -137,7 +134,6 @@ export interface AggregateCampaignStatsJob {
 
 export type AnalyticsJobData = TrackClickJob | TrackOpenJob | AggregateCampaignStatsJob
 
-// Scheduled Job Types
 export type ScheduledJobType = 'publish-scheduled-document' | 'send-scheduled-newsletter'
 
 export interface PublishScheduledDocumentJob {
@@ -154,5 +150,4 @@ export interface SendScheduledNewsletterJob {
 
 export type ScheduledJobData = PublishScheduledDocumentJob | SendScheduledNewsletterJob
 
-// Union of all job data types
 export type JobData = EmailJobData | NewsletterJobData | AnalyticsJobData | ScheduledJobData

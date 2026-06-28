@@ -9,7 +9,6 @@ import { errorResponses, userProfileSchema } from '@api/schemas'
 
 const usersRouter = createRouter()
 
-// Get the authenticated user's profile
 usersRouter.openapi(
   createRoute({
     method: 'get',

@@ -56,7 +56,6 @@ documentsRouter.openapi(
       userId: session.user.id,
     })
 
-    // Check if there are more results
     const hasMore = userDocuments.length > filters.limit
     const results = hasMore ? userDocuments.slice(0, filters.limit) : userDocuments
     const nextCursor = hasMore ? (results.at(-1)?.createdAt?.toISOString() ?? null) : null

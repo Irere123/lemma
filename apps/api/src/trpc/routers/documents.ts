@@ -99,7 +99,6 @@ export const documentRouter = createTRPCRouter({
         userId: user.id,
       })
 
-      // Check if there are more results
       const hasMore = userDocuments.length > input.limit
       const results = hasMore ? userDocuments.slice(0, input.limit) : userDocuments
       const nextCursor = hasMore ? (results.at(-1)?.createdAt?.toISOString() ?? null) : null

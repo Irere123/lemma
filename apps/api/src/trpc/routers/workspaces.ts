@@ -33,12 +33,10 @@ const workspaceSettingsSchema = z.object({
 })
 
 export const workspacesRouter = createTRPCRouter({
-  // List user's workspaces
   list: protectedProcedure.query(async ({ ctx }) => {
     return getUserWorkspaces(ctx.db, ctx.user.id)
   }),
 
-  // Get workspace by ID
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const workspace = await getWorkspaceById(ctx.db, input.id)
 
@@ -49,7 +47,6 @@ export const workspacesRouter = createTRPCRouter({
       })
     }
 
-    // Check if user is a member
     const member = await getWorkspaceMember(ctx.db, input.id, ctx.user.id)
     if (!member) {
       throw new TRPCError({
@@ -61,7 +58,6 @@ export const workspacesRouter = createTRPCRouter({
     return { workspace, role: member.role }
   }),
 
-  // Get workspace by slug
   getBySlug: protectedProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -85,7 +81,6 @@ export const workspacesRouter = createTRPCRouter({
       return { workspace, role: member.role }
     }),
 
-  // Create workspace
   create: protectedProcedure
     .input(
       z.object({
@@ -105,7 +100,6 @@ export const workspacesRouter = createTRPCRouter({
       return workspace
     }),
 
-  // Update workspace
   update: protectedProcedure
     .input(
       z.object({
@@ -118,7 +112,6 @@ export const workspacesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has admin access
       const hasAccess = await hasWorkspaceRole(ctx.db, input.id, ctx.user.id, ['OWNER', 'ADMIN'])
       if (!hasAccess) {
         throw new TRPCError({
@@ -131,7 +124,6 @@ export const workspacesRouter = createTRPCRouter({
       return workspace
     }),
 
-  // Delete workspace
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -144,7 +136,6 @@ export const workspacesRouter = createTRPCRouter({
         })
       }
 
-      // Only owner can delete
       if (workspace.ownerId !== ctx.user.id) {
         throw new TRPCError({
           code: 'FORBIDDEN',
@@ -156,7 +147,6 @@ export const workspacesRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  // Get workspace members
   members: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -171,7 +161,6 @@ export const workspacesRouter = createTRPCRouter({
       return getWorkspaceMembers(ctx.db, input.workspaceId)
     }),
 
-  // Update member role
   updateMemberRole: protectedProcedure
     .input(
       z.object({
@@ -181,7 +170,6 @@ export const workspacesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has admin access
       const hasAccess = await hasWorkspaceRole(ctx.db, input.workspaceId, ctx.user.id, [
         'OWNER',
         'ADMIN',
@@ -193,7 +181,6 @@ export const workspacesRouter = createTRPCRouter({
         })
       }
 
-      // Cannot change owner role
       const workspace = await getWorkspaceById(ctx.db, input.workspaceId)
       if (workspace?.ownerId === input.userId && input.role !== 'OWNER') {
         throw new TRPCError({
@@ -212,7 +199,6 @@ export const workspacesRouter = createTRPCRouter({
       return member
     }),
 
-  // Remove member
   removeMember: protectedProcedure
     .input(
       z.object({
@@ -235,7 +221,6 @@ export const workspacesRouter = createTRPCRouter({
         })
       }
 
-      // Cannot remove owner
       const workspace = await getWorkspaceById(ctx.db, input.workspaceId)
       if (workspace?.ownerId === input.userId) {
         throw new TRPCError({
@@ -248,7 +233,6 @@ export const workspacesRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  // Invite member
   invite: protectedProcedure
     .input(
       z.object({
@@ -258,7 +242,6 @@ export const workspacesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has admin access
       const hasAccess = await hasWorkspaceRole(ctx.db, input.workspaceId, ctx.user.id, [
         'OWNER',
         'ADMIN',
@@ -285,7 +268,6 @@ export const workspacesRouter = createTRPCRouter({
         invitedBy: ctx.user.id,
       })
 
-      // Send invitation email
       const inviteUrl = `${env.FRONTEND_URL}/invite?token=${invite.token}`
       await enqueueSingleEmail({
         to: input.email,
@@ -301,7 +283,6 @@ export const workspacesRouter = createTRPCRouter({
       return invite
     }),
 
-  // Get pending invites
   pendingInvites: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -319,7 +300,6 @@ export const workspacesRouter = createTRPCRouter({
       return getPendingInvites(ctx.db, input.workspaceId)
     }),
 
-  // Cancel invite
   cancelInvite: protectedProcedure
     .input(z.object({ inviteId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -327,7 +307,6 @@ export const workspacesRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  // Accept invite (public)
   acceptInvite: protectedProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -354,7 +333,6 @@ export const workspacesRouter = createTRPCRouter({
       return { success: true, workspace }
     }),
 
-  // Get invite details (public)
   getInvite: publicProcedure
     .input(z.object({ token: z.string() }))
     .query(async ({ ctx, input }) => {

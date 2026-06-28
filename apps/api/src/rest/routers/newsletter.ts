@@ -16,7 +16,6 @@ import { errorResponses } from '@api/schemas'
 
 const newsletterRouter = createRouter()
 
-// Subscribe
 // Protected: the authenticated writer adds a subscriber to their own list.
 newsletterRouter.openapi(
   createRoute({
@@ -98,7 +97,6 @@ newsletterRouter.openapi(
       writerId: session.user.id,
     })
 
-    // Send welcome email via job queue
     if (input.sendConfirmation !== false && subCreated) {
       await enqueueWelcomeEmail(
         {
@@ -164,7 +162,6 @@ newsletterRouter.openapi(
       throw new HTTPException(404, { message: 'Subscription not found' })
     }
 
-    // Update subscriber status
     await upsertSubscriber(db, {
       id: sub.id,
       isUnsubscribed: true,

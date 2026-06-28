@@ -117,7 +117,6 @@ likesRouter.openapi(
     const session = c.get('session')
     const { documentId } = c.req.valid('json')
 
-    // Verify document exists
     const document = await getDocumentById(db, documentId)
     if (!document) {
       throw new HTTPException(404, { message: 'Document not found' })

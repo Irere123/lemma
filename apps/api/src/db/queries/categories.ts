@@ -351,10 +351,8 @@ export const syncDocumentTags = async (
   tagNames: string[],
   writerId: string
 ): Promise<Tag[]> => {
-  // Remove existing tags
   await db.delete(documentTags).where(eq(documentTags.documentId, documentId))
 
-  // Add new tags
   const newTags: Tag[] = []
   for (const name of tagNames) {
     const tag = await getOrCreateTag(db, name, writerId)

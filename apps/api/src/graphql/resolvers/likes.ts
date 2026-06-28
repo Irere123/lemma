@@ -44,7 +44,6 @@ export const likeResolvers = {
 
       const { db, session } = context
 
-      // Verify document exists
       const document = await getDocumentById(db, args.documentId)
       if (!document) {
         throw new GraphQLError('Document not found', {

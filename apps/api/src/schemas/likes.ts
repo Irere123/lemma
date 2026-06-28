@@ -1,9 +1,5 @@
 import { z } from '@hono/zod-openapi'
 
-// ============================================================================
-// LIKE SCHEMAS
-// ============================================================================
-
 export const likeSchema = z.object({
   id: z.string(),
   documentId: z.string(),
@@ -19,10 +15,6 @@ export const getLikeStatusSchema = z.object({
   documentId: z.string(),
 })
 
-// ============================================================================
-// RESPONSE SCHEMAS
-// ============================================================================
-
 export const toggleLikeResponseSchema = z.object({
   liked: z.boolean(),
   likeCount: z.number(),
@@ -32,10 +24,6 @@ export const likeStatusResponseSchema = z.object({
   isLiked: z.boolean(),
   likeCount: z.number(),
 })
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
 
 export type ToggleLikeData = z.infer<typeof toggleLikeSchema>
 export type ToggleLikeResponse = z.infer<typeof toggleLikeResponseSchema>

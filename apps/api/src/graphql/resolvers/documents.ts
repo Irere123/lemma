@@ -109,7 +109,6 @@ export const documentResolvers = {
       const doc = await getDocumentById(context.db, args.id)
       if (!doc) return null
 
-      // Ensure user owns the document
       if (doc.userId !== context.session!.user.id) {
         throw new GraphQLError('Not authorized to access this document', {
           extensions: { code: 'FORBIDDEN' },
@@ -195,7 +194,6 @@ export const documentResolvers = {
 
       const { db, session } = context
 
-      // Check ownership
       const existing = await getDocumentById(db, args.input.id)
       if (!existing || existing.userId !== session!.user.id) {
         throw new GraphQLError('Document not found or not authorized', {
@@ -228,7 +226,6 @@ export const documentResolvers = {
 
       const { db, session } = context
 
-      // Check ownership
       const existing = await getDocumentById(db, args.id)
       if (!existing || existing.userId !== session!.user.id) {
         throw new GraphQLError('Document not found or not authorized', {

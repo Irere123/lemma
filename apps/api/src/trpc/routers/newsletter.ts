@@ -227,7 +227,6 @@ export const newsletterRouter = createTRPCRouter({
       }
 
       try {
-        // Update subscriber status
         await upsertSubscriber(ctx.db, {
           id: sub.id,
           isUnsubscribed: true,
@@ -292,7 +291,6 @@ export const newsletterRouter = createTRPCRouter({
       }
     }),
 
-  // Resend confirmation email
   resendConfirmation: protectedProcedure
     .input(z.object({ email: z.email() }))
     .mutation(async ({ ctx, input }) => {

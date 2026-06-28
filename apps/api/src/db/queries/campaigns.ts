@@ -154,7 +154,6 @@ export type CampaignStats = {
 }
 
 export const getCampaignStats = async (db: DB, campaignId: string): Promise<CampaignStats> => {
-  // Get total clicks
   const clicksResult = await db
     .select({
       total: sql<number>`count(*)`,
@@ -164,7 +163,6 @@ export const getCampaignStats = async (db: DB, campaignId: string): Promise<Camp
     .innerJoin(campaignLinks, eq(clickEvents.linkId, campaignLinks.id))
     .where(eq(campaignLinks.campaignId, campaignId))
 
-  // Get unsubscribes
   const unsubsResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(unsubscribeEvents)
@@ -369,7 +367,6 @@ export const getSubscriberGrowth = async (
     )
     .groupBy(sql`strftime('%Y-%m-%d', ${subscribers.unsubscribedAt}, 'unixepoch')`)
 
-  // Merge results
   const dateMap = new Map<string, { newSubscribers: number; unsubscribes: number }>()
 
   for (const row of newSubs) {

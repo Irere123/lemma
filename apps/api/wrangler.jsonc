@@ -53,20 +53,6 @@
           "preview_id": "00000000000000000000000000000000"
         }
       ],
-      "ratelimits": [
-        {
-          "name": "API_RATE_LIMITER",
-          "namespace_id": "2001",
-          // 300 requests / 60s per caller, per Cloudflare location.
-          "simple": { "limit": 300, "period": 60 }
-        },
-        {
-          "name": "AUTH_RATE_LIMITER",
-          "namespace_id": "2002",
-          // Strict: 20 auth/OAuth attempts / 60s per caller, per location.
-          "simple": { "limit": 20, "period": 60 }
-        }
-      ],
       "queues": {
         "producers": [
           {
@@ -161,20 +147,6 @@
         {
           "binding": "CACHE",
           "id": "c4d7e58664054cbfb3335c52b0be2742"
-        }
-      ],
-      "ratelimits": [
-        {
-          "name": "API_RATE_LIMITER",
-          "namespace_id": "1001",
-          // 300 requests / 60s per caller, per Cloudflare location.
-          "simple": { "limit": 300, "period": 60 }
-        },
-        {
-          "name": "AUTH_RATE_LIMITER",
-          "namespace_id": "1002",
-          // Strict: 20 auth/OAuth attempts / 60s per caller, per location.
-          "simple": { "limit": 20, "period": 60 }
         }
       ],
       "queues": {

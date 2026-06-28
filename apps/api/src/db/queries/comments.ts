@@ -8,10 +8,6 @@ import type { CommentWithAuthor, CreateCommentData, GetCommentsData } from '@api
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 100
 
-// ============================================================================
-// CREATE OPERATIONS
-// ============================================================================
-
 export const createComment = async (db: DB, data: CreateCommentData, userId: string) => {
   const [comment] = await db
     .insert(comments)
@@ -32,10 +28,6 @@ export const createComment = async (db: DB, data: CreateCommentData, userId: str
 
   return comment
 }
-
-// ============================================================================
-// READ OPERATIONS
-// ============================================================================
 
 export const getCommentById = async (db: DB, id: string) => {
   return db.query.comments.findFirst({
@@ -193,10 +185,6 @@ export const getDocumentCommentCount = async (db: DB, documentId: string): Promi
   return result[0]?.count ?? 0
 }
 
-// ============================================================================
-// UPDATE OPERATIONS
-// ============================================================================
-
 export const updateComment = async (db: DB, id: string, userId: string, content: string) => {
   const [comment] = await db
     .update(comments)
@@ -206,10 +194,6 @@ export const updateComment = async (db: DB, id: string, userId: string, content:
 
   return comment
 }
-
-// ============================================================================
-// DELETE OPERATIONS
-// ============================================================================
 
 export const deleteComment = async (db: DB, id: string, userId: string): Promise<boolean> => {
   const result = await db

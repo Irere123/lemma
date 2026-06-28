@@ -12,7 +12,6 @@ export const withDatabase: MiddlewareHandler = async (c, next) => {
   const timer = middlewareLogger.time('database-connection')
   const { db } = createDb()
 
-  // Set database on context
   c.set('db', db)
 
   try {

@@ -14,7 +14,6 @@ import { createRouter } from '@api/lib/utils'
 
 const feedsRouter = createRouter()
 
-// Main RSS feed
 feedsRouter.openapi(
   createRoute({
     method: 'get',
@@ -63,7 +62,6 @@ feedsRouter.openapi(
   }
 )
 
-// Atom feed
 feedsRouter.openapi(
   createRoute({
     method: 'get',
@@ -112,7 +110,6 @@ feedsRouter.openapi(
   }
 )
 
-// RSS feed for a specific category
 feedsRouter.openapi(
   createRoute({
     method: 'get',
@@ -173,7 +170,6 @@ feedsRouter.openapi(
   }
 )
 
-// JSON feed (modern alternative to RSS)
 feedsRouter.openapi(
   createRoute({
     method: 'get',

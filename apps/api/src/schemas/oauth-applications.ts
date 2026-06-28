@@ -1,6 +1,5 @@
 import { z } from '@hono/zod-openapi'
 
-// Create OAuth Application Schema
 export const createOAuthApplicationSchema = z.object({
   name: z.string().min(1).max(255).openapi({
     description: 'The name of the OAuth application',
@@ -59,7 +58,6 @@ export const createOAuthApplicationSchema = z.object({
   }),
 })
 
-// Update OAuth Application Schema
 export const updateOAuthApplicationSchema = z.object({
   id: z.string().uuid().openapi({
     description: 'The unique identifier of the OAuth application',
@@ -126,7 +124,6 @@ export const updateOAuthApplicationSchema = z.object({
   }),
 })
 
-// Get OAuth Application Schema
 export const getOAuthApplicationSchema = z.object({
   id: z
     .string()
@@ -142,7 +139,6 @@ export const getOAuthApplicationSchema = z.object({
     }),
 })
 
-// Delete OAuth Application Schema
 export const deleteOAuthApplicationSchema = z.object({
   id: z.string().uuid().openapi({
     description: 'The unique identifier of the OAuth application to delete',
@@ -150,7 +146,6 @@ export const deleteOAuthApplicationSchema = z.object({
   }),
 })
 
-// Regenerate Client Secret Schema
 export const regenerateClientSecretSchema = z.object({
   id: z.string().uuid().openapi({
     description: 'The unique identifier of the OAuth application',
@@ -158,7 +153,6 @@ export const regenerateClientSecretSchema = z.object({
   }),
 })
 
-// OAuth Application Response Schema
 export const oauthApplicationResponseSchema = z.object({
   id: z.string().uuid().openapi({
     description: 'Unique identifier of the OAuth application',
@@ -227,14 +221,12 @@ export const oauthApplicationResponseSchema = z.object({
   }),
 })
 
-// OAuth Applications List Response Schema
 export const oauthApplicationsListResponseSchema = z.object({
   data: z.array(oauthApplicationResponseSchema).openapi({
     description: 'Array of OAuth applications',
   }),
 })
 
-// Client Secret Response Schema
 export const clientSecretResponseSchema = z.object({
   clientSecret: z.string().openapi({
     description: 'The new client secret',

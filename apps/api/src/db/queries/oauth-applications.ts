@@ -83,7 +83,6 @@ export type DeleteOAuthApplicationParams = {
   id: string
 }
 
-// Generate client credentials
 function generateClientCredentials() {
   const clientId = `lemm_client_${generateId()}`
   const clientSecret = `lemm_app_secret_${generateId()}`
@@ -96,11 +95,9 @@ function generateClientCredentials() {
   }
 }
 
-// Create OAuth application
 export async function createOAuthApplication(db: DB, params: CreateOAuthApplicationParams) {
   const { clientId, clientSecret, clientSecretHash } = generateClientCredentials()
 
-  // Generate unique slug
   const slug = await generateUniqueSlug(db, params.name)
 
   const [result] = await db
@@ -139,7 +136,6 @@ export async function createOAuthApplication(db: DB, params: CreateOAuthApplicat
   }
 }
 
-// Get OAuth applications for a team
 export async function getOAuthApplications(db: DB) {
   return db
     .select({
@@ -173,7 +169,6 @@ export async function getOAuthApplications(db: DB) {
     .orderBy(desc(oauthApplications.createdAt))
 }
 
-// Get OAuth application by ID
 export async function getOAuthApplicationById(db: DB, id: string) {
   const [result] = await db
     .select({
@@ -209,7 +204,6 @@ export async function getOAuthApplicationById(db: DB, id: string) {
   return result
 }
 
-// Get OAuth application by client ID
 export async function getOAuthApplicationByClientId(db: DB, clientId: string) {
   const [result] = await db
     .select({
@@ -240,7 +234,6 @@ export async function getOAuthApplicationByClientId(db: DB, clientId: string) {
   return result
 }
 
-// Get OAuth application by slug
 export async function getOAuthApplicationBySlug(db: DB, slug: string) {
   const [result] = await db
     .select({
@@ -276,11 +269,9 @@ export async function getOAuthApplicationBySlug(db: DB, slug: string) {
   return result
 }
 
-// Update OAuth application
 export async function updateOAuthApplication(db: DB, params: UpdateOAuthApplicationParams) {
   const { id, ...updateData } = params
 
-  // If name is being updated, regenerate the slug
   let slug: string | undefined
   if (updateData.name) {
     slug = await generateUniqueSlug(db, updateData.name)
@@ -318,7 +309,6 @@ export async function updateOAuthApplication(db: DB, params: UpdateOAuthApplicat
   return result
 }
 
-// Update OAuth application approval status
 export async function updateOAuthApplicationStatus(
   db: DB,
   params: {
@@ -344,7 +334,6 @@ export async function updateOAuthApplicationStatus(
   return result
 }
 
-// Delete OAuth application
 export async function deleteOAuthApplication(db: DB, params: DeleteOAuthApplicationParams) {
   const [result] = await db
     .delete(oauthApplications)
@@ -357,7 +346,6 @@ export async function deleteOAuthApplication(db: DB, params: DeleteOAuthApplicat
   return result
 }
 
-// Regenerate client secret
 export async function regenerateClientSecret(db: DB, id: string) {
   const clientSecret = `lemm_app_secret_${generateId()}`
   const clientSecretHash = hash(clientSecret)

@@ -8,7 +8,6 @@ import { createYogaServer } from './graphql'
 import { createAuth } from './lib/auth'
 import { API_VERSION, getBaseUrl } from './lib/constants'
 import { createRouter } from './lib/utils'
-import { apiRateLimit, authRateLimit } from './rest/middleware'
 import { withDatabase } from './rest/middleware/db'
 import { routers } from './rest/routers'
 import { createTRPCContext } from './trpc/init'
@@ -42,13 +41,6 @@ export function createApp() {
       maxAge: 86400,
     })
   )
-
-  // Rate limiting (no-op locally when the bindings aren't configured).
-  // Strict limiter on auth/OAuth endpoints; general limiter on the public API.
-  app.use('/auth/*', authRateLimit())
-  app.use('/v1/oauth/*', authRateLimit())
-  app.use('/v1/*', apiRateLimit())
-  app.use('/graphql', apiRateLimit())
 
   app.use(
     '/trpc/*',

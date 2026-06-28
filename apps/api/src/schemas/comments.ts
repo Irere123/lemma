@@ -1,9 +1,5 @@
 import { z } from '@hono/zod-openapi'
 
-// ============================================================================
-// COMMENT SCHEMAS
-// ============================================================================
-
 export const commentSchema = z.object({
   id: z.string(),
   documentId: z.string(),
@@ -42,10 +38,6 @@ export const getCommentRepliesSchema = z.object({
   cursor: z.string().optional(),
 })
 
-// ============================================================================
-// RESPONSE SCHEMAS
-// ============================================================================
-
 export const authorSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -65,10 +57,6 @@ export const commentsResponseSchema = z.object({
 export const commentResponseSchema = z.object({
   data: commentWithAuthorSchema,
 })
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
 
 export type CreateCommentData = z.infer<typeof createCommentSchema>
 export type UpdateCommentData = z.infer<typeof updateCommentSchema>

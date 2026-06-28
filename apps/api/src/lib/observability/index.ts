@@ -1,7 +1,6 @@
 import { flushSentry, initializeSentry } from './sentry'
 import { logger } from './logger'
 
-// Sentry integration
 export {
   addBreadcrumb,
   captureException,
@@ -18,7 +17,6 @@ export {
   type SentryConfig,
 } from './sentry'
 
-// Structured logging
 export {
   Logger,
   logger,

@@ -324,13 +324,11 @@ export const acceptWorkspaceInvite = async (
   const invite = await getWorkspaceInviteByToken(db, token)
   if (!invite || invite.acceptedAt) return undefined
 
-  // Mark invite as accepted
   await db
     .update(workspaceInvites)
     .set({ acceptedAt: new Date() })
     .where(eq(workspaceInvites.id, invite.id))
 
-  // Add user as member
   return addWorkspaceMember(db, {
     workspaceId: invite.workspaceId,
     userId,

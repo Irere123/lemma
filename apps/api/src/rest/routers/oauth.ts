@@ -65,7 +65,6 @@ app.openapi(
     const query = c.req.valid('query')
     const { client_id, redirect_uri, scope, state, code_challenge } = query
 
-    // Validate client_id
     const application = await getOAuthApplicationByClientId(db, client_id)
     if (!application || !application.active) {
       throw new HTTPException(400, {
@@ -80,14 +79,12 @@ app.openapi(
       })
     }
 
-    // Validate redirect_uri
     if (!application.redirectUris.includes(redirect_uri)) {
       throw new HTTPException(400, {
         message: 'Invalid redirect_uri',
       })
     }
 
-    // Validate scopes
     const requestedScopes = scope.split(' ').filter(Boolean)
     const invalidScopes = requestedScopes.filter((s) => !application.scopes.includes(s))
 
@@ -97,7 +94,6 @@ app.openapi(
       })
     }
 
-    // Return application info for consent screen
     const applicationInfo = {
       id: application.id,
       name: application.name,
@@ -118,7 +114,6 @@ app.openapi(
   }
 )
 
-// OAuth Authorization Decision Endpoint - POST (user consent)
 app.openapi(
   createRoute({
     method: 'post',
@@ -183,7 +178,6 @@ app.openapi(
     const body = c.req.valid('json')
     const { client_id, decision, scopes, redirect_uri, state, code_challenge } = body
 
-    // Validate client_id
     const application = await getOAuthApplicationByClientId(db, client_id)
     if (!application || !application.active) {
       throw new HTTPException(400, {
@@ -200,7 +194,6 @@ app.openapi(
 
     const redirectUrl = new URL(redirect_uri)
 
-    // Handle denial
     if (decision === 'deny') {
       redirectUrl.searchParams.set('error', 'access_denied')
       redirectUrl.searchParams.set('error_description', 'User denied access')
@@ -210,7 +203,6 @@ app.openapi(
       return c.json({ redirect_url: redirectUrl.toString() })
     }
 
-    // Create authorization code
     const authCode = await createAuthorizationCode(db, {
       applicationId: application.id,
       userId: session.user.id,
@@ -235,7 +227,6 @@ app.openapi(
       )
 
       if (!hasAuthorizedBefore && session.user.email) {
-        // Send notification email about app installation
         await sendEmail({
           to: session.user.email,
           subject: `An app has been added to your account`,
@@ -255,7 +246,6 @@ app.openapi(
       console.error('Failed to send app installation email:', error)
     }
 
-    // Build success redirect URL
     redirectUrl.searchParams.set('code', authCode.code)
     if (state) {
       redirectUrl.searchParams.set('state', state)
@@ -265,7 +255,6 @@ app.openapi(
   }
 )
 
-// OAuth Token Exchange Endpoint
 app.openapi(
   createRoute({
     method: 'post',
@@ -327,7 +316,6 @@ app.openapi(
       scope,
     } = body
 
-    // Validate client credentials
     const application = await getOAuthApplicationByClientId(db, client_id)
     if (!application || !application.active) {
       throw new HTTPException(400, {
@@ -359,7 +347,6 @@ app.openapi(
       }
 
       try {
-        // Exchange authorization code for access token
         const tokenResponse = await exchangeAuthorizationCode(
           db,
           code,
@@ -421,10 +408,8 @@ app.openapi(
       }
 
       try {
-        // Parse requested scopes
         const requestedScopes = scope ? scope.split(' ').filter(Boolean) : undefined
 
-        // Refresh access token
         const tokenResponse = await refreshAccessToken(db, {
           refreshToken: refresh_token,
           applicationId: application.id,
@@ -473,7 +458,6 @@ app.openapi(
   }
 )
 
-// OAuth Token Revocation Endpoint
 app.openapi(
   createRoute({
     method: 'post',
@@ -520,7 +504,6 @@ app.openapi(
 
     const { token, client_id, client_secret } = body
 
-    // Validate client credentials
     const application = await getOAuthApplicationByClientId(db, client_id)
     if (!application || !application.active) {
       throw new HTTPException(400, {
@@ -544,7 +527,6 @@ app.openapi(
       }
     }
 
-    // Revoke token
     await revokeAccessToken(db, {
       token,
       applicationId: application.id,

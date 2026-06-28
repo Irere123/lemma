@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 const EnvSchema = z.object({
-  // generic stuff
   ENV: z.enum(['local', 'production']),
   ALLOWED_API_ORIGINS: z.string(),
   LEMMA_ENCRYPTION_KEY: z.string(),

@@ -155,7 +155,6 @@ async function processConfirmationEmail(data: SendConfirmationEmailJob, db: any)
 async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<void> {
   const { documentId, writerId, campaignId, subscriberIds } = data
 
-  // Get document
   const document = await getDocumentById(db, documentId)
   if (!document) {
     const error = new Error(`Document ${documentId} not found`)
@@ -163,7 +162,6 @@ async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<
     throw error
   }
 
-  // Get writer settings
   const writerSettings = await getWriterNewsletterSettings(db, writerId)
   if (!writerSettings) {
     const error = new Error(`Writer settings for ${writerId} not found`)
@@ -171,7 +169,6 @@ async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<
     throw error
   }
 
-  // Get subscribers
   let subscribers: { id: string; email: string; token: string }[]
   if (subscriberIds && subscriberIds.length > 0) {
     // Specific subscribers - would need a new query for this
@@ -189,13 +186,11 @@ async function processNewsletterSend(data: SendNewsletterJob, db: any): Promise<
     return
   }
 
-  // Split into batches and enqueue batch jobs
   const batches = []
   for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
     batches.push(subscribers.slice(i, i + BATCH_SIZE))
   }
 
-  // Enqueue batch processing jobs
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i]
     if (!batch) continue

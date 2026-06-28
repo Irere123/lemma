@@ -4,16 +4,11 @@ import type { DB } from '@api/db'
 import { documentLikes } from '@api/db/schema'
 import { generateId } from '@api/lib/utils'
 
-// ============================================================================
-// LIKE OPERATIONS
-// ============================================================================
-
 export const toggleLike = async (
   db: DB,
   documentId: string,
   userId: string
 ): Promise<{ liked: boolean; likeCount: number }> => {
-  // Check if already liked
   const existingLike = await db
     .select({ id: documentLikes.id })
     .from(documentLikes)
@@ -21,7 +16,6 @@ export const toggleLike = async (
     .limit(1)
 
   if (existingLike.length > 0) {
-    // Unlike: remove the like
     await db
       .delete(documentLikes)
       .where(and(eq(documentLikes.documentId, documentId), eq(documentLikes.userId, userId)))
@@ -29,7 +23,6 @@ export const toggleLike = async (
     const likeCount = await getDocumentLikeCount(db, documentId)
     return { liked: false, likeCount }
   } else {
-    // Like: add new like
     await db.insert(documentLikes).values({
       id: generateId('like'),
       documentId,

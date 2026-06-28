@@ -32,7 +32,6 @@ const campaignStatusSchema = z.enum([
 ])
 
 export const campaignsRouter = createTRPCRouter({
-  // Get all campaigns for the user
   list: protectedProcedure
     .input(
       z
@@ -47,7 +46,6 @@ export const campaignsRouter = createTRPCRouter({
       return campaigns
     }),
 
-  // Get a single campaign
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const campaign = await getCampaignById(ctx.db, input.id)
 
@@ -61,7 +59,6 @@ export const campaignsRouter = createTRPCRouter({
     return campaign
   }),
 
-  // Create a new campaign
   create: protectedProcedure
     .input(
       z.object({
@@ -87,7 +84,6 @@ export const campaignsRouter = createTRPCRouter({
       return campaign
     }),
 
-  // Update a campaign
   update: protectedProcedure
     .input(
       z.object({
@@ -119,7 +115,6 @@ export const campaignsRouter = createTRPCRouter({
       return campaign
     }),
 
-  // Delete a campaign
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -137,7 +132,6 @@ export const campaignsRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  // Send a campaign immediately
   send: protectedProcedure
     .input(
       z.object({
@@ -171,13 +165,11 @@ export const campaignsRouter = createTRPCRouter({
         })
       }
 
-      // Update campaign status
       await updateCampaign(ctx.db, {
         id: input.campaignId,
         status: 'SENDING',
       })
 
-      // Enqueue the newsletter send
       await enqueueNewsletter({
         campaignId: input.campaignId,
         documentId: input.documentId,
@@ -187,7 +179,6 @@ export const campaignsRouter = createTRPCRouter({
       return { success: true, message: 'Newsletter queued for sending' }
     }),
 
-  // Schedule a campaign
   schedule: protectedProcedure
     .input(
       z.object({
@@ -214,14 +205,12 @@ export const campaignsRouter = createTRPCRouter({
         })
       }
 
-      // Update campaign status
       await updateCampaign(ctx.db, {
         id: input.campaignId,
         scheduledAt: scheduledDate,
         status: 'SCHEDULED',
       })
 
-      // Schedule the newsletter
       await scheduleNewsletter({
         campaignId: input.campaignId,
         documentId: input.documentId,
@@ -232,7 +221,6 @@ export const campaignsRouter = createTRPCRouter({
       return { success: true, message: 'Newsletter scheduled successfully' }
     }),
 
-  // A/B Testing
   createABTest: protectedProcedure
     .input(
       z.object({
@@ -251,7 +239,6 @@ export const campaignsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Validate percentages add up to 100
       const totalPercentage = input.variants.reduce((sum, v) => sum + v.percentage, 0)
       if (totalPercentage !== 100) {
         throw new TRPCError({
@@ -260,7 +247,6 @@ export const campaignsRouter = createTRPCRouter({
         })
       }
 
-      // Create parent campaign
       const parentSlug = slugifyString(input.title) || generateId()
       const parentCampaign = await createCampaign(ctx.db, {
         title: input.title,
@@ -269,7 +255,6 @@ export const campaignsRouter = createTRPCRouter({
         status: 'SENDING',
       })
 
-      // Create variant campaigns
       const variants: { variantId: string; documentId: string; percentage: number }[] = []
 
       for (const variant of input.variants) {
@@ -288,7 +273,6 @@ export const campaignsRouter = createTRPCRouter({
         })
       }
 
-      // Enqueue A/B test
       await enqueueABTest({
         campaignId: parentCampaign.id,
         variants,
@@ -303,7 +287,6 @@ export const campaignsRouter = createTRPCRouter({
       }
     }),
 
-  // Get campaign analytics
   stats: protectedProcedure
     .input(z.object({ campaignId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -325,7 +308,6 @@ export const campaignsRouter = createTRPCRouter({
       }
     }),
 
-  // Get clicks over time for a campaign
   clicksOverTime: protectedProcedure
     .input(
       z.object({
@@ -352,7 +334,6 @@ export const campaignsRouter = createTRPCRouter({
       )
     }),
 
-  // Add tracking link to campaign
   addLink: protectedProcedure
     .input(
       z.object({
@@ -380,7 +361,6 @@ export const campaignsRouter = createTRPCRouter({
       return link
     }),
 
-  // Get campaign links
   getLinks: protectedProcedure
     .input(z.object({ campaignId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -396,7 +376,6 @@ export const campaignsRouter = createTRPCRouter({
       return getCampaignLinks(ctx.db, input.campaignId)
     }),
 
-  // Subscriber analytics
   subscriberStats: protectedProcedure.query(async ({ ctx }) => {
     return getSubscriberStats(ctx.db, ctx.user.id)
   }),

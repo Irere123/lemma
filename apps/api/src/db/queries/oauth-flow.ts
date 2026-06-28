@@ -33,7 +33,6 @@ export type RevokeTokenParams = {
   applicationId?: string
 }
 
-// Create authorization code
 export async function createAuthorizationCode(db: DB, params: CreateAuthorizationCodeParams) {
   const code = `lemm_authorization_code_${generateId()}`
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
@@ -60,7 +59,6 @@ export async function createAuthorizationCode(db: DB, params: CreateAuthorizatio
   return result
 }
 
-// Exchange authorization code for access token
 export async function exchangeAuthorizationCode(
   db: DB,
   code: string,
@@ -68,7 +66,6 @@ export async function exchangeAuthorizationCode(
   applicationId: string,
   codeVerifier?: string
 ) {
-  // Get the authorization code
   const [authCode] = await db
     .select({
       id: oauthAuthorizationCodes.id,
@@ -137,13 +134,11 @@ export async function exchangeAuthorizationCode(
     }
   }
 
-  // Mark the authorization code as used
   await db
     .update(oauthAuthorizationCodes)
     .set({ used: true })
     .where(eq(oauthAuthorizationCodes.id, authCode.id))
 
-  // Create access token
   const accessToken = await createAccessToken(db, {
     applicationId: authCode.applicationId,
     userId: authCode.userId,
@@ -153,7 +148,6 @@ export async function exchangeAuthorizationCode(
   return accessToken
 }
 
-// Create access token
 export async function createAccessToken(db: DB, params: CreateAccessTokenParams) {
   const token = `lemm_access_token_${generateId()}`
   const refreshToken = `lemm_refresh_token_${generateId()}`
@@ -202,7 +196,6 @@ export async function createAccessToken(db: DB, params: CreateAccessTokenParams)
   }
 }
 
-// Validate access token
 export async function validateAccessToken(db: DB, token: string) {
   // Hash the incoming token to compare with stored hash
   const tokenHash = hash(token)
@@ -249,7 +242,6 @@ export async function validateAccessToken(db: DB, token: string) {
     return null
   }
 
-  // Update last used timestamp
   await db
     .update(oauthAccessTokens)
     .set({ lastUsedAt: new Date().toISOString() })
@@ -258,14 +250,12 @@ export async function validateAccessToken(db: DB, token: string) {
   return result
 }
 
-// Refresh access token
 export async function refreshAccessToken(db: DB, params: RefreshAccessTokenParams) {
   const { refreshToken, applicationId, scopes } = params
 
   // Hash the incoming refresh token to compare with stored hash
   const refreshTokenHash = hash(refreshToken)
 
-  // Get the existing token
   const [existingToken] = await db
     .select({
       id: oauthAccessTokens.id,
@@ -316,7 +306,6 @@ export async function refreshAccessToken(db: DB, params: RefreshAccessTokenParam
     validatedScopes = scopes
   }
 
-  // Revoke the old token
   await db
     .update(oauthAccessTokens)
     .set({
@@ -325,7 +314,6 @@ export async function refreshAccessToken(db: DB, params: RefreshAccessTokenParam
     })
     .where(eq(oauthAccessTokens.id, existingToken.id))
 
-  // Create new access token
   const newToken = await createAccessToken(db, {
     applicationId,
     userId: existingToken.userId,
@@ -335,7 +323,6 @@ export async function refreshAccessToken(db: DB, params: RefreshAccessTokenParam
   return newToken
 }
 
-// Revoke access token
 export async function revokeAccessToken(db: DB, params: RevokeTokenParams) {
   const { token, applicationId } = params
 
@@ -366,7 +353,6 @@ export async function revokeAccessToken(db: DB, params: RevokeTokenParams) {
   return result
 }
 
-// Get user's authorized applications
 export async function getUserAuthorizedApplications(db: DB, userId: string) {
   return db
     .select({
@@ -413,7 +399,6 @@ export async function hasUserEverAuthorizedApp(
   return !!token
 }
 
-// Revoke all user tokens for an application
 export async function revokeUserApplicationTokens(db: DB, userId: string, applicationId: string) {
   await db
     .update(oauthAccessTokens)

@@ -5,7 +5,6 @@ import { toggleLikeSchema, getLikeStatusSchema } from '@api/schemas'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../init'
 
 export const likesRouter = createTRPCRouter({
-  // Get like status for a document
   getStatus: publicProcedure.input(getLikeStatusSchema).query(async ({ ctx, input }) => {
     if (!ctx.user) {
       // For unauthenticated users, just return count
@@ -16,9 +15,7 @@ export const likesRouter = createTRPCRouter({
     return getLikeStatus(ctx.db, input.documentId, ctx.user.id)
   }),
 
-  // Toggle like (authenticated only)
   toggle: protectedProcedure.input(toggleLikeSchema).mutation(async ({ ctx, input }) => {
-    // Verify document exists
     const document = await getDocumentById(ctx.db, input.documentId)
     if (!document) {
       throw new TRPCError({

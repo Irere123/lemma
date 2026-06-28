@@ -31,7 +31,6 @@ async function getOwnedCategory(db: DB, id: string, userId: string) {
   return category
 }
 
-// List categories
 categoriesRouter.openapi(
   createRoute({
     method: 'get',
@@ -58,7 +57,6 @@ categoriesRouter.openapi(
   }
 )
 
-// Create category
 categoriesRouter.openapi(
   createRoute({
     method: 'post',
@@ -94,7 +92,6 @@ categoriesRouter.openapi(
   }
 )
 
-// Get category by ID
 categoriesRouter.openapi(
   createRoute({
     method: 'get',
@@ -123,7 +120,6 @@ categoriesRouter.openapi(
   }
 )
 
-// Update category
 categoriesRouter.openapi(
   createRoute({
     method: 'patch',
@@ -164,7 +160,6 @@ categoriesRouter.openapi(
   }
 )
 
-// Delete category
 categoriesRouter.openapi(
   createRoute({
     method: 'delete',

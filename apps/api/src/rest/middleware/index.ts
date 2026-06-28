@@ -17,4 +17,3 @@ export const publicMiddleware: MiddlewareHandler[] = [requestLogging, withDataba
 export const protectedMiddleware: MiddlewareHandler[] = [requestLogging, withDatabase, withAuth]
 
 export { withRequiredScope } from './scope'
-export { apiRateLimit, authRateLimit, withRateLimit } from './rate-limit'

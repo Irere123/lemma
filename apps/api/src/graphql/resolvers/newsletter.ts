@@ -70,7 +70,6 @@ export const newsletterResolvers = {
       const { email, sendConfirmation = true } = args.input
       const writerId = session!.user.id
 
-      // Check if subscriber already exists
       const existing = await getSubscriberByEmail(db, email, writerId)
 
       if (existing) {

@@ -5,7 +5,6 @@ import { randomBytes } from 'node:crypto'
  * @returns A new API key string
  */
 export function generateApiKey(): string {
-  // Generate 32 random bytes and convert to hex
   const randomString = randomBytes(32).toString('hex')
   return `lemma_${randomString}`
 }

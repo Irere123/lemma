@@ -24,7 +24,6 @@ async function getOwnedTag(db: DB, id: string, userId: string) {
   return tag
 }
 
-// List tags
 tagsRouter.openapi(
   createRoute({
     method: 'get',
@@ -51,7 +50,6 @@ tagsRouter.openapi(
   }
 )
 
-// Create tag
 tagsRouter.openapi(
   createRoute({
     method: 'post',
@@ -87,7 +85,6 @@ tagsRouter.openapi(
   }
 )
 
-// Get tag by ID
 tagsRouter.openapi(
   createRoute({
     method: 'get',
@@ -116,7 +113,6 @@ tagsRouter.openapi(
   }
 )
 
-// Delete tag
 tagsRouter.openapi(
   createRoute({
     method: 'delete',

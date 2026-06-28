@@ -9,7 +9,6 @@ import { errorResponses, subscriberStatsSchema, subscribersResponseSchema } from
 
 const subscribersRouter = createRouter()
 
-// List subscribers
 subscribersRouter.openapi(
   createRoute({
     method: 'get',
@@ -46,7 +45,6 @@ subscribersRouter.openapi(
   }
 )
 
-// Subscriber stats
 subscribersRouter.openapi(
   createRoute({
     method: 'get',

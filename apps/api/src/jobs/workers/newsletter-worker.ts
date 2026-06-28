@@ -81,19 +81,16 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
     subscriberCount: subscriberBatch.length,
   })
 
-  // Get document
   const document = await getDocumentById(db, documentId)
   if (!document) {
     throw new Error(`Document ${documentId} not found`)
   }
 
-  // Get writer settings
   const writerSettings = await getWriterNewsletterSettings(db, writerId)
   if (!writerSettings) {
     throw new Error(`Writer settings for ${writerId} not found`)
   }
 
-  // Get subscribers in this batch
   const batchSubscribers = await db
     .select()
     .from(subscribers)
@@ -127,14 +124,12 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
     return
   }
 
-  // Render newsletter template
   const NewsletterTemplate = await getNewsletterTemplate()
 
   // Render the body from the canonical Tiptap JSON; markdown is the fallback
   // for legacy documents that predate the JSON content column.
   const bodyHtml = document.content ? renderToEmail(document.content) : null
 
-  // Prepare batch emails
   const emails = await Promise.all(
     recipients.map(async (subscriber: any) => {
       const html = await render(
@@ -219,7 +214,6 @@ async function processScheduledNewsletter(data: ScheduleNewsletterJob, db: any):
   const scheduledDate = new Date(scheduledAt)
   const now = new Date()
 
-  // If scheduled time has arrived, trigger the send
   if (scheduledDate <= now) {
     await updateCampaign(db, {
       id: campaignId,
@@ -244,7 +238,6 @@ async function processScheduledNewsletter(data: ScheduleNewsletterJob, db: any):
 async function processABTest(data: SendABTestJob, db: any): Promise<void> {
   const { campaignId, variants, writerId, testDurationHours } = data
 
-  // Get all confirmed subscribers
   const allSubscribers = await getConfirmedSubscribers(db, writerId)
 
   if (allSubscribers.length === 0) {
@@ -266,7 +259,6 @@ async function processABTest(data: SendABTestJob, db: any): Promise<void> {
     assignedCount += count
   }
 
-  // Enqueue newsletter sends for each variant
   for (const variant of variants) {
     const subscriberIds = variantAssignments.get(variant.variantId) || []
     if (subscriberIds.length > 0) {

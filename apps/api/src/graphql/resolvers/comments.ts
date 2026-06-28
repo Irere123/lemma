@@ -107,7 +107,6 @@ export const commentResolvers = {
       const { db, session } = context
       const { documentId, parentId, content } = args.input
 
-      // Verify document exists
       const document = await getDocumentById(db, documentId)
       if (!document) {
         throw new GraphQLError('Document not found', {
@@ -115,7 +114,6 @@ export const commentResolvers = {
         })
       }
 
-      // Verify parent if provided
       if (parentId) {
         const parent = await getCommentById(db, parentId)
         if (!parent) {

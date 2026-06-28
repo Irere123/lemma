@@ -103,14 +103,11 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
 
     const keyHash = hash(token)
 
-    // Check cache first for API key
     let apiKey = await apiKeyCache.get(keyHash)
 
     if (!apiKey) {
-      // If not cache, query database
       apiKey = await getApiKeyByToken(db, keyHash)
       if (apiKey) {
-        // Store in cache for future requests
         await apiKeyCache.set(keyHash, apiKey)
       }
     }
@@ -120,14 +117,11 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
       throw new HTTPException(401, { message: 'Invalid API key' })
     }
 
-    // Check cache first for user
     let user = await userCache.get(apiKey.userId)
 
     if (!user) {
-      // If not cache, query database
       user = await getUserById(db, apiKey.userId)
       if (user) {
-        // Store in cache for future requests
         await userCache.set(apiKey.userId, user)
       }
     }
@@ -148,7 +142,6 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
     c.set('session', session)
     c.set('scopes', expandScopes(apiKey.scopes ?? []))
 
-    // Update last used at
     updatedApiKeyLastUsedAt(db, apiKey.id)
 
     middlewareLogger.debug('API key authentication successful', { userId: user.id })

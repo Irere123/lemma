@@ -1,7 +1,6 @@
 import { z } from '@hono/zod-openapi'
 import { SCOPES } from '@lemma/common/scopes'
 
-// OAuth Authorization Request Schema
 export const oauthAuthorizationRequestSchema = z.object({
   response_type: z.literal('code').openapi({
     description: "OAuth response type, must be 'code'",
@@ -38,7 +37,6 @@ export const oauthAuthorizationRequestSchema = z.object({
   }),
 })
 
-// OAuth Authorization Response Schema
 export const oauthAuthorizationResponseSchema = z.object({
   authorize_url: z.string().url().openapi({
     description: 'URL to redirect user for authorization',
@@ -46,7 +44,6 @@ export const oauthAuthorizationResponseSchema = z.object({
   }),
 })
 
-// OAuth Token Exchange Request Schema
 export const oauthTokenRequestSchema = z
   .object({
     grant_type: z.literal('authorization_code').openapi({
@@ -78,7 +75,6 @@ export const oauthTokenRequestSchema = z
     message: 'Either client_secret or code_verifier must be provided',
   })
 
-// OAuth Refresh Token Request Schema
 export const oauthRefreshTokenRequestSchema = z.object({
   grant_type: z.literal('refresh_token').openapi({
     description: "OAuth grant type, must be 'refresh_token'",
@@ -102,7 +98,6 @@ export const oauthRefreshTokenRequestSchema = z.object({
   }),
 })
 
-// OAuth Token Response Schema
 export const oauthTokenResponseSchema = z.object({
   access_token: z.string().openapi({
     description: 'Access token for API requests',
@@ -126,7 +121,6 @@ export const oauthTokenResponseSchema = z.object({
   }),
 })
 
-// OAuth Token Revocation Request Schema
 export const oauthRevokeTokenRequestSchema = z.object({
   token: z.string().openapi({
     description: 'Token to revoke (access token or refresh token)',
@@ -146,7 +140,6 @@ export const oauthRevokeTokenRequestSchema = z.object({
   }),
 })
 
-// OAuth Error Response Schema
 export const oauthErrorResponseSchema = z.object({
   error: z.string().openapi({
     description: 'Error code',
@@ -280,7 +273,6 @@ export const oauthApplicationInfoSchema = z.object({
   }),
 })
 
-// User's Authorized Applications Schema
 export const userAuthorizedApplicationsSchema = z.object({
   data: z.array(
     z.object({
@@ -299,7 +291,6 @@ export const userAuthorizedApplicationsSchema = z.object({
   ),
 })
 
-// Revoke User Application Access Schema
 export const revokeUserApplicationAccessSchema = z.object({
   applicationId: z.string().uuid().openapi({
     description: 'ID of the application to revoke access for',
