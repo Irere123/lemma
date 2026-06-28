@@ -3,6 +3,9 @@ export interface DocumentData {
   title: string | null
   subtitle: string | null
   markdown: string | null
+  // Pre-rendered, email-safe HTML built from the canonical Tiptap JSON
+  // (@lemma/content renderToEmail). Preferred over markdown when present.
+  bodyHtml?: string | null
   bannerImage: string | null
   publishedDate: Date | null
   scheduledDate: Date | null

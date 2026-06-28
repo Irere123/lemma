@@ -1,4 +1,5 @@
 import { Body, Container, Head, Html, Link, Markdown, Preview, Text } from '@react-email/components'
+
 import type { DocumentData, NewsletterSettings } from '../types'
 
 interface Props {
@@ -37,71 +38,79 @@ export const DynamicDocumentNewsletter = ({
             {writerSettings.fromName} &middot; {writerSettings.newsletterName}
           </Text>
 
-          {/* Main content */}
-          {document.markdown && (
-            <div style={styles.content}>
-              <Markdown
-                markdownCustomStyles={{
-                  h1: {
-                    fontSize: '24px',
-                    fontWeight: '600',
-                    marginTop: '32px',
-                    marginBottom: '16px',
-                    lineHeight: '1.3',
-                  },
-                  h2: {
-                    fontSize: '20px',
-                    fontWeight: '600',
-                    marginTop: '28px',
-                    marginBottom: '12px',
-                    lineHeight: '1.3',
-                  },
-                  h3: {
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    marginTop: '24px',
-                    marginBottom: '8px',
-                    lineHeight: '1.3',
-                  },
-                  p: { marginTop: '0', marginBottom: '20px', lineHeight: '1.7' },
-                  link: { color: '#0969da', textDecoration: 'underline' },
-                  blockQuote: {
-                    borderLeft: '3px solid #d0d7de',
-                    paddingLeft: '16px',
-                    marginLeft: '0',
-                    marginRight: '0',
-                    marginBottom: '20px',
-                    color: '#57606a',
-                    fontStyle: 'italic',
-                  },
-                  codeInline: {
-                    backgroundColor: '#f6f8fa',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontFamily: 'ui-monospace, monospace',
-                  },
-                  codeBlock: {
-                    backgroundColor: '#f6f8fa',
-                    padding: '16px',
-                    borderRadius: '6px',
-                    overflow: 'auto',
-                    marginBottom: '20px',
-                  },
-                  hr: { border: 'none', borderTop: '1px solid #d0d7de', margin: '32px 0' },
-                  image: { maxWidth: '100%', height: 'auto', borderRadius: '4px' },
-                }}
-                markdownContainerStyles={{
-                  fontFamily:
-                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                  fontSize: '17px',
-                  lineHeight: '1.7',
-                  color: '#1a1a1a',
-                }}
-              >
-                {document.markdown}
-              </Markdown>
-            </div>
+          {/* Main content — prefer canonical-JSON HTML, fall back to markdown. */}
+          {document.bodyHtml ? (
+            <div
+              style={styles.content}
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: server-built by @lemma/content (escaped + URL-sanitized)
+              dangerouslySetInnerHTML={{ __html: document.bodyHtml }}
+            />
+          ) : (
+            document.markdown && (
+              <div style={styles.content}>
+                <Markdown
+                  markdownCustomStyles={{
+                    h1: {
+                      fontSize: '24px',
+                      fontWeight: '600',
+                      marginTop: '32px',
+                      marginBottom: '16px',
+                      lineHeight: '1.3',
+                    },
+                    h2: {
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      marginTop: '28px',
+                      marginBottom: '12px',
+                      lineHeight: '1.3',
+                    },
+                    h3: {
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      marginTop: '24px',
+                      marginBottom: '8px',
+                      lineHeight: '1.3',
+                    },
+                    p: { marginTop: '0', marginBottom: '20px', lineHeight: '1.7' },
+                    link: { color: '#0969da', textDecoration: 'underline' },
+                    blockQuote: {
+                      borderLeft: '3px solid #d0d7de',
+                      paddingLeft: '16px',
+                      marginLeft: '0',
+                      marginRight: '0',
+                      marginBottom: '20px',
+                      color: '#57606a',
+                      fontStyle: 'italic',
+                    },
+                    codeInline: {
+                      backgroundColor: '#f6f8fa',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      fontFamily: 'ui-monospace, monospace',
+                    },
+                    codeBlock: {
+                      backgroundColor: '#f6f8fa',
+                      padding: '16px',
+                      borderRadius: '6px',
+                      overflow: 'auto',
+                      marginBottom: '20px',
+                    },
+                    hr: { border: 'none', borderTop: '1px solid #d0d7de', margin: '32px 0' },
+                    image: { maxWidth: '100%', height: 'auto', borderRadius: '4px' },
+                  }}
+                  markdownContainerStyles={{
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    fontSize: '17px',
+                    lineHeight: '1.7',
+                    color: '#1a1a1a',
+                  }}
+                >
+                  {document.markdown}
+                </Markdown>
+              </div>
+            )
           )}
 
           {/* Footer */}
