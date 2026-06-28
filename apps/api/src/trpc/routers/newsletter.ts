@@ -2,18 +2,22 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { DB } from '@api/db'
+import { getSubscriberStats } from '@api/db/queries/campaigns'
 import {
   getWriterNewsletterSettings,
   upsertWriterNewsletterSettings,
 } from '@api/db/queries/newsletter-settings'
 import {
-  getConfirmedSubscribers,
+  deleteSubscriber,
   getSubscriberByToken,
   getSubscriberByWriterAndEmail,
+  getSubscribersByWriter,
+  getWriterSubscriberById,
   upsertSubscriber,
 } from '@api/db/queries/subscribers'
 import { getUserByUsername } from '@api/db/queries/users'
 import { unsubscribeEvents } from '@api/db/schema'
+import { env } from '@api/env-runtime'
 import { enqueueConfirmationEmail, enqueueWelcomeEmail } from '@api/jobs/producers'
 import { generateId } from '@api/lib/utils'
 import { newsletterSettingsSchema } from '@api/schemas/newsletter'
@@ -102,9 +106,50 @@ export const newsletterRouter = createTRPCRouter({
     return settings
   }),
 
+  /**
+   * Public-safe newsletter info for an author's profile. Returns null when the
+   * writer has no newsletter or has it switched off, so the subscribe widget
+   * only renders when there's something to subscribe to.
+   */
+  getPublicSettings: publicProcedure
+    .input(
+      z
+        .object({
+          username: z.string().optional(),
+          writerId: z.string().optional(),
+        })
+        .refine((v) => v.username || v.writerId, {
+          message: 'A writer handle or id is required.',
+        })
+    )
+    .query(async ({ ctx, input }) => {
+      let writerId = input.writerId
+      if (!writerId && input.username) {
+        const writer = await getUserByUsername(ctx.db, input.username)
+        if (!writer) return null
+        writerId = writer.id
+      }
+
+      const settings = await getWriterNewsletterSettings(ctx.db, writerId as string)
+      if (!settings || !settings.isActive) return null
+
+      return {
+        writerId: writerId as string,
+        newsletterName: settings.newsletterName,
+        fromName: settings.fromName,
+        brandColor: settings.brandColor,
+        logoUrl: settings.logoUrl,
+      }
+    }),
+
   upsertNewsletterSettings: protectedProcedure
     .input(newsletterSettingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Default the confirmation URL to the hosted confirm page so subscription
+      // emails always carry a working link even if the writer leaves it blank.
+      const confirmationUrl =
+        input.confirmationUrl || (env.FRONTEND_URL ? `${env.FRONTEND_URL}/subscribe/confirm` : null)
+
       const settings = await upsertWriterNewsletterSettings(ctx.db, {
         writerId: ctx.user.id,
         id: input.id,
@@ -112,7 +157,7 @@ export const newsletterRouter = createTRPCRouter({
         fromName: input.fromName,
         logoUrl: input.logoUrl || null,
         brandColor: input.brandColor || null,
-        confirmationUrl: input.confirmationUrl || null,
+        confirmationUrl,
         isActive: input.isActive,
       })
 
@@ -291,20 +336,58 @@ export const newsletterRouter = createTRPCRouter({
       return { success: true, message: 'Confirmation email sent' }
     }),
 
-  // Get subscriber list for writer
+  // Subscriber list for the writer, filtered by lifecycle state.
   subscribers: protectedProcedure
     .input(
       z
         .object({
-          confirmedOnly: z.boolean().optional().default(false),
+          status: z.enum(['all', 'confirmed', 'pending', 'unsubscribed']).optional().default('all'),
+          limit: z.number().min(1).max(100).optional().default(100),
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      if (input?.confirmedOnly) {
-        return getConfirmedSubscribers(ctx.db, ctx.user.id)
+      const status = input?.status ?? 'all'
+      return getSubscribersByWriter(ctx.db, ctx.user.id, {
+        status: status === 'all' ? undefined : status,
+        limit: input?.limit ?? 100,
+      })
+    }),
+
+  // Counts by lifecycle state for the subscribers dashboard.
+  subscriberStats: protectedProcedure.query(async ({ ctx }) => {
+    return getSubscriberStats(ctx.db, ctx.user.id)
+  }),
+
+  // Manually add an already-confirmed subscriber (e.g. importing a contact).
+  // No confirmation email is sent — the writer vouches for the address.
+  addSubscriber: protectedProcedure
+    .input(z.object({ email: z.email() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await getSubscriberByWriterAndEmail(ctx.db, ctx.user.id, input.email)
+      if (existing) {
+        throw new TRPCError({ code: 'CONFLICT', message: 'That email is already on your list.' })
       }
-      // TODO: Add query for all subscribers
-      return getConfirmedSubscribers(ctx.db, ctx.user.id)
+
+      return upsertSubscriber(ctx.db, {
+        email: input.email,
+        token: generateId('st'),
+        writerId: ctx.user.id,
+        isConfirmed: true,
+        confirmedAt: new Date(),
+      })
+    }),
+
+  // Permanently remove a subscriber from the writer's list.
+  removeSubscriber: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const sub = await getWriterSubscriberById(ctx.db, input.id, ctx.user.id)
+      if (!sub) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Subscriber not found' })
+      }
+
+      await deleteSubscriber(ctx.db, input.id)
+      return { success: true }
     }),
 })

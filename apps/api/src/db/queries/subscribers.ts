@@ -101,6 +101,13 @@ export const getWriterSubscriberById = async (
 }
 
 /**
+ * Permanently remove a subscriber row.
+ */
+export const deleteSubscriber = async (db: DB, id: string): Promise<void> => {
+  await db.delete(subscribers).where(eq(subscribers.id, id))
+}
+
+/**
  * Get subscriber by email
  */
 export const getSubscriberByEmail = async (
