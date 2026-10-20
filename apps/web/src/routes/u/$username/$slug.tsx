@@ -39,7 +39,7 @@ function RouteComponent() {
 
   if (isLoading) {
     return (
-      <main className='mx-auto w-full max-w-2xl space-y-4 px-5 pt-12 md:px-6'>
+      <main className='mx-auto w-full max-w-[calc(var(--writer-measure)+2.5rem)] space-y-4 px-5 pt-12'>
         <Skeleton className='h-10 w-3/4' />
         <Skeleton className='h-5 w-1/2' />
         <Skeleton className='h-64 w-full rounded-xl' />
@@ -62,7 +62,7 @@ function RouteComponent() {
 
   return (
     <main className='min-h-screen pb-24'>
-      <div className='mx-auto w-full max-w-2xl px-5 pt-12 md:px-6'>
+      <div className='mx-auto w-full max-w-[calc(var(--writer-measure)+2.5rem)] px-5 pt-12'>
         <Link
           to='/u/$username'
           params={{ username }}
@@ -112,11 +112,11 @@ function RouteComponent() {
         )}
       </div>
 
-      <article className='mx-auto mt-10 w-full max-w-2xl px-5 md:px-6'>
-        <ArticleBody html={post.html} markdown={post.markdown} />
+      <article className='mx-auto mt-10 w-full max-w-[calc(var(--writer-measure)+2.5rem)] px-5'>
+        <ArticleBody html={post.html} />
       </article>
 
-      <div className='mx-auto mt-12 w-full max-w-2xl px-5 md:px-6'>
+      <div className='mx-auto mt-12 w-full max-w-[calc(var(--writer-measure)+2.5rem)] px-5'>
         <LikeButton documentId={post.id} />
       </div>
 

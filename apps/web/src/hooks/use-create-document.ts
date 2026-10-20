@@ -36,7 +36,7 @@ export function useCreateDocument() {
 
   const createDocument = () => {
     if (mutation.isPending) return
-    mutation.mutate({ title: getUntitledTitle(''), markdown: '' })
+    mutation.mutate({ title: getUntitledTitle('') })
   }
 
   return { createDocument, isPending: mutation.isPending }
