@@ -4,6 +4,7 @@ import { ReactRenderer } from '@tiptap/react'
 import Suggestion, { type SuggestionOptions } from '@tiptap/suggestion'
 import type { ReactNode, RefObject } from 'react'
 import tippy, { type GetReferenceClientRect, type Instance, type Props } from 'tippy.js'
+
 import { EditorCommandOut } from '../components/editor-command'
 
 const Command = Extension.create({
@@ -97,6 +98,10 @@ export interface SuggestionItem {
   title: string
   description: string
   icon: ReactNode
+  /** Section of the menu the item is listed under. */
+  group?: string
+  /** What to type instead (a Markdown shortcut), shown beside the item. */
+  shortcut?: string
   searchTerms?: string[]
   command?: (props: { editor: Editor; range: Range }) => void
 }

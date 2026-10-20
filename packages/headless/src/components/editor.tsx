@@ -4,6 +4,7 @@ import { Provider } from 'jotai'
 import type { FC, ReactNode } from 'react'
 import { forwardRef, useRef } from 'react'
 import tunnel from 'tunnel-rat'
+
 import { headlessStore } from '../utils/store'
 import { EditorCommandTunnelContext } from './editor-command'
 
@@ -37,7 +38,13 @@ export type EditorContentProps = Omit<EditorProviderProps, 'content'> & {
 export const EditorContent = forwardRef<HTMLDivElement, EditorContentProps>(
   ({ className, children, initialContent, ...rest }, ref) => (
     <div ref={ref} className={className}>
-      <EditorProvider {...rest} content={initialContent}>
+      {/* Only pass `content` when there is some: Tiptap compares options on
+          every render, and `undefined` never equals its default (''), which
+          would re-apply the options (and re-run plugin views) on each render. */}
+      <EditorProvider
+        {...rest}
+        {...(initialContent === undefined ? {} : { content: initialContent })}
+      >
         {children}
       </EditorProvider>
     </div>
