@@ -7,6 +7,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Heading4,
   List,
   ListOrdered,
   type LucideIcon,
@@ -56,6 +57,12 @@ const items: SelectorItem[] = [
     icon: Heading3,
     command: (editor) => editor?.chain().focus().clearNodes().toggleHeading({ level: 3 }).run(),
     isActive: (editor) => editor?.isActive('heading', { level: 3 }) ?? false,
+  },
+  {
+    name: 'Heading 4',
+    icon: Heading4,
+    command: (editor) => editor?.chain().focus().clearNodes().toggleHeading({ level: 4 }).run(),
+    isActive: (editor) => editor?.isActive('heading', { level: 4 }) ?? false,
   },
   {
     name: 'To-do List',

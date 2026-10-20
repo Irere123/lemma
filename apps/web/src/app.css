@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "katex/dist/katex.min.css";
 @source "./";
 @source "../../../packages/headless/src";
 
@@ -197,6 +198,102 @@
 }
 
 @layer components {
+  /* The writing column: the editor and the published page share this measure
+     (about 70 characters of body text), so lines break in the same places. */
+  :root {
+    --writer-measure: 41rem;
+  }
+
+  .writer-column {
+    margin-inline: auto;
+    width: 100%;
+    max-width: calc(var(--writer-measure) + 2.5rem);
+    padding-inline: 1.25rem;
+    padding-bottom: 40vh;
+  }
+
+  /* The editor's bar fades while the writer types and returns when the
+     pointer moves or anything in it takes focus. */
+  .editor-top-bar {
+    transition: opacity 240ms ease;
+  }
+  .editor-top-bar[data-idle="true"]:not(:focus-within):not(:hover) {
+    opacity: 0;
+    transition-delay: 600ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .editor-top-bar {
+      transition: none;
+    }
+  }
+
+  /* Touch screens format from the keyboard toolbar; the floating selection
+     menu would fight the native selection handles. */
+  @media (pointer: coarse) {
+    .editor-bubble {
+      display: none;
+    }
+  }
+
+  /* Slash menu section headings (cmdk). */
+  .slash-menu [cmdk-group-heading] {
+    padding: 0.5rem 0.5rem 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Block handle: + and ⋮⋮ in the gutter beside the block under the pointer. */
+  .block-handle {
+    margin-top: 0.2rem;
+    transition: opacity 120ms ease;
+  }
+  .block-handle-button {
+    display: inline-flex;
+    height: 1.75rem;
+    width: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+  }
+  .block-handle-button:hover,
+  .block-handle-button[data-popup-open] {
+    background-color: var(--accent);
+    color: var(--foreground);
+  }
+  .block-handle-button svg {
+    height: 1rem;
+    width: 1rem;
+  }
+  .block-handle[data-dragging="true"] {
+    opacity: 0;
+  }
+  /* Touch screens use the keyboard toolbar instead. */
+  @media (pointer: coarse) {
+    .block-handle {
+      display: none;
+    }
+  }
+
+  /* A block opened from a link, or the target of a published anchor. */
+  .writer-prose .is-linked-block,
+  .writer-prose :target {
+    border-radius: 0.375rem;
+    background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+    box-shadow: 0 0 0 0.35rem color-mix(in oklab, var(--primary) 10%, transparent);
+    transition:
+      background-color 600ms ease,
+      box-shadow 600ms ease;
+  }
+
+  /* Leave room for the sticky bar when jumping to a heading or a block. */
+  html {
+    scroll-padding-top: 5rem;
+  }
+
   .writer-prose {
     min-height: 55vh;
     color: var(--foreground);
@@ -238,7 +335,8 @@
     font-weight: 650;
   }
 
-  .writer-prose p.is-editor-empty:first-child::before {
+  /* Placeholder on the empty block under the caret (CaretPlaceholder). */
+  .writer-prose .is-empty::before {
     content: attr(data-placeholder);
     pointer-events: none;
     float: left;
@@ -248,8 +346,15 @@
   }
 
   .writer-prose a {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
     text-decoration-thickness: 0.08em;
     text-underline-offset: 0.16em;
+    transition: text-decoration-color 120ms ease;
+  }
+  .writer-prose a:hover {
+    text-decoration-color: currentColor;
   }
 
   .writer-prose img {
@@ -289,6 +394,323 @@
     margin-top: 0.6em;
   }
 
+  /* Long documents: let the browser skip layout and paint for blocks that are
+     off screen. Keeps typing cost flat as a book grows. Applies to the editor
+     and the reader alike; nothing here relies on cross-block CSS counters. */
+  .writer-prose > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 2lh;
+  }
+  /* The block being typed in always lays out (see ActiveBlock in the editor). */
+  .writer-prose > .is-active-block {
+    content-visibility: visible;
+  }
+
+  .writer-prose h4,
+  .writer-prose h5,
+  .writer-prose h6 {
+    margin-top: 1.75rem;
+    font-family: "Open Runde", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .writer-prose h4 {
+    font-size: 1.1em;
+  }
+
+  .writer-prose h5 {
+    font-size: 1em;
+  }
+
+  .writer-prose h6 {
+    font-size: 0.85em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .writer-prose ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+    list-style: disc;
+  }
+
+  .writer-prose ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+    list-style: decimal;
+  }
+
+  .writer-prose li {
+    margin: 0.25rem 0;
+  }
+
+  .writer-prose li > p {
+    margin: 0;
+  }
+
+  .writer-prose ul[data-type="taskList"] {
+    padding-left: 0.25rem;
+    list-style: none;
+  }
+
+  .writer-prose ul[data-type="taskList"] > li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .writer-prose ul[data-type="taskList"] > li > label {
+    display: flex;
+    margin-top: 0.42em;
+    user-select: none;
+  }
+
+  .writer-prose ul[data-type="taskList"] input[type="checkbox"] {
+    display: grid;
+    place-content: center;
+    margin: 0;
+    height: 1.05em;
+    width: 1.05em;
+    appearance: none;
+    cursor: pointer;
+    border: 1.5px solid color-mix(in oklab, var(--foreground) 35%, transparent);
+    border-radius: 0.3em;
+    background-color: var(--background);
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+  .writer-prose ul[data-type="taskList"] input[type="checkbox"]:checked {
+    border-color: var(--primary);
+    background-color: var(--primary);
+  }
+  .writer-prose ul[data-type="taskList"] input[type="checkbox"]:checked::after {
+    content: "";
+    height: 0.3em;
+    width: 0.55em;
+    transform: translateY(-0.06em) rotate(-45deg);
+    border-bottom: 2px solid var(--primary-foreground);
+    border-left: 2px solid var(--primary-foreground);
+  }
+  .writer-prose ul[data-type="taskList"] input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .writer-prose ul[data-type="taskList"] input[type="checkbox"]:disabled {
+    cursor: default;
+  }
+
+  .writer-prose ul[data-type="taskList"] > li > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .writer-prose ul[data-type="taskList"] > li[data-checked="true"] > div {
+    color: var(--muted-foreground);
+    text-decoration: line-through;
+  }
+
+  .writer-prose blockquote {
+    margin: 1.5rem 0;
+    border-left: 2px solid var(--border);
+    padding-left: 1.25rem;
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+
+  .writer-prose code {
+    border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    border-radius: 0.375rem;
+    background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+    padding: 0.05em 0.3em;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85em;
+  }
+
+  .writer-prose pre {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+    padding: 1rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    line-height: 1.6;
+  }
+
+  .writer-prose pre code {
+    border: 0;
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* Syntax colours (GitHub-like), for the editor and published pages alike. */
+  .writer-prose pre {
+    --code-keyword: #cf222e;
+    --code-string: #0a3069;
+    --code-number: #0550ae;
+    --code-function: #8250df;
+    --code-comment: #6e7781;
+    --code-variable: #953800;
+    --code-type: #116329;
+  }
+  .dark .writer-prose pre {
+    --code-keyword: #ff7b72;
+    --code-string: #a5d6ff;
+    --code-number: #79c0ff;
+    --code-function: #d2a8ff;
+    --code-comment: #8b949e;
+    --code-variable: #ffa657;
+    --code-type: #7ee787;
+  }
+  .writer-prose
+    :is(.hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-doctag, .hljs-meta .hljs-keyword) {
+    color: var(--code-keyword);
+  }
+  .writer-prose :is(.hljs-string, .hljs-regexp, .hljs-meta .hljs-string, .hljs-addition) {
+    color: var(--code-string);
+  }
+  .writer-prose
+    :is(.hljs-number, .hljs-literal, .hljs-attr, .hljs-attribute, .hljs-symbol, .hljs-bullet) {
+    color: var(--code-number);
+  }
+  .writer-prose :is(.hljs-title, .hljs-section, .hljs-title.function_, .hljs-selector-id) {
+    color: var(--code-function);
+  }
+  .writer-prose :is(.hljs-comment, .hljs-quote) {
+    color: var(--code-comment);
+    font-style: italic;
+  }
+  .writer-prose :is(.hljs-variable, .hljs-template-variable, .hljs-params, .hljs-property) {
+    color: var(--code-variable);
+  }
+  .writer-prose
+    :is(.hljs-type, .hljs-class .hljs-title, .hljs-name, .hljs-tag, .hljs-selector-class) {
+    color: var(--code-type);
+  }
+  .writer-prose .hljs-deletion {
+    color: var(--code-keyword);
+  }
+
+  .writer-prose hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .writer-prose img {
+    margin-block: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+  }
+
+  .writer-prose img.image-uploading {
+    opacity: 0.4;
+  }
+
+  .writer-prose .embed-video,
+  .writer-prose div[data-youtube-video] {
+    margin: 1.5rem 0;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+  }
+
+  .writer-prose div[data-youtube-video] iframe {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Math: KaTeX output, in the editor's node views and the reader's HTML. */
+  .writer-prose .math-block,
+  .writer-prose div[data-type="block-math"],
+  .writer-prose .tiptap-mathematics-render[data-type="block-math"] {
+    margin: 1.25rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    text-align: center;
+  }
+
+  .writer-prose .tiptap-mathematics-render--editable {
+    cursor: pointer;
+    border-radius: 0.25rem;
+  }
+
+  .writer-prose .tiptap-mathematics-render--editable:hover {
+    background-color: var(--accent);
+  }
+
+  .writer-prose .inline-math-error,
+  .writer-prose .block-math-error {
+    color: var(--destructive);
+    font-family: ui-monospace, monospace;
+  }
+
+  /* Footnotes: numbers come from the footnotes plugin (editor) or the HTML (reader). */
+  .writer-prose sup.footnote-ref {
+    font-size: 0.7em;
+    line-height: 0;
+  }
+
+  .ProseMirror sup.footnote-ref::after {
+    content: attr(data-number);
+    color: var(--primary);
+    cursor: default;
+    padding: 0 0.1em;
+  }
+
+  .writer-prose sup.footnote-ref a {
+    text-decoration: none;
+  }
+
+  .writer-prose ol.footnotes,
+  .writer-prose section.footnotes {
+    margin-top: 3rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    font-size: 0.9em;
+    color: var(--muted-foreground);
+  }
+
+  .writer-prose section.footnotes ol {
+    margin: 0;
+  }
+
+  .writer-prose .footnote-backref {
+    margin-left: 0.35em;
+    text-decoration: none;
+  }
+
+  /* Other sessions' cursors (another tab or device). */
+  .collaboration-carets__caret {
+    position: relative;
+    margin-inline: -1px;
+    border-inline: 1px solid currentColor;
+    word-break: normal;
+    pointer-events: none;
+  }
+
+  .collaboration-carets__label {
+    position: absolute;
+    top: -1.4em;
+    left: -1px;
+    border-radius: 3px 3px 3px 0;
+    padding: 0.1rem 0.3rem;
+    font-family: "Open Runde", ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+    color: white;
+    white-space: nowrap;
+    user-select: none;
+  }
+
   /* Callout — editor renders the emoji via [data-emoji]::before, the reader via .callout-icon. */
   .callout {
     position: relative;
@@ -313,6 +735,11 @@
     content: attr(data-emoji);
   }
 
+  /* Published callouts carry a real icon element. */
+  .callout:has(> .callout-icon)::before {
+    content: none;
+  }
+
   .callout > :first-child,
   .callout-body > :first-child {
     margin-top: 0;
@@ -323,8 +750,27 @@
     margin-top: 0.75em;
   }
 
+  /* In the editor the icon is a button before the body. */
+  .callout > button.callout-icon + .callout-body {
+    margin-top: 0;
+  }
+  button.callout-icon {
+    top: 0.65rem;
+    left: 0.6rem;
+    padding: 0.1rem 0.35rem;
+  }
+
+  /* Code block tools sit over the block's top-right corner. */
+  .code-block > pre {
+    margin: 0;
+  }
+  .writer-prose > .code-block {
+    margin: 1.5rem 0;
+  }
+
   /* Tables — styled for both editor (.writer-prose) and reader output. */
   .writer-table-wrap,
+  .table-wrap,
   .tableWrapper {
     margin: 1.5rem 0;
     overflow-x: auto;
@@ -722,4 +1168,12 @@
       transition: none;
     }
   }
+}
+
+/* Unlayered, to beat the styles Tiptap injects (also unlayered). Tiptap's
+   break-spaces keeps a line-ending space's width, so the editor wrapped
+   earlier than the published page; pre-wrap hangs it, and lines break in the
+   same places in both. */
+.ProseMirror.writer-prose {
+  white-space: pre-wrap;
 }
