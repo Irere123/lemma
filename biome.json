@@ -33,7 +33,8 @@
       "!**/public/fallback-*.js",
       "!**/apps/docs/.source",
       "!**/venv",
-      "!**/.venv"
+      "!**/.venv",
+      "!packages/content/test/fixtures/paste/**/*.html"
     ]
   },
   "formatter": {
