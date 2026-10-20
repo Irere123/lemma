@@ -24,7 +24,7 @@
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
 
-    "lib": ["DOM"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "target": "ESNext",
     "jsx": "react-jsx",
     "declarationMap": false,
