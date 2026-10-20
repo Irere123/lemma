@@ -1,6 +1,7 @@
 import { type Environment, parseEnv } from './env'
 import type { JobData } from './jobs/types'
 import type { CampaignProgress } from './realtime/campaign-progress'
+import type { DocumentRoom } from './realtime/document-room'
 import type { WriterStats } from './realtime/writer-stats'
 
 export type QueueSendOptions = {
@@ -39,6 +40,11 @@ export type KVNamespaceBinding = {
 }
 
 export type R2BucketBinding = {
+  get?: (key: string) => Promise<{
+    body: ReadableStream
+    httpMetadata?: { contentType?: string }
+    httpEtag?: string
+  } | null>
   put: (
     key: string,
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob | null,
@@ -63,6 +69,7 @@ export type CloudflareBindings = Partial<Environment> & {
   SCHEDULED_QUEUE?: QueueBinding<JobData>
   CAMPAIGN_PROGRESS?: DurableObjectNamespace<CampaignProgress>
   WRITER_STATS?: DurableObjectNamespace<WriterStats>
+  DOCUMENT_ROOM?: DurableObjectNamespace<DocumentRoom>
 }
 
 let runtimeBindings: CloudflareBindings = {}

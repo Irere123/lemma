@@ -1,4 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi'
+import { renderToMarkdown } from '@lemma/content'
 import { HTTPException } from 'hono/http-exception'
 
 import {
@@ -8,6 +9,7 @@ import {
   updateDocumentBannerImage,
   upsertDocument,
 } from '@api/db/queries'
+import { ContentValidationError, readDocumentContent } from '@api/lib/documents/room'
 import { createRouter } from '@api/lib/utils'
 import { validateResponse } from '@api/lib/validate-response'
 import { withRequiredScope } from '@api/rest/middleware'
@@ -98,10 +100,18 @@ documentsRouter.openapi(
     const session = c.get('session')
     const input = c.req.valid('json')
 
-    const result = await upsertDocument(db, input, session.user.id)
+    let result: Awaited<ReturnType<typeof upsertDocument>>
+    try {
+      result = await upsertDocument(db, input, session.user.id)
+    } catch (error) {
+      if (error instanceof ContentValidationError) {
+        throw new HTTPException(400, { message: error.message })
+      }
+      throw error
+    }
 
     if (!result) {
-      throw new HTTPException(500, { message: 'Failed to save document' })
+      throw new HTTPException(404, { message: 'Document not found' })
     }
 
     return c.json(validateResponse({ data: result }, upsertDocumentResponseSchema))
@@ -187,7 +197,13 @@ documentsRouter.openapi(
       throw new HTTPException(404, { message: 'Document not found' })
     }
 
-    return c.json(validateResponse(document, documentSchema))
+    const content = await readDocumentContent(document.id)
+    return c.json(
+      validateResponse(
+        { ...document, content, markdown: renderToMarkdown(content) },
+        documentSchema
+      )
+    )
   }
 )
 

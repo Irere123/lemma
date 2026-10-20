@@ -1,3 +1,5 @@
+import { type MarkdownLoss, renderToMarkdown } from '@lemma/content'
+import { blockChanges } from '@lemma/content/schema'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
@@ -12,8 +14,11 @@ import {
   updateDocumentBannerImage,
   upsertDocument,
 } from '@api/db/queries'
+import { getUserDocumentById } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
+import { renderPublishedHtml } from '@api/lib/documents/render'
+import { ContentValidationError, openRoom, readDocumentContent } from '@api/lib/documents/room'
 import { computeNewsletterSchedule } from '@api/lib/scheduling'
 import {
   deleteDocumentSchema,
@@ -34,10 +39,70 @@ export const documentRouter = createTRPCRouter({
       return getPublishedArticles(db, { writerId: input?.writerId, limit: input?.limit })
     }),
 
-  getDocumentById: publicProcedure
+  // Owner-only metadata for the editor. The body syncs over the document's
+  // realtime channel, never through this query.
+  getDocumentById: protectedProcedure
     .input(documentByIdSchema)
-    .query(async ({ ctx: { db }, input }) => {
-      return getDocumentById(db, input.id)
+    .query(async ({ ctx: { db, user }, input }) => {
+      return (await getUserDocumentById(db, input.id, user.id)) ?? null
+    }),
+
+  // "Export as Markdown".
+  getMarkdown: protectedProcedure
+    .input(documentByIdSchema)
+    .query(async ({ ctx: { db, user }, input }) => {
+      const doc = await getUserDocumentById(db, input.id, user.id)
+      if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      // What Markdown couldn't carry, so the writer is told rather than surprised.
+      let losses: MarkdownLoss[] = []
+      const markdown = renderToMarkdown(await readDocumentContent(doc.id), {
+        onLoss: (lost) => {
+          losses = lost
+        },
+      })
+      return { title: doc.title, markdown, losses }
+    }),
+
+  // Version history (kept by the document's room).
+  listRevisions: protectedProcedure
+    .input(documentByIdSchema)
+    .query(async ({ ctx: { db, user }, input }) => {
+      const doc = await getUserDocumentById(db, input.id, user.id)
+      if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      return (await openRoom(doc.id)).listRevisions()
+    }),
+
+  // One past version, rendered as it would be published, plus which blocks
+  // differ from the current version.
+  getRevision: protectedProcedure
+    .input(z.object({ id: z.string(), revisionId: z.number().int().positive() }))
+    .query(async ({ ctx: { db, user }, input }) => {
+      const doc = await getUserDocumentById(db, input.id, user.id)
+      if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      const room = await openRoom(doc.id)
+      const revision = await room.getRevision(input.revisionId)
+      if (!revision) throw new TRPCError({ code: 'NOT_FOUND', message: 'Version not found' })
+      const current = await room.read()
+      const { fields, ...summary } = revision
+      return {
+        ...summary,
+        subtitle: fields.subtitle,
+        html: renderPublishedHtml(fields.content),
+        // From this version to the current one.
+        changes: blockChanges(fields.content, current.content),
+        titleChanged: fields.title !== current.title,
+        subtitleChanged: fields.subtitle !== current.subtitle,
+      }
+    }),
+
+  restoreRevision: protectedProcedure
+    .input(z.object({ id: z.string(), revisionId: z.number().int().positive() }))
+    .mutation(async ({ ctx: { db, user }, input }) => {
+      const doc = await getUserDocumentById(db, input.id, user.id)
+      if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      const restored = await (await openRoom(doc.id)).restoreRevision(input.revisionId)
+      if (!restored) throw new TRPCError({ code: 'NOT_FOUND', message: 'Version not found' })
+      return { restored }
     }),
 
   // Public reader: a PUBLISHED post by slug (or id fallback) with an author
@@ -65,8 +130,14 @@ export const documentRouter = createTRPCRouter({
   upsertDocument: protectedProcedure
     .input(upsertDocumentSchema)
     .mutation(async ({ ctx, input }) => {
-      const document = await upsertDocument(ctx.db, input, ctx.user.id)
-      return document
+      try {
+        return (await upsertDocument(ctx.db, input, ctx.user.id)) ?? null
+      } catch (error) {
+        if (error instanceof ContentValidationError) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: error.message, cause: error })
+        }
+        throw error
+      }
     }),
 
   updateBannerImage: protectedProcedure

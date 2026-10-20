@@ -1,5 +1,18 @@
 import type { Document, NewsletterSettings } from '@api/db/schema'
 
+type FeedDocument = Pick<
+  Document,
+  | 'id'
+  | 'slug'
+  | 'title'
+  | 'subtitle'
+  | 'metaDescription'
+  | 'publishedDate'
+  | 'createdAt'
+  | 'bannerImage'
+  | 'ogImage'
+> & { html?: string | null }
+
 export interface RSSFeedOptions {
   title: string
   description: string
@@ -205,7 +218,7 @@ export function generateAtomFeed(options: RSSFeedOptions, items: RSSItem[]): str
 }
 
 export function documentsToRSSItems(
-  documents: Document[],
+  documents: FeedDocument[],
   baseUrl: string,
   authorName?: string
 ): RSSItem[] {
@@ -213,7 +226,7 @@ export function documentsToRSSItems(
     title: doc.title || 'Untitled',
     link: `${baseUrl}/posts/${doc.slug || doc.id}`,
     description: doc.subtitle || doc.metaDescription || doc.title || '',
-    content: doc.markdown || undefined,
+    content: doc.html || undefined,
     pubDate: doc.publishedDate || doc.createdAt || new Date(),
     guid: `${baseUrl}/posts/${doc.slug || doc.id}`,
     author: authorName,
@@ -223,7 +236,7 @@ export function documentsToRSSItems(
 
 export function generateBlogRSSFeed(
   writerSettings: NewsletterSettings,
-  documents: Document[],
+  documents: FeedDocument[],
   baseUrl: string
 ): string {
   const items = documentsToRSSItems(documents, baseUrl, writerSettings.fromName)
@@ -243,7 +256,7 @@ export function generateBlogRSSFeed(
 
 export function generateBlogAtomFeed(
   writerSettings: NewsletterSettings,
-  documents: Document[],
+  documents: FeedDocument[],
   baseUrl: string
 ): string {
   const items = documentsToRSSItems(documents, baseUrl, writerSettings.fromName)
