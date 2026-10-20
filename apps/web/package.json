@@ -11,7 +11,9 @@
     "check-types": "tsc --noEmit",
     "postinstall": "npm run cf-typegen",
     "preview": "bun run build && vite preview",
-    "typecheck": "npm run cf-typegen && tsc -b"
+    "typecheck": "npm run cf-typegen && tsc -b",
+    "test": "bun test test",
+    "bench:build": "vite build --config bench/vite.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.1.0",
@@ -91,6 +93,7 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "agentation": "3.0.2",
+    "playwright": "1.64.1",
     "tailwindcss": "^4.1.13",
     "tw-animate-css": "^1.3.7",
     "typescript": "^5.9.2",

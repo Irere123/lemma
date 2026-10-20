@@ -10,6 +10,7 @@ vite-lfg
 **/certificates/
 **/node_modules/
 **/dist/
+**/dist-bench/
 **/.next/
 **/.vercel/
 **/.DS_Store
