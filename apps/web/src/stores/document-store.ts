@@ -1,9 +1,10 @@
-import { caseInsensitiveStringEqual } from '@/lib/utils'
 import type { Draft } from 'immer'
 import localforage from 'localforage'
 import { createStore, useStore } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+
+import { caseInsensitiveStringEqual } from '@/lib/utils'
 import {
   deleteTreeItem,
   insertTreeItem,
@@ -217,7 +218,7 @@ export const documentStore = createStore<Store>()(
       version: 1,
       storage: createJSONStorage(() => storage),
       partialize: (state) => ({
-        opendocumentIds: state.openDocumentIds,
+        openDocumentIds: state.openDocumentIds,
       }),
     }
   )
