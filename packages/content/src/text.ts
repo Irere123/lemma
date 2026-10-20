@@ -8,6 +8,12 @@ const BLOCK_TYPES = new Set([
   'listItem',
   'taskItem',
   'horizontalRule',
+  'tableCell',
+  'tableHeader',
+  'callout',
+  'footnote',
+  'blockMath',
+  'hardBreak',
 ])
 
 const WORDS_PER_MINUTE = 225
@@ -68,4 +74,22 @@ export function summarize(doc: ContentDoc | null | undefined, excerptLength = 20
     readingTime: readingTime(words),
     excerpt: excerpt(text, excerptLength),
   }
+}
+
+/**
+ * Split plain text into pieces of at most ~`size` characters on word
+ * boundaries, so a book can be indexed without any single row approaching
+ * D1's 2 MB value limit.
+ */
+export function chunkText(text: string, size = 32_000): string[] {
+  const chunks: string[] = []
+  let rest = text.trim()
+  while (rest.length > size) {
+    let cut = rest.lastIndexOf(' ', size)
+    if (cut < size * 0.5) cut = size
+    chunks.push(rest.slice(0, cut).trim())
+    rest = rest.slice(cut).trim()
+  }
+  if (rest) chunks.push(rest)
+  return chunks
 }
