@@ -5,7 +5,9 @@
 //
 // Fails when typing cost grows with document length (the Phase A failure:
 // 31 ms at 1k words, 1,000 ms at 100k), or passes an absolute ceiling. CI
-// machines vary, so the main check is the ratio between sizes.
+// machines vary, so the main check is the ratio between sizes; growth that
+// still fits in one frame at the largest size passes (on a fast machine a
+// 2 ms baseline makes a few ms look like a large ratio).
 import { createReadStream, existsSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join } from 'node:path'
@@ -18,6 +20,7 @@ const SIZES = (process.env.SIZES ?? '1000,10000,50000,100000').split(',').map(Nu
 const KEYS = Number(process.env.KEYS ?? 60)
 // Budgets (ms / ratio). The 16 ms goal is checked on real hardware, not in CI.
 const MAX_GROWTH = Number(process.env.MAX_GROWTH ?? 4) // p50 at the largest size vs the smallest
+const FRAME_MS = 16
 // INJECT_REGRESSION=1 re-creates the Phase A bug (the whole document
 // serialised on every keystroke), to show this benchmark catches it.
 const INJECT = process.env.INJECT_REGRESSION === '1'
@@ -146,8 +149,8 @@ const smallest = results[0]
 const largest = results[results.length - 1]
 const growth = largest.p50 / Math.max(smallest.p50, 1)
 check(
-  `typing cost doesn't grow with length: p50 ${smallest.words} → ${largest.words} words is ×${growth.toFixed(1)} (budget ×${MAX_GROWTH})`,
-  growth <= MAX_GROWTH,
+  `typing cost doesn't grow with length: p50 ${smallest.words} → ${largest.words} words is ×${growth.toFixed(1)}, ${largest.p50} ms (budget ×${MAX_GROWTH}, or within ${FRAME_MS} ms)`,
+  growth <= MAX_GROWTH || largest.p50 <= FRAME_MS,
   { results }
 )
 const jsGrowth = largest.jsP50 / Math.max(smallest.jsP50, 0.5)
