@@ -120,6 +120,13 @@ export const documents = createTable(
     wordCount: text('word_count'),
     // Featured flag
     isFeatured: integer('is_featured', { mode: 'boolean' }).default(false),
+    // Where the body lives: null = the legacy content/markdown/html columns
+    // above; 'room' = the document's DocumentRoom Durable Object (Yjs), with
+    // derived HTML in document_html and search text in document_search.
+    bodyStore: text('body_store'),
+    // Set the first time the post is published; the slug is frozen from then on
+    // so shared and emailed links keep working when the title changes.
+    firstPublishedAt: integer('first_published_at', { mode: 'timestamp' }),
   },
   (table) => [
     index('documents_user_id_idx').on(table.userId),
@@ -135,6 +142,52 @@ export const documents = createTable(
 export type Document = typeof documents.$inferSelect
 export type DocumentInsert = typeof documents.$inferInsert
 export type DocumentStatus = (typeof documentStatus)[number]
+
+// Published HTML, split into parts so a book never meets D1's 2 MB value
+// limit. Only published documents have rows; unpublishing deletes them.
+export const documentHtml = createTable(
+  'document_html',
+  {
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    part: integer('part').notNull(),
+    html: text('html').notNull(),
+  },
+  (table) => [unique('document_html_part_unique').on(table.documentId, table.part)]
+)
+
+// Plain-text search index, chunked like document_html and indexed by the
+// document_search_fts FTS5 table (see migration 0005). Title and subtitle are
+// repeated on every part; results are de-duplicated per document.
+export const documentSearch = createTable(
+  'document_search',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    userId: text('user_id'),
+    part: integer('part').notNull(),
+    title: text('title'),
+    subtitle: text('subtitle'),
+    body: text('body').notNull(),
+  },
+  (table) => [
+    index('document_search_document_idx').on(table.documentId),
+    index('document_search_user_idx').on(table.userId),
+  ]
+)
+
+// The pre-Yjs body columns of a document, kept verbatim when its room first
+// seeds from them, so the move is reversible.
+export const documentLegacyBodies = createTable('document_legacy_bodies', {
+  documentId: text('document_id').primaryKey(),
+  content: text('content'),
+  markdown: text('markdown'),
+  html: text('html'),
+  archivedAt: integer('archived_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+})
 
 export const categories = createTable(
   'categories',

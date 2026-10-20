@@ -5,6 +5,7 @@ import { secureHeaders } from 'hono/secure-headers'
 
 import { createDb } from './db'
 import { getCampaignById } from './db/queries/campaigns'
+import { getUserDocumentById } from './db/queries/documents'
 import { env, getRuntimeBindings } from './env-runtime'
 import { createYogaServer } from './graphql'
 import { createAuth } from './lib/auth'
@@ -18,6 +19,15 @@ import { appRouter } from './trpc/routers/_app'
 export function createApp() {
   const app = createRouter()
   const yoga = createYogaServer()
+
+  // Local dev serves uploads from /assets (see below); the web app on another
+  // port embeds them, so relax the same-origin CORP that secureHeaders sets.
+  if (env.ENV === 'local') {
+    app.use('/assets/*', async (c, next) => {
+      await next()
+      c.res.headers.set('cross-origin-resource-policy', 'cross-origin')
+    })
+  }
 
   app.use(secureHeaders())
 
@@ -127,6 +137,51 @@ export function createApp() {
 
     return namespace.getByName(campaignId).fetch(c.req.raw)
   })
+
+  // Live editing: the editor syncs a document's title, subtitle and body with
+  // its DocumentRoom over the Yjs protocol. Owner only.
+  app.get('/realtime/documents/:documentId', async (c) => {
+    if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') {
+      return c.text('Expected websocket', 426)
+    }
+
+    // Browsers attach cookies to cross-site WebSocket handshakes, so check
+    // where the page opening this socket came from.
+    const origin = c.req.header('origin')
+    const allowed = env.ALLOWED_API_ORIGINS?.split(',') ?? []
+    if (!origin || !allowed.includes(origin)) return c.text('Forbidden', 403)
+
+    const session = await createAuth().api.getSession({ headers: c.req.raw.headers })
+    if (!session?.user) return c.text('Unauthorized', 401)
+
+    const documentId = c.req.param('documentId')
+    const { db } = createDb()
+    const document = await getUserDocumentById(db, documentId, session.user.id)
+    if (!document) return c.text('Not found', 404)
+
+    const namespace = getRuntimeBindings().DOCUMENT_ROOM
+    if (!namespace) return c.text('Realtime unavailable', 503)
+
+    const stub = namespace.getByName(documentId)
+    await stub.ensure(documentId)
+    return stub.fetch(c.req.raw)
+  })
+
+  // Local dev only: serve uploads from the simulated R2 bucket (production
+  // serves them from the bucket's public domain).
+  if (env.ENV === 'local') {
+    app.get('/assets/*', async (c) => {
+      const key = c.req.path.replace(/^\/assets\//, '')
+      const object = await getRuntimeBindings().R2_BUCKET?.get?.(key)
+      if (!object) return c.notFound()
+      return new Response(object.body, {
+        headers: {
+          'content-type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+          'cache-control': 'public, max-age=31536000, immutable',
+        },
+      })
+    })
+  }
 
   app.get('/realtime/subscribers', async (c) => {
     if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') {

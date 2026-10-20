@@ -1,4 +1,3 @@
-import { renderToEmail } from '@lemma/content'
 import { render } from '@react-email/render'
 import { and, eq, inArray } from 'drizzle-orm'
 
@@ -9,6 +8,8 @@ import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings
 import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
 import { newsletterDeliveries, subscribers } from '@api/db/schema'
 import { env } from '@api/env-runtime'
+import { renderEmailHtml } from '@api/lib/documents/render'
+import { readDocumentContent } from '@api/lib/documents/room'
 import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
 import { logger } from '@api/lib/observability'
 import { generateId } from '@api/lib/utils'
@@ -133,9 +134,8 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
 
   const NewsletterTemplate = await getNewsletterTemplate()
 
-  // Render the body from the canonical Tiptap JSON; markdown is the fallback
-  // for legacy documents that predate the JSON content column.
-  const bodyHtml = document.content ? renderToEmail(document.content) : null
+  // Rendered once per batch from the document's current body.
+  const bodyHtml = renderEmailHtml(await readDocumentContent(document.id))
 
   const emails = await Promise.all(
     recipients.map(async (subscriber: any) => {
@@ -145,7 +145,7 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
             id: document.id,
             title: document.title,
             subtitle: document.subtitle,
-            markdown: document.markdown,
+            markdown: null,
             bodyHtml,
             bannerImage: document.bannerImage,
             publishedDate: document.publishedDate,

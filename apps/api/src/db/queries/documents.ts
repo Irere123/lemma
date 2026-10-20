@@ -1,59 +1,52 @@
-import { type ContentDoc, renderToHTML, summarize } from '@lemma/content'
-import { and, desc, eq, lt, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, lt, ne, or, sql } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
 import { type Document, type DocumentStatus, documentLikes, documents } from '@api/db/schema'
 import { slugifyString } from '@api/db/utils/slugify'
+import { readPublishedHtml, writeSearchIndex } from '@api/lib/documents/derived'
+import { bodyFields, hasBodyFields, openRoom } from '@api/lib/documents/room'
 import { generateId } from '@api/lib/utils'
 import type { UpsertDocumentData } from '@api/schemas'
 
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 100
 
-const normalizeMarkdown = (markdown: string) => markdown.replaceAll('\r\n', '\n').trimEnd()
-
-const resolveMarkdownForSave = (data: UpsertDocumentData): string | undefined => {
-  if (typeof data.markdown === 'string') {
-    return normalizeMarkdown(data.markdown)
-  }
-
-  if (data.markdown === null) {
-    // Database column is non-nullable in production, so treat null as empty content.
-    return ''
-  }
-
-  return undefined
+/**
+ * Everything about a document except its body. The body lives in the
+ * document's DocumentRoom (see realtime/document-room.ts); reads that need it
+ * go through the room or the derived tables (document_html, document_search).
+ */
+export const documentMetaColumns = {
+  id: documents.id,
+  slug: documents.slug,
+  title: documents.title,
+  subtitle: documents.subtitle,
+  status: documents.status,
+  userId: documents.userId,
+  excerpt: documents.excerpt,
+  contentVersion: documents.contentVersion,
+  bannerImage: documents.bannerImage,
+  scheduledDate: documents.scheduledDate,
+  publishedDate: documents.publishedDate,
+  createdAt: documents.createdAt,
+  updatedAt: documents.updatedAt,
+  metaTitle: documents.metaTitle,
+  metaDescription: documents.metaDescription,
+  metaKeywords: documents.metaKeywords,
+  canonicalUrl: documents.canonicalUrl,
+  ogImage: documents.ogImage,
+  readingTime: documents.readingTime,
+  wordCount: documents.wordCount,
+  isFeatured: documents.isFeatured,
+  bodyStore: documents.bodyStore,
+  firstPublishedAt: documents.firstPublishedAt,
 }
 
-type DerivedContent = {
-  content: ContentDoc | null
-  html: string
-  excerpt: string
-  wordCount: string
-  readingTime: string
-}
+export type DocumentMeta = Omit<Document, 'content' | 'markdown' | 'html'>
 
-// Cache everything derived from content JSON so reads never have to render.
-const deriveFromContent = (content: ContentDoc | null): DerivedContent => {
-  if (!content) {
-    return { content: null, html: '', excerpt: '', wordCount: '0', readingTime: '' }
-  }
-
-  const summary = summarize(content)
-  return {
-    content,
-    html: renderToHTML(content),
-    excerpt: summary.excerpt,
-    wordCount: String(summary.words),
-    readingTime: summary.words > 0 ? summary.readingTime : '',
-  }
-}
-
-async function ensureUniqueSlug(db: DB, base: string, excludeId?: string): Promise<string> {
+export async function ensureUniqueSlug(db: DB, base: string, excludeId?: string): Promise<string> {
   let candidate = base || 'post'
   let suffix = 0
-  // Check if exists; if so, append incremental suffix
-  // Keep attempts bounded reasonably, though realistically collisions are rare
   while (true) {
     const whereClause = excludeId
       ? and(eq(documents.slug, candidate), ne(documents.id, excludeId))
@@ -69,99 +62,98 @@ async function ensureUniqueSlug(db: DB, base: string, excludeId?: string): Promi
   }
 }
 
+/**
+ * Create or update a document for `userId`.
+ *
+ * Metadata (status, cover, dates) is written to D1 directly. Title, subtitle
+ * and body go to the document's room as a merged edit, which then refreshes
+ * D1. Body input is validated against the content schema; invalid input
+ * throws ContentValidationError before anything is written.
+ */
 export const upsertDocument = async (
   db: DB,
   data: UpsertDocumentData,
   userId: string
-): Promise<Document | undefined> => {
-  const markdownForSave = resolveMarkdownForSave(data)
+): Promise<DocumentMeta | undefined> => {
+  const fields = bodyFields(data)
 
   if (data.id) {
-    const updateValues: any = { updatedAt: new Date() }
+    const existing = await getUserDocumentById(db, data.id, userId)
+    if (!existing) return undefined
 
-    if (Object.hasOwn(data, 'title')) {
-      updateValues.title = data.title ?? null
-    }
-
-    if (Object.hasOwn(data, 'subtitle')) {
-      updateValues.subtitle = data.subtitle ?? null
-    }
-
-    if (Object.hasOwn(data, 'status')) {
-      updateValues.status = data.status
-    }
-
-    if (Object.hasOwn(data, 'bannerImage')) {
-      updateValues.bannerImage = data.bannerImage ?? null
-    }
-
-    if (Object.hasOwn(data, 'scheduledDate')) {
+    const updateValues: Partial<typeof documents.$inferInsert> = {}
+    if (Object.hasOwn(data, 'status') && data.status) updateValues.status = data.status
+    if (Object.hasOwn(data, 'bannerImage')) updateValues.bannerImage = data.bannerImage ?? null
+    if (Object.hasOwn(data, 'scheduledDate'))
       updateValues.scheduledDate = data.scheduledDate ?? null
-    }
-
-    if (Object.hasOwn(data, 'publishedDate')) {
+    if (Object.hasOwn(data, 'publishedDate'))
       updateValues.publishedDate = data.publishedDate ?? null
+    if (updateValues.status === 'PUBLISHED' && !existing.firstPublishedAt) {
+      updateValues.firstPublishedAt = new Date()
     }
 
-    if (markdownForSave !== undefined) {
-      updateValues.markdown = markdownForSave
+    const statusChanged =
+      updateValues.status !== undefined && updateValues.status !== existing.status
+    if (Object.keys(updateValues).length > 0) {
+      updateValues.updatedAt = new Date()
+      await db
+        .update(documents)
+        .set(updateValues)
+        .where(and(eq(documents.id, data.id), eq(documents.userId, userId)))
     }
 
-    if (Object.hasOwn(data, 'content')) {
-      const derived = deriveFromContent((data.content ?? null) as ContentDoc | null)
-      updateValues.content = derived.content
-      updateValues.html = derived.html
-      updateValues.excerpt = derived.excerpt
-      updateValues.wordCount = derived.wordCount
-      updateValues.readingTime = derived.readingTime
+    const room = hasBodyFields(fields) || statusChanged ? await openRoom(data.id) : null
+    // applyEdit and flushNow both re-render the published HTML for the new status.
+    if (room && hasBodyFields(fields)) await room.applyEdit(fields)
+    const published = statusChanged && updateValues.status === 'PUBLISHED'
+    // Keep each published version in the document's history.
+    if (room && (published || !hasBodyFields(fields))) {
+      await room.flushNow(published ? { revision: 'publish' } : {})
     }
 
-    if (Object.hasOwn(data, 'title')) {
-      const base = slugifyString(data.title ?? generateId())
-      const safeBase = base || generateId()
-      updateValues.slug = await ensureUniqueSlug(db, safeBase, data.id)
-    }
-
-    const [document] = await db
-      .update(documents)
-      .set(updateValues)
-      .where(and(eq(documents.id, data.id), eq(documents.userId, userId)))
-      .returning()
-    return document
+    return getUserDocumentById(db, data.id, userId)
   }
 
-  try {
-    const base = slugifyString(data.title ?? generateId())
-    const safeBase = base || generateId()
-    const slug = await ensureUniqueSlug(db, safeBase)
-    const derived = deriveFromContent((data.content ?? null) as ContentDoc | null)
+  const now = new Date()
+  const title = fields.title?.trim() || null
+  const id = generateId()
+  const slug = await ensureUniqueSlug(db, slugifyString(title ?? '') || generateId())
+  const status = data.status ?? 'DRAFT'
 
-    const [document] = await db
-      .insert(documents)
-      .values({
-        slug,
-        id: generateId(),
-        userId,
-        title: data.title ?? null,
-        subtitle: data.subtitle ?? null,
-        status: data.status ?? 'DRAFT',
-        content: derived.content,
-        markdown: markdownForSave ?? '',
-        html: derived.html,
-        excerpt: derived.excerpt,
-        wordCount: derived.wordCount,
-        readingTime: derived.readingTime,
-        bannerImage: data.bannerImage ?? null,
-        scheduledDate: data.scheduledDate ?? null,
-        publishedDate: data.publishedDate ?? null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning()
-    return document
-  } catch (error) {
-    console.log(error)
+  await db.insert(documents).values({
+    id,
+    slug,
+    userId,
+    title,
+    subtitle: fields.subtitle?.trim() || null,
+    status,
+    markdown: '',
+    bodyStore: 'room',
+    bannerImage: data.bannerImage ?? null,
+    scheduledDate: data.scheduledDate ?? null,
+    publishedDate: data.publishedDate ?? null,
+    firstPublishedAt: status === 'PUBLISHED' ? now : null,
+    wordCount: '0',
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  if (fields.content !== undefined || status === 'PUBLISHED') {
+    const room = await openRoom(id)
+    if (fields.content !== undefined) await room.applyEdit({ content: fields.content })
+    else await room.flushNow()
+  } else {
+    // Searchable by title straight away; the room re-indexes on first edit.
+    await writeSearchIndex(db, {
+      documentId: id,
+      userId,
+      title: title ?? '',
+      subtitle: fields.subtitle ?? '',
+      text: '',
+    })
   }
+
+  return getUserDocumentById(db, id, userId)
 }
 
 export const deleteDocument = async (
@@ -173,16 +165,22 @@ export const deleteDocument = async (
     .delete(documents)
     .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
     .returning({ id: documents.id })
-  return result.length > 0
+  if (result.length === 0) return false
+  try {
+    await (await openRoom(documentId)).destroy()
+  } catch (error) {
+    console.error('deleteDocument: failed to destroy room', { documentId, error: String(error) })
+  }
+  return true
 }
 
 export const getDueScheduledDocuments = async (
   db: DB,
   now: Date = new Date(),
   limit = 50
-): Promise<Document[]> => {
+): Promise<DocumentMeta[]> => {
   return db
-    .select()
+    .select(documentMetaColumns)
     .from(documents)
     .where(and(eq(documents.status, 'DRAFT'), lt(documents.scheduledDate, now)))
     .orderBy(documents.scheduledDate)
@@ -211,20 +209,7 @@ export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
   }
 
   const userDocuments = await db
-    .select({
-      id: documents.id,
-      slug: documents.slug,
-      title: documents.title,
-      subtitle: documents.subtitle,
-      status: documents.status,
-      userId: documents.userId,
-      markdown: documents.markdown,
-      bannerImage: documents.bannerImage,
-      scheduledDate: documents.scheduledDate,
-      publishedDate: documents.publishedDate,
-      createdAt: documents.createdAt,
-      updatedAt: documents.updatedAt,
-    })
+    .select(documentMetaColumns)
     .from(documents)
     .where(and(...filters))
     .orderBy(desc(documents.publishedDate))
@@ -233,38 +218,46 @@ export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
   return userDocuments
 }
 
-export const getDocumentById = async (db: DB, id: string) => {
-  return db.query.documents.findFirst({
-    where: (table, { eq }) => eq(table.id, id),
-  })
+// Internal lookup (no ownership check) — never expose directly to clients.
+export const getDocumentById = async (db: DB, id: string): Promise<DocumentMeta | undefined> => {
+  const [row] = await db
+    .select(documentMetaColumns)
+    .from(documents)
+    .where(eq(documents.id, id))
+    .limit(1)
+  return row
 }
 
 /**
  * Batch-load documents by id (avoids the GraphQL N+1 when resolving
  * `Campaign.document` across a list of campaigns).
  */
-export const getDocumentsByIds = async (db: DB, ids: string[]): Promise<Map<string, Document>> => {
+export const getDocumentsByIds = async (
+  db: DB,
+  ids: string[]
+): Promise<Map<string, DocumentMeta>> => {
   if (ids.length === 0) return new Map()
 
-  const rows = await db.query.documents.findMany({
-    where: (table, { inArray }) => inArray(table.id, ids),
-  })
+  const rows = await db
+    .select(documentMetaColumns)
+    .from(documents)
+    .where(inArray(documents.id, ids))
 
   return new Map(rows.map((doc) => [doc.id, doc]))
 }
 
 // User-scoped fetch: only returns the document if it belongs to the caller.
-export const getUserDocumentById = async (db: DB, id: string, userId: string) => {
-  return db.query.documents.findFirst({
-    where: (table, { and: andOp, eq: eqOp }) =>
-      andOp(eqOp(table.id, id), eqOp(table.userId, userId)),
-  })
-}
-
-export const getDocumentBySlug = async (db: DB, slug: string) => {
-  return db.query.documents.findFirst({
-    where: (table, { eq }) => eq(table.slug, slug),
-  })
+export const getUserDocumentById = async (
+  db: DB,
+  id: string,
+  userId: string
+): Promise<DocumentMeta | undefined> => {
+  const [row] = await db
+    .select(documentMetaColumns)
+    .from(documents)
+    .where(and(eq(documents.id, id), eq(documents.userId, userId)))
+    .limit(1)
+  return row
 }
 
 export const updateDocumentBannerImage = async (
@@ -277,7 +270,7 @@ export const updateDocumentBannerImage = async (
     .update(documents)
     .set({ bannerImage, updatedAt: new Date() })
     .where(and(eq(documents.id, id), eq(documents.userId, userId)))
-    .returning()
+    .returning(documentMetaColumns)
 
   return document
 }
@@ -290,10 +283,10 @@ type PublishedArticlesOptions = {
   sort?: 'latest' | 'popular'
 }
 
-// List rows omit heavy body fields (markdown/content/html) and contentVersion.
+// List rows omit the body and internal bookkeeping columns.
 export type PublishedArticle = Omit<
-  Document,
-  'markdown' | 'content' | 'html' | 'contentVersion'
+  DocumentMeta,
+  'contentVersion' | 'bodyStore' | 'firstPublishedAt'
 > & { likeCount: number }
 
 export const getPublishedArticles = async (
@@ -351,23 +344,41 @@ export const getPublishedArticles = async (
 export const getPublishedDocumentById = async (
   db: DB,
   id: string
-): Promise<Document | undefined> => {
-  return db.query.documents.findFirst({
-    where: (table, { and: andOp, eq: eqOp }) =>
-      andOp(eqOp(table.id, id), eqOp(table.status, 'PUBLISHED')),
-  })
+): Promise<DocumentMeta | undefined> => {
+  const [row] = await db
+    .select(documentMetaColumns)
+    .from(documents)
+    .where(and(eq(documents.id, id), eq(documents.status, 'PUBLISHED')))
+    .limit(1)
+  return row
 }
 
+export type PublishedDocument = DocumentMeta & { html: string }
+
+/**
+ * A published post with its rendered HTML. Matches by slug, falling back to
+ * the id for legacy links. If the HTML was never rendered (a legacy post whose
+ * room hasn't seeded yet), the room renders it now.
+ */
 export const getPublishedArticleBySlug = async (
   db: DB,
   slug: string
-): Promise<Document | undefined> => {
-  // Prefer matching by slug; fallback to ID for legacy posts without slugs
-  const article = await db.query.documents.findFirst({
-    where: (table, { and, eq, or }) =>
-      and(or(eq(table.slug, slug), eq(table.id, slug)), eq(table.status, 'PUBLISHED')),
-  })
-  return article
+): Promise<PublishedDocument | undefined> => {
+  const [article] = await db
+    .select(documentMetaColumns)
+    .from(documents)
+    .where(
+      and(or(eq(documents.slug, slug), eq(documents.id, slug)), eq(documents.status, 'PUBLISHED'))
+    )
+    .limit(1)
+  if (!article) return undefined
+
+  let html = await readPublishedHtml(db, article.id)
+  if (html === null) {
+    await (await openRoom(article.id)).flushNow()
+    html = (await readPublishedHtml(db, article.id)) ?? ''
+  }
+  return { ...article, html }
 }
 
 // Filter by type and status
@@ -380,7 +391,7 @@ export const getDocumentsByTypeAndStatus = async (
   db: DB,
   data: GetDocumentsByTypeAndStatusData,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Omit<Document, 'markdown' | 'content' | 'html' | 'contentVersion'>[]> => {
+): Promise<Omit<PublishedArticle, 'likeCount'>[]> => {
   const safeLimit = Math.min(limit, MAX_PAGE_SIZE)
 
   const results = await db
@@ -436,12 +447,11 @@ const toFtsMatch = (raw: string): string | null => {
 }
 
 /**
- * Full-text search across the user's documents (title, subtitle, body) using
- * the `documents_fts` FTS5 index. Results are ranked by BM25 with the title
- * weighted highest, and include a highlighted title and a body snippet so the
- * UI can show *why* each result matched. `char(2)`/`char(3)` are used as the
- * highlight markers — control characters that never occur in real content, so
- * the client can split on them without any risk of HTML injection.
+ * Full-text search across the user's documents using the chunked
+ * `document_search_fts` index (BM25, title weighted highest). Each document
+ * appears once, with the snippet from its best-matching chunk. `char(2)` /
+ * `char(3)` mark highlights — control characters that never occur in real
+ * content, so the client can split on them without any risk of HTML injection.
  */
 export const searchUserDocuments = async (
   db: DB,
@@ -458,26 +468,35 @@ export const searchUserDocuments = async (
     snippet: string | null
   }>(sql`
     SELECT
-      d.id AS id,
+      s.document_id AS id,
       d.title AS title,
       d.subtitle AS subtitle,
-      highlight(documents_fts, 0, char(2), char(3)) AS title_hl,
-      snippet(documents_fts, 2, char(2), char(3), '…', 10) AS snippet
-    FROM documents_fts
-    JOIN documents d ON d.rowid = documents_fts.rowid
-    WHERE documents_fts MATCH ${match}
-      AND d.user_id = ${userId}
-    ORDER BY bm25(documents_fts, 10.0, 5.0, 1.0)
-    LIMIT ${limit}
+      highlight(document_search_fts, 0, char(2), char(3)) AS title_hl,
+      snippet(document_search_fts, 2, char(2), char(3), '…', 10) AS snippet
+    FROM document_search_fts
+    JOIN document_search s ON s.id = document_search_fts.rowid
+    JOIN documents d ON d.id = s.document_id
+    WHERE document_search_fts MATCH ${match}
+      AND s.user_id = ${userId}
+    ORDER BY bm25(document_search_fts, 10.0, 5.0, 1.0)
+    LIMIT ${limit * 4}
   `)
 
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    subtitle: row.subtitle,
-    titleHighlighted: row.title_hl,
-    // Only surface the body snippet when it actually contains a highlighted
-    // match; otherwise it's just the start of the body and adds noise.
-    snippet: row.snippet?.includes('\u0002') ? row.snippet : null,
-  }))
+  const seen = new Set<string>()
+  const results: DocumentSearchResult[] = []
+  for (const row of rows) {
+    if (seen.has(row.id)) continue
+    seen.add(row.id)
+    results.push({
+      id: row.id,
+      title: row.title,
+      subtitle: row.subtitle,
+      titleHighlighted: row.title_hl,
+      // Only surface the body snippet when it actually contains a highlighted
+      // match; otherwise it's just the start of the chunk and adds noise.
+      snippet: row.snippet?.includes('\u0002') ? row.snippet : null,
+    })
+    if (results.length >= limit) break
+  }
+  return results
 }

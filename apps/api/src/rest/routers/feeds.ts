@@ -4,6 +4,7 @@ import { getDocumentsByCategory } from '@api/db/queries/categories'
 import { getPublishedArticles } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
 import { env } from '@api/env-runtime'
+import { withFeedHtml } from '@api/lib/documents/derived'
 import {
   documentsToRSSItems,
   generateBlogAtomFeed,
@@ -45,7 +46,7 @@ feedsRouter.openapi(
     const writerId = query.writerId
 
     const [articles, writerSettings] = await Promise.all([
-      getPublishedArticles(db, { writerId, limit }),
+      getPublishedArticles(db, { writerId, limit }).then((rows) => withFeedHtml(db, rows)),
       getWriterNewsletterSettings(db, writerId),
     ])
 
@@ -53,7 +54,7 @@ feedsRouter.openapi(
       return c.text('Newsletter settings not configured', 404)
     }
 
-    const rss = generateBlogRSSFeed(writerSettings, articles as any, env.FRONTEND_URL)
+    const rss = generateBlogRSSFeed(writerSettings, articles, env.FRONTEND_URL)
 
     return c.text(rss, 200, {
       'Content-Type': 'application/rss+xml; charset=utf-8',
@@ -93,7 +94,7 @@ feedsRouter.openapi(
     const writerId = query.writerId
 
     const [articles, writerSettings] = await Promise.all([
-      getPublishedArticles(db, { writerId, limit }),
+      getPublishedArticles(db, { writerId, limit }).then((rows) => withFeedHtml(db, rows)),
       getWriterNewsletterSettings(db, writerId),
     ])
 
@@ -101,7 +102,7 @@ feedsRouter.openapi(
       return c.text('Newsletter settings not configured', 404)
     }
 
-    const atom = generateBlogAtomFeed(writerSettings, articles as any, env.FRONTEND_URL)
+    const atom = generateBlogAtomFeed(writerSettings, articles, env.FRONTEND_URL)
 
     return c.text(atom, 200, {
       'Content-Type': 'application/atom+xml; charset=utf-8',
@@ -206,7 +207,7 @@ feedsRouter.openapi(
     const writerId = query.writerId
 
     const [articles, writerSettings] = await Promise.all([
-      getPublishedArticles(db, { writerId, limit }),
+      getPublishedArticles(db, { writerId, limit }).then((rows) => withFeedHtml(db, rows)),
       getWriterNewsletterSettings(db, writerId),
     ])
 
@@ -225,7 +226,7 @@ feedsRouter.openapi(
         url: `${env.FRONTEND_URL}/posts/${doc.slug || doc.id}`,
         title: doc.title || 'Untitled',
         content_text: doc.subtitle || doc.metaDescription || '',
-        content_html: doc.markdown || undefined,
+        content_html: doc.html || undefined,
         summary: doc.subtitle || doc.metaDescription || undefined,
         image: doc.bannerImage || doc.ogImage || undefined,
         date_published: (doc.publishedDate || doc.createdAt)?.toISOString(),

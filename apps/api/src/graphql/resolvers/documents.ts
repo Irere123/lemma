@@ -1,3 +1,4 @@
+import { renderToMarkdown } from '@lemma/content'
 import { and, eq, sql } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
@@ -10,7 +11,9 @@ import {
   updateDocumentBannerImage,
   upsertDocument,
 } from '@api/db/queries'
-import { type Document, type DocumentStatus, documents } from '@api/db/schema'
+import type { DocumentMeta } from '@api/db/queries/documents'
+import { type DocumentStatus, documents } from '@api/db/schema'
+import { ContentValidationError, readDocumentContent } from '@api/lib/documents/room'
 import type { GraphQLContext } from '../context'
 import { requireAuth, requireScope } from '../context'
 import {
@@ -46,6 +49,22 @@ type UpdateDocumentInput = {
   bannerImage?: string | null
   scheduledDate?: Date | null
   publishedDate?: Date | null
+}
+
+type Document = DocumentMeta
+
+// Body input that doesn't fit the content schema is the caller's mistake.
+async function upsertOrReject(...args: Parameters<typeof upsertDocument>) {
+  try {
+    return await upsertDocument(...args)
+  } catch (error) {
+    if (error instanceof ContentValidationError) {
+      throw new GraphQLError(error.message, {
+        extensions: { code: 'BAD_USER_INPUT', problems: error.problems },
+      })
+    }
+    throw error
+  }
 }
 
 async function getDocumentsTotalCount(
@@ -150,12 +169,11 @@ export const documentResolvers = {
     },
 
     node: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
-      // Try to find document first
+      // Published posts are public; drafts only resolve for their owner.
       const doc = await getDocumentById(context.db, args.id)
-      if (doc) {
-        return { ...doc, __typename: 'Document' }
-      }
-      return null
+      if (!doc) return null
+      if (doc.status !== 'PUBLISHED' && doc.userId !== context.session?.user.id) return null
+      return { ...doc, __typename: 'Document' }
     },
   },
 
@@ -173,7 +191,7 @@ export const documentResolvers = {
         ...args.input,
         status: args.input.status ?? ('DRAFT' as const),
       }
-      const doc = await upsertDocument(db, input, session!.user.id)
+      const doc = await upsertOrReject(db, input, session!.user.id)
 
       if (!doc) {
         throw new GraphQLError('Failed to create document', {
@@ -205,7 +223,7 @@ export const documentResolvers = {
         ...args.input,
         status: args.input.status ?? existing.status ?? ('DRAFT' as const),
       }
-      const doc = await upsertDocument(db, input, session!.user.id)
+      const doc = await upsertOrReject(db, input, session!.user.id)
 
       if (!doc) {
         throw new GraphQLError('Failed to update document', {
@@ -260,6 +278,8 @@ export const documentResolvers = {
   },
 
   Document: {
-    // Field resolvers can be added here if needed
+    // The body is fetched only when asked for. Parent resolvers have already
+    // checked the caller may see this document (owner, or published).
+    markdown: async (doc: Document) => renderToMarkdown(await readDocumentContent(doc.id)),
   },
 }

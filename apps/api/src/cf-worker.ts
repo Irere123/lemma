@@ -15,6 +15,7 @@ import {
 // Durable Object classes must be exported from the Worker entry so the runtime
 // can instantiate them for the `durable_objects` bindings in wrangler.jsonc.
 export { CampaignProgress } from './realtime/campaign-progress'
+export { DocumentRoom } from './realtime/document-room'
 export { WriterStats } from './realtime/writer-stats'
 
 type ExecutionContextLike = {

@@ -62,6 +62,10 @@
           {
             "name": "WRITER_STATS",
             "class_name": "WriterStats"
+          },
+          {
+            "name": "DOCUMENT_ROOM",
+            "class_name": "DocumentRoom"
           }
         ]
       },
@@ -69,6 +73,10 @@
         {
           "tag": "v1",
           "new_sqlite_classes": ["CampaignProgress", "WriterStats"]
+        },
+        {
+          "tag": "v2",
+          "new_sqlite_classes": ["DocumentRoom"]
         }
       ],
       "queues": {
@@ -176,6 +184,10 @@
           {
             "name": "WRITER_STATS",
             "class_name": "WriterStats"
+          },
+          {
+            "name": "DOCUMENT_ROOM",
+            "class_name": "DocumentRoom"
           }
         ]
       },
@@ -183,6 +195,10 @@
         {
           "tag": "v1",
           "new_sqlite_classes": ["CampaignProgress", "WriterStats"]
+        },
+        {
+          "tag": "v2",
+          "new_sqlite_classes": ["DocumentRoom"]
         }
       ],
       "queues": {
