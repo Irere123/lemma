@@ -1,15 +1,17 @@
-import type { JSONContent } from '@lemma/headless'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useDebouncedCallback } from 'use-debounce'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import type * as Y from 'yjs'
 
-import AdvancedEditor, { type WriterEditorUpdate } from '@/components/editor'
+import AdvancedEditor from '@/components/editor'
 import { BackNavigationButton } from '@/components/navigation/back-navigation-button'
+import { DocumentEditorSkeleton } from '@/components/skeletons/document-editor-skeleton'
 import { Button } from '@/components/ui/button'
 import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
 import { getSession } from '@/lib/auth.server'
+import { useDocumentSync, useSyncState, useYText } from '@/lib/collab/hooks'
 import { buildSeoHead } from '@/lib/seo'
 import { useDocumentStore } from '@/stores/document-store'
 import { useTRPC } from '@/trpc/client'
@@ -33,16 +35,6 @@ export const Route = createFileRoute('/write/$docId')({
   component: RouteComponent,
 })
 
-type DraftState = {
-  bannerImage: string | null
-  content: JSONContent | null
-  markdown: string
-  publishedDate: Date | null
-  status: 'DRAFT' | 'PUBLISHED'
-  subtitle: string
-  title: string
-}
-
 type DateValue = Date | string | null | undefined
 
 const normalizeDateValue = (value: DateValue): Date | null => {
@@ -52,329 +44,197 @@ const normalizeDateValue = (value: DateValue): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-const areNullableDatesEqual = (first: Date | null, second: Date | null) =>
-  (first?.getTime() ?? null) === (second?.getTime() ?? null)
-
 function RouteComponent() {
   const { docId } = Route.useParams()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
-  const upsertDocumentInStore = useDocumentStore((state) => state.upsertDocument)
-  const fallbackDocument = useDocumentStore((state) => state.documents[docId])
-
+  // Metadata only; the title, subtitle and body sync through `sync`.
   const documentQueryOptions = trpc.documents.getDocumentById.queryOptions({ id: docId })
-  const { data: fetchedDocument, isLoading } = useQuery(documentQueryOptions)
-  const document = fetchedDocument ?? fallbackDocument
+  const { data: document, isLoading } = useQuery(documentQueryOptions)
+  const sync = useDocumentSync(docId)
+  const ready = useSyncState(sync, (state) => state.ready)
+  const closed = useSyncState(sync, (state) => state.closed)
+  const offline = useSyncState(sync, (state) => state.save === 'offline')
+  const outdated = useSyncState(sync, (state) => state.outdated)
 
-  const [title, setTitle] = useState('')
-  const [subtitle, setSubtitle] = useState('')
   const [bannerImage, setBannerImage] = useState<string | null>(null)
   const [publishedDate, setPublishedDate] = useState<Date | null>(null)
   const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT')
   const [isBannerUploading, setIsBannerUploading] = useState(false)
-  const [saveStatus, setSaveStatus] = useState('Saved')
 
-  const hydratedDocumentRef = useRef<string | null>(null)
-  const draftRef = useRef<DraftState>({
-    title: '',
-    subtitle: '',
-    bannerImage: null,
-    content: null,
-    markdown: '',
-    publishedDate: null,
-    status: 'DRAFT',
-  })
+  useEffect(() => {
+    if (!document) return
+    setBannerImage(document.bannerImage ?? null)
+    setPublishedDate(normalizeDateValue(document.publishedDate))
+    setStatus(document.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT')
+  }, [document])
+
+  useEffect(
+    () => () => {
+      void queryClient.invalidateQueries({
+        queryKey: trpc.documents.getUserDocuments.queryOptions({}).queryKey,
+      })
+    },
+    [queryClient, trpc.documents.getUserDocuments]
+  )
+
+  // Saving is continuous; keep ⌘S from opening the browser's "Save page".
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault()
+        toast('Lemma saves as you type.', { id: 'autosave-hint' })
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const { mutateAsync: upsertDocument, isPending: isUpsertLoading } = useMutation(
     trpc.documents.upsertDocument.mutationOptions()
   )
 
-  const persistDocument = useCallback(
-    async (patch?: Record<string, unknown>) => {
-      const payload = {
-        id: docId,
-        title: draftRef.current.title.trim() || null,
-        subtitle: draftRef.current.subtitle.trim() || null,
-        bannerImage: draftRef.current.bannerImage,
-        content: draftRef.current.content,
-        markdown: draftRef.current.markdown,
-        publishedDate: draftRef.current.publishedDate,
-        status: draftRef.current.status,
-        ...patch,
-      }
-
-      const updatedDocument = await upsertDocument(payload as any)
-      if (updatedDocument) {
-        upsertDocumentInStore(updatedDocument as any)
-        queryClient.setQueryData(documentQueryOptions.queryKey, updatedDocument)
-        await queryClient.invalidateQueries({
-          queryKey: trpc.documents.getUserDocuments.queryOptions({}).queryKey,
-        })
-      }
-
-      return updatedDocument
-    },
-    [
-      docId,
-      documentQueryOptions.queryKey,
-      queryClient,
-      trpc.documents.getUserDocuments,
-      upsertDocument,
-      upsertDocumentInStore,
-    ]
-  )
-
-  const persistDocumentDebounced = useDebouncedCallback(async () => {
-    setSaveStatus('Saving...')
-    try {
-      await persistDocument()
-      setSaveStatus('Saved')
-    } catch (error) {
-      console.error(error)
-      setSaveStatus('Save failed')
-    }
-  }, 900)
-
-  const queueDraftUpdate = (patch: Partial<DraftState>) => {
-    let changed = false
-
-    for (const [key, value] of Object.entries(patch)) {
-      const typedKey = key as keyof DraftState
-
-      if (typedKey === 'publishedDate') {
-        const nextDate = value as DraftState['publishedDate']
-        if (!areNullableDatesEqual(draftRef.current.publishedDate, nextDate)) {
-          changed = true
-          break
-        }
-        continue
-      }
-
-      if (!Object.is(draftRef.current[typedKey], value)) {
-        changed = true
-        break
-      }
-    }
-
-    if (!changed) return
-
-    draftRef.current = { ...draftRef.current, ...patch }
-    setSaveStatus('Unsaved')
-    persistDocumentDebounced()
-  }
-
-  const persistDocumentNow = useCallback(
-    async (patch?: Record<string, unknown>) => {
-      persistDocumentDebounced.cancel()
-      setSaveStatus('Saving...')
+  // Publishing, the cover and the date are explicit actions: online only, and
+  // they fail visibly instead of queueing.
+  const updateMetadata = useCallback(
+    async (patch: {
+      bannerImage?: string | null
+      publishedDate?: Date | null
+      status?: 'DRAFT' | 'PUBLISHED'
+    }) => {
       try {
-        await persistDocument(patch)
-        setSaveStatus('Saved')
+        const updated = await upsertDocument({ id: docId, ...patch })
+        if (updated) queryClient.setQueryData(documentQueryOptions.queryKey, updated)
         return true
       } catch (error) {
         console.error(error)
-        setSaveStatus('Save failed')
+        toast.error(error instanceof Error ? error.message : 'Could not update the document.')
         return false
       }
     },
-    [persistDocument, persistDocumentDebounced]
+    [docId, documentQueryOptions.queryKey, queryClient, upsertDocument]
   )
-
-  useEffect(() => {
-    if (!document) return
-    const source = fetchedDocument ? 'server' : 'store'
-    const hydrationKey = `${docId}:${source}`
-
-    if (hydratedDocumentRef.current === hydrationKey) return
-
-    // Never replace server data with fallback store data for the same document.
-    if (source === 'store' && hydratedDocumentRef.current === `${docId}:server`) return
-
-    hydratedDocumentRef.current = hydrationKey
-
-    const nextTitle = document.title ?? ''
-    const nextSubtitle = document.subtitle ?? ''
-    const nextBannerImage = document.bannerImage ?? null
-    const nextPublishedDate = normalizeDateValue(document.publishedDate)
-    const nextStatus = document.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
-    const nextMarkdown =
-      typeof document.markdown === 'string' ? document.markdown : draftRef.current.markdown
-    const nextContent =
-      (document as { content?: JSONContent | null }).content ?? draftRef.current.content
-
-    setTitle(nextTitle)
-    setSubtitle(nextSubtitle)
-    setBannerImage(nextBannerImage)
-    setPublishedDate(nextPublishedDate)
-    setStatus(nextStatus)
-    setSaveStatus('Saved')
-
-    draftRef.current = {
-      title: nextTitle,
-      subtitle: nextSubtitle,
-      bannerImage: nextBannerImage,
-      content: nextContent,
-      publishedDate: nextPublishedDate,
-      status: nextStatus,
-      markdown: nextMarkdown,
-    }
-  }, [docId, document, fetchedDocument])
-
-  useEffect(
-    () => () => {
-      persistDocumentDebounced.flush()
-    },
-    [persistDocumentDebounced]
-  )
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const isSaveShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's'
-      if (!isSaveShortcut) return
-
-      event.preventDefault()
-      void persistDocumentNow()
-    }
-
-    const onBeforeUnload = () => {
-      persistDocumentDebounced.flush()
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('beforeunload', onBeforeUnload)
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('beforeunload', onBeforeUnload)
-    }
-  }, [persistDocumentDebounced, persistDocumentNow])
 
   const handleBannerImageSelect = useCallback(
     async (file: File) => {
       if (!file.type.startsWith('image/')) {
-        setSaveStatus('Save failed')
+        toast.error('The cover must be an image.')
         return
       }
 
-      const previousBannerImage = draftRef.current.bannerImage
-      let uploadedImageUrl: null | string = null
-
+      const previous = bannerImage
       setIsBannerUploading(true)
-      setSaveStatus('Saving...')
       try {
         const uploaded = await uploadFile(file)
-        const nextBannerImage = uploaded.url
-        uploadedImageUrl = nextBannerImage
-
-        setBannerImage(nextBannerImage)
-        draftRef.current = { ...draftRef.current, bannerImage: nextBannerImage }
-        const didPersist = await persistDocumentNow({ bannerImage: nextBannerImage })
-
-        if (!didPersist) {
-          setBannerImage(previousBannerImage)
-          draftRef.current = { ...draftRef.current, bannerImage: previousBannerImage }
-
-          if (uploadedImageUrl) {
-            try {
-              await deleteUploadedFile({ fileUrl: uploadedImageUrl })
-            } catch (cleanupError) {
-              console.error(
-                'Failed to cleanup uploaded cover image after save failure',
-                cleanupError
-              )
-            }
-          }
+        setBannerImage(uploaded.url)
+        if (!(await updateMetadata({ bannerImage: uploaded.url }))) {
+          setBannerImage(previous)
+          await deleteUploadedFile({ fileUrl: uploaded.url }).catch(() => {})
           return
         }
-
-        if (previousBannerImage && previousBannerImage !== nextBannerImage) {
-          try {
-            await deleteUploadedFile({ fileUrl: previousBannerImage })
-          } catch (cleanupError) {
-            console.error('Failed to delete previous cover image', cleanupError)
-          }
+        if (previous && previous !== uploaded.url) {
+          await deleteUploadedFile({ fileUrl: previous }).catch(() => {})
         }
       } catch (error) {
         console.error(error)
-        setSaveStatus('Save failed')
+        toast.error('Could not upload the cover image.')
       } finally {
         setIsBannerUploading(false)
       }
     },
-    [persistDocumentNow]
+    [bannerImage, updateMetadata]
   )
 
   const handleBannerImageRemove = useCallback(async () => {
-    const previousBannerImage = draftRef.current.bannerImage
-
+    const previous = bannerImage
     setBannerImage(null)
-    draftRef.current = { ...draftRef.current, bannerImage: null }
-
-    const didPersist = await persistDocumentNow({ bannerImage: null })
-    if (!didPersist) {
-      setBannerImage(previousBannerImage)
-      draftRef.current = { ...draftRef.current, bannerImage: previousBannerImage }
+    if (!(await updateMetadata({ bannerImage: null }))) {
+      setBannerImage(previous)
       return
     }
+    if (previous) await deleteUploadedFile({ fileUrl: previous }).catch(() => {})
+  }, [bannerImage, updateMetadata])
 
-    if (!previousBannerImage) return
-
-    try {
-      await deleteUploadedFile({ fileUrl: previousBannerImage })
-    } catch (cleanupError) {
-      console.error('Failed to delete removed cover image', cleanupError)
-    }
-  }, [persistDocumentNow])
+  const handlePublishedDateChange = useCallback(
+    async (value: Date | null) => {
+      const previous = publishedDate
+      setPublishedDate(value)
+      if (!(await updateMetadata({ publishedDate: value }))) setPublishedDate(previous)
+    },
+    [publishedDate, updateMetadata]
+  )
 
   const handleStatusChange = useCallback(
     async (nextStatus: 'DRAFT' | 'PUBLISHED') => {
-      const previousStatus = draftRef.current.status
-      const previousPublishedDate = draftRef.current.publishedDate
       const nextPublishedDate =
-        nextStatus === 'PUBLISHED'
-          ? (draftRef.current.publishedDate ?? new Date())
-          : draftRef.current.publishedDate
-
+        nextStatus === 'PUBLISHED' ? (publishedDate ?? new Date()) : publishedDate
+      const ok = await updateMetadata({ status: nextStatus, publishedDate: nextPublishedDate })
+      if (!ok) return
       setStatus(nextStatus)
       setPublishedDate(nextPublishedDate)
-      draftRef.current = {
-        ...draftRef.current,
-        status: nextStatus,
-        publishedDate: nextPublishedDate,
-      }
-
-      const didPersist = await persistDocumentNow({
-        status: nextStatus,
-        publishedDate: nextPublishedDate,
-      })
-
-      if (!didPersist) {
-        setStatus(previousStatus)
-        setPublishedDate(previousPublishedDate)
-        draftRef.current = {
-          ...draftRef.current,
-          status: previousStatus,
-          publishedDate: previousPublishedDate,
-        }
-        return
-      }
-
-      if (nextStatus === 'PUBLISHED') {
-        setSaveStatus('Published')
-        return
-      }
-
-      setSaveStatus('Unpublished')
+      toast.success(nextStatus === 'PUBLISHED' ? 'Published' : 'Unpublished')
     },
-    [persistDocumentNow]
+    [publishedDate, updateMetadata]
   )
+
+  const handleExportMarkdown = useCallback(async () => {
+    try {
+      const result = await queryClient.fetchQuery(
+        trpc.documents.getMarkdown.queryOptions({ id: docId }, { staleTime: 0 })
+      )
+      const blob = new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const anchor = window.document.createElement('a')
+      anchor.href = url
+      anchor.download = `${(result.title || 'untitled').replace(/[^\w\- ]+/g, '').trim() || 'untitled'}.md`
+      anchor.click()
+      URL.revokeObjectURL(url)
+      // Trailing spaces aren't worth a word; everything else Markdown dropped is.
+      const lost = result.losses
+        .filter((loss) => loss.feature !== 'trailingSpace')
+        .map((loss) => `${loss.description.replace(/\s*\(.*\)$/, '')} (${loss.count})`)
+      if (lost.length > 0) {
+        toast.info(
+          `Exported. Markdown can't hold everything here, so this was left out: ${lost.join(', ')}.`,
+          {
+            duration: 10_000,
+          }
+        )
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Could not export this document.')
+    }
+  }, [docId, queryClient, trpc.documents.getMarkdown])
+
+  const onBannerImageRemove = useCallback(() => {
+    void handleBannerImageRemove()
+  }, [handleBannerImageRemove])
+  const onPublishedDateChange = useCallback(
+    (value: Date | null) => {
+      void handlePublishedDateChange(value)
+    },
+    [handlePublishedDateChange]
+  )
+  const onExportMarkdown = useCallback(() => {
+    void handleExportMarkdown()
+  }, [handleExportMarkdown])
+  const onPublish = useCallback(() => {
+    void handleStatusChange('PUBLISHED')
+  }, [handleStatusChange])
+  const onUnpublish = useCallback(() => {
+    void handleStatusChange('DRAFT')
+  }, [handleStatusChange])
+  const { user } = Route.useRouteContext()
+  const username = (user as { username?: string | null } | undefined)?.username
+  const viewUrl =
+    status === 'PUBLISHED' && username && document?.slug ? `/u/${username}/${document.slug}` : null
 
   if (isLoading && !document) {
     return (
       <WriteRoomShell>
-        <div className='mx-auto w-full max-w-[900px] px-4 py-10 text-sm md:px-6'>
-          Loading draft...
-        </div>
+        <DocumentEditorSkeleton />
       </WriteRoomShell>
     )
   }
@@ -382,8 +242,8 @@ function RouteComponent() {
   if (!document) {
     return (
       <WriteRoomShell>
-        <div className='mx-auto flex w-full max-w-[900px] flex-col gap-4 px-4 py-10 md:px-6'>
-          <p className='text-sm text-muted-foreground'>Document not found.</p>
+        <div className='writer-column flex flex-col gap-4 py-16'>
+          <p className='text-muted-foreground text-sm'>Document not found.</p>
           <Link to='/app' className='text-sm font-medium underline underline-offset-4'>
             Return to documents
           </Link>
@@ -392,98 +252,86 @@ function RouteComponent() {
     )
   }
 
-  const editorKey = `${docId}:${fetchedDocument ? 'server' : 'store'}`
-  // Prefer canonical JSON; fall back to legacy markdown (editor upgrades it on save).
-  const documentContent = (document as { content?: JSONContent | null }).content ?? null
-  const editorInitialContent: JSONContent | string =
-    documentContent ?? (typeof document.markdown === 'string' ? document.markdown : '')
+  if (sync && ready) {
+    return (
+      <>
+        <SidebarTitle docId={docId} title={sync.title} />
+        {outdated ? <OutdatedBanner /> : null}
+        <AdvancedEditor
+          key={docId}
+          sync={sync}
+          disabled={closed || outdated}
+          status={status}
+          isStatusUpdating={isUpsertLoading}
+          viewUrl={viewUrl}
+          onPublish={onPublish}
+          onUnpublish={onUnpublish}
+          bannerImage={bannerImage}
+          publishedDate={publishedDate}
+          isBannerUploading={isBannerUploading}
+          onBannerImageSelect={handleBannerImageSelect}
+          onBannerImageRemove={onBannerImageRemove}
+          onPublishedDateChange={onPublishedDateChange}
+          onExportMarkdown={onExportMarkdown}
+        />
+      </>
+    )
+  }
 
   return (
-    <WriteRoomShell
-      isStatusUpdating={isUpsertLoading}
-      status={status}
-      onStatusChange={(value) => {
-        void handleStatusChange(value)
-      }}
-    >
-      <AdvancedEditor
-        key={editorKey}
-        className='pt-4'
-        initialContent={editorInitialContent}
-        title={title}
-        subtitle={subtitle}
-        bannerImage={bannerImage}
-        publishedDate={publishedDate}
-        isBannerUploading={isBannerUploading}
-        saveStatus={isUpsertLoading ? 'Saving...' : saveStatus}
-        onBannerImageSelect={handleBannerImageSelect}
-        onBannerImageRemove={() => {
-          void handleBannerImageRemove()
-        }}
-        onTitleChange={(value) => {
-          setTitle(value)
-          queueDraftUpdate({ title: value })
-        }}
-        onSubtitleChange={(value) => {
-          setSubtitle(value)
-          queueDraftUpdate({ subtitle: value })
-        }}
-        onPublishedDateChange={(value) => {
-          setPublishedDate(value)
-          queueDraftUpdate({ publishedDate: value })
-        }}
-        onContentChange={(value: WriterEditorUpdate) => {
-          const markdown = value.markdown
-          const content = value.json
-
-          if (!hydratedDocumentRef.current) {
-            draftRef.current = {
-              ...draftRef.current,
-              content,
-              markdown,
-            }
-            return
-          }
-
-          queueDraftUpdate({
-            content,
-            markdown,
-          })
-        }}
-      />
+    <WriteRoomShell>
+      {outdated ? <OutdatedBanner /> : null}
+      {offline ? (
+        <div className='writer-column py-16 text-muted-foreground text-sm'>
+          You're offline, and this document hasn't been opened on this device before. It will open
+          as soon as you're back online.
+        </div>
+      ) : (
+        <DocumentEditorSkeleton />
+      )}
     </WriteRoomShell>
   )
 }
 
-function WriteRoomShell({
-  children,
-  isStatusUpdating = false,
-  onStatusChange,
-  status,
-}: {
-  children: ReactNode
-  isStatusUpdating?: boolean
-  onStatusChange?: (value: 'DRAFT' | 'PUBLISHED') => void
-  status?: 'DRAFT' | 'PUBLISHED'
-}) {
-  const isPublished = status === 'PUBLISHED'
+/**
+ * Keeps the sidebar's title in step with the synced title. Its own component
+ * so title keystrokes re-render only this, not the editor.
+ */
+function SidebarTitle({ docId, title: text }: { docId: string; title: Y.Text }) {
+  const updateDocumentInStore = useDocumentStore((state) => state.updateDocument)
+  const [title] = useYText(text)
+  useEffect(() => {
+    const timer = setTimeout(() => updateDocumentInStore({ id: docId, title: title || null }), 600)
+    return () => clearTimeout(timer)
+  }, [docId, title, updateDocumentInStore])
+  return null
+}
 
+// The document was saved by a newer version of Lemma than this page runs.
+function OutdatedBanner() {
   return (
-    <div className='min-h-screen w-full bg-background pb-20'>
-      <header className='sticky top-0 z-40 border-border/70 border-b bg-background/95 backdrop-blur'>
-        <div className='mx-auto flex w-full max-w-[900px] items-center justify-between px-4 py-3 md:px-6'>
-          <BackNavigationButton label='Back' />
-          {status ? (
-            <Button
-              type='button'
-              size='sm'
-              variant={isPublished ? 'outline' : 'default'}
-              onClick={() => onStatusChange?.(isPublished ? 'DRAFT' : 'PUBLISHED')}
-              disabled={isStatusUpdating}
-            >
-              {isPublished ? 'Unpublish' : 'Publish'}
-            </Button>
-          ) : null}
+    <div
+      role='alert'
+      className='fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-3 text-sm shadow-lg dark:bg-amber-950'
+    >
+      <span>
+        Lemma has been updated. Reload to keep editing. Your changes so far are saved on this
+        device.
+      </span>
+      <Button type='button' size='sm' onClick={() => window.location.reload()}>
+        Reload
+      </Button>
+    </div>
+  )
+}
+
+// Loading, offline and not-found states: the same bar, without the editor's actions.
+function WriteRoomShell({ children }: { children: ReactNode }) {
+  return (
+    <div className='min-h-dvh w-full bg-background'>
+      <header className='sticky top-0 z-40 border-border/60 border-b bg-background/90 backdrop-blur'>
+        <div className='mx-auto flex h-13 w-full max-w-5xl items-center px-3 md:px-5'>
+          <BackNavigationButton label='Documents' className='text-muted-foreground' />
         </div>
       </header>
       {children}

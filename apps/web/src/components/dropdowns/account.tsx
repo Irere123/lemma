@@ -13,6 +13,7 @@ import { useEffect } from 'react'
 
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { signOut, useSession } from '@/lib/auth-client'
+import { clearLocalDocuments } from '@/lib/collab/local-store'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '../ui/button'
 
@@ -85,7 +86,10 @@ export function AccountDropdown({
         </MenuItem>
         <MenuItem
           onClick={() => {
-            void signOut().then(() => navigate({ to: '/login' }))
+            // Documents are cached on the device for offline use; don't leave them behind.
+            void signOut()
+              .then(() => clearLocalDocuments())
+              .then(() => navigate({ to: '/login' }))
           }}
         >
           <IconLogout /> Logout
