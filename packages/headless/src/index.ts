@@ -1,64 +1,48 @@
 // Components
+
+// React integration, from the same @tiptap/react copy EditorContent uses (a
+// second copy in the app would have its own contexts).
+export {
+  NodeViewContent,
+  type NodeViewProps,
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+  useEditorState,
+} from '@tiptap/react'
+
 export {
   EditorBubble,
   EditorBubbleItem,
   EditorCommand,
   EditorCommandEmpty,
+  EditorCommandGroup,
   EditorCommandItem,
   EditorCommandList,
   EditorContent,
-  EditorRoot,
-  useEditor,
   type EditorContentProps,
   type EditorInstance,
+  EditorRoot,
   type JSONContent,
+  useEditor,
 } from './components'
-
-// Extensions
+// Extensions (editor UI only; the document model lives in @lemma/content/schema)
 export {
-  CharacterCount,
-  CodeBlockLowlight,
-  Color,
   Command,
   createSuggestionItems,
-  GlobalDragHandle,
   handleCommandNavigation,
-  HighlightExtension,
-  HorizontalRule,
-  InputRule,
-  MarkdownExtension,
-  Mathematics,
-  Placeholder,
   renderItems,
-  StarterKit,
-  TaskItem,
-  TaskList,
-  TextStyle,
-  TiptapImage,
-  TiptapLink,
-  TiptapUnderline,
-  Youtube,
-  type MathematicsOptions,
   type SuggestionItem,
 } from './extensions'
-
 // Plugins
 export {
   createImageUpload,
   handleImageDrop,
   handleImagePaste,
-  UploadImagesPlugin,
   type ImageUploadOptions,
   type UploadFn,
+  UploadImagesPlugin,
 } from './plugins'
-
 // Utils
-export {
-  getAllContent,
-  getPrevText,
-  getUrlFromString,
-  isValidUrl,
-} from './utils'
-
+export { getUrlFromString, isValidUrl } from './utils'
 // Store and Atoms
 export { queryAtom, rangeAtom } from './utils/atoms'

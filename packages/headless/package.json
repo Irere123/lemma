@@ -1,12 +1,11 @@
 {
   "name": "@lemma/headless",
   "version": "1.0.0",
-  "description": "Headless editor component for Lemma",
+  "description": "Headless editor UI (slash menu, bubble menu, upload placeholders) for Lemma. Consumed from source by the web app.",
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.cts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "files": [
     "dist"
   ],
@@ -24,37 +23,15 @@
   "dependencies": {
     "@radix-ui/react-slot": "1.2.4",
     "@tiptap/core": "catalog:",
-    "@tiptap/extension-character-count": "3.19.0",
-    "@tiptap/extension-code-block-lowlight": "3.19.0",
-    "@tiptap/extension-color": "3.19.0",
-    "@tiptap/extension-highlight": "3.19.0",
-    "@tiptap/extension-horizontal-rule": "3.19.0",
-    "@tiptap/extension-image": "3.19.0",
-    "@tiptap/extension-link": "3.19.0",
-    "@tiptap/extension-placeholder": "3.19.0",
-    "@tiptap/extension-task-item": "3.19.0",
-    "@tiptap/extension-task-list": "3.19.0",
-    "@tiptap/extension-text-style": "3.19.0",
-    "@tiptap/extension-underline": "3.19.0",
-    "@tiptap/extension-youtube": "3.19.0",
     "@tiptap/pm": "catalog:",
     "@tiptap/react": "catalog:",
-    "@tiptap/starter-kit": "3.19.0",
     "@tiptap/suggestion": "3.19.0",
-    "@types/node": "25.2.3",
     "cmdk": "1.1.1",
     "jotai": "2.17.1",
-    "katex": "0.16.28",
-    "react-markdown": "10.1.0",
-    "react-moveable": "0.56.0",
-    "react-tweet": "3.3.0",
     "tippy.js": "6.3.7",
-    "tiptap-extension-global-drag-handle": "0.1.18",
-    "tiptap-markdown": "0.9.0",
     "tunnel-rat": "0.1.2"
   },
   "devDependencies": {
-    "@types/katex": "0.16.8",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "tsdown": "0.20.3",
@@ -69,5 +46,8 @@
     "markdown",
     "nextjs",
     "react"
-  ]
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  }
 }

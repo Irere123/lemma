@@ -1,8 +1,7 @@
 import { isNodeSelection, useCurrentEditor } from '@tiptap/react'
 import { BubbleMenu, type BubbleMenuProps } from '@tiptap/react/menus'
 import type { ReactNode } from 'react'
-import { forwardRef, useEffect, useMemo, useRef } from 'react'
-import type { Instance, Props } from 'tippy.js'
+import { forwardRef, useCallback } from 'react'
 
 export interface EditorBubbleProps extends Omit<BubbleMenuProps, 'editor'> {
   readonly children: ReactNode
@@ -11,16 +10,12 @@ export interface EditorBubbleProps extends Omit<BubbleMenuProps, 'editor'> {
 export const EditorBubble = forwardRef<HTMLDivElement, EditorBubbleProps>(
   ({ children, ...rest }, ref) => {
     const { editor: currentEditor } = useCurrentEditor()
-    const instanceRef = useRef<Instance<Props> | null>(null)
-
-    useEffect(() => {
-      if (!instanceRef.current) return
-
-      instanceRef.current.popperInstance?.update()
-    }, [])
-
-    const bubbleMenuProps: Omit<BubbleMenuProps, 'children'> = useMemo(() => {
-      const shouldShow: BubbleMenuProps['shouldShow'] = ({ editor, state }) => {
+    // Stable across renders. Every bubble menu reacts to the same
+    // `bubbleMenu` options-update transaction, which @tiptap/react sends
+    // whenever shouldShow or options change identity: unstable props here
+    // would overwrite other bubble menus' rules (e.g. the link bubble's).
+    const shouldShow = useCallback<NonNullable<BubbleMenuProps['shouldShow']>>(
+      ({ editor, state }) => {
         const { selection } = state
         const { empty } = selection
 
@@ -38,30 +33,17 @@ export const EditorBubble = forwardRef<HTMLDivElement, EditorBubbleProps>(
           return false
         }
         return true
-      }
-
-      const editor = currentEditor ?? undefined
-
-      return {
-        shouldShow,
-        onCreate: (val: Instance<Props>) => {
-          instanceRef.current = val
-
-          instanceRef.current.popper.firstChild?.addEventListener('blur', (event) => {
-            event.preventDefault()
-            event.stopImmediatePropagation()
-          })
-        },
-        editor,
-        ...rest,
-      }
-    }, [currentEditor, rest])
+      },
+      []
+    )
 
     if (!currentEditor) return null
 
     return (
       <div ref={ref}>
-        <BubbleMenu {...bubbleMenuProps}>{children}</BubbleMenu>
+        <BubbleMenu {...rest} editor={currentEditor} shouldShow={shouldShow}>
+          {children}
+        </BubbleMenu>
       </div>
     )
   }

@@ -1,9 +1,10 @@
 import type { Editor, Range } from '@tiptap/core'
 import { useCurrentEditor } from '@tiptap/react'
-import { CommandEmpty, CommandItem } from 'cmdk'
+import { CommandEmpty, CommandGroup, CommandItem } from 'cmdk'
 import { useAtomValue } from 'jotai'
 import type { ComponentPropsWithoutRef, ForwardRefExoticComponent, RefAttributes } from 'react'
 import { forwardRef, type ReactElement } from 'react'
+
 import { rangeAtom } from '../utils/atoms'
 
 interface EditorCommandItemProps {
@@ -33,5 +34,7 @@ export const EditorCommandItem: ForwardRefExoticComponent<
 EditorCommandItem.displayName = 'EditorCommandItem'
 
 export const EditorCommandEmpty: typeof CommandEmpty = CommandEmpty
+
+export const EditorCommandGroup: typeof CommandGroup = CommandGroup
 
 export default EditorCommandItem
