@@ -43,6 +43,11 @@ jobs:
       - name: Type-check (API + packages)
         run: bunx turbo typecheck --filter='!web'
 
+      # Document model contract, renderer/parser round trips (property-based),
+      # paste snapshots, revision retention, editor = shared schema.
+      - name: Test
+        run: bunx turbo test
+
       # Advisory: pre-existing debt, surfaced as annotations but not blocking.
       - name: Lint & format check (advisory)
         if: ${{ !cancelled() }}
@@ -53,10 +58,85 @@ jobs:
         run: bunx turbo typecheck --filter=web
         continue-on-error: true
 
+  # The editor against a real local stack (wrangler dev: D1, Durable Objects,
+  # R2; the built web app): the chaos test (two tabs, offline, crashes, slow
+  # and lost frames → zero lost characters), block ids / schema gate / undo /
+  # revision history, and the typing-latency benchmark.
+  e2e:
+    name: Editor end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: e2e-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+      VITE_PUBLIC_BACKEND_URL: http://localhost:4000
+      VITE_PUBLIC_APP_URL: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      # Playwright drives the browser from Node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+
+      - name: Browser
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Local database
+        working-directory: apps/api
+        run: bun run migrate:local
+
+      - name: Start the API
+        working-directory: apps/api
+        run: |
+          nohup bunx wrangler dev --env local --port 4000 \
+            --var BETTER_AUTH_SECRET:ci-only-auth-secret-0123456789abcdef > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 90); do curl -sf http://localhost:4000/health > /dev/null && exit 0; sleep 2; done
+          cat "$RUNNER_TEMP/api.log"; exit 1
+
+      - name: Build and serve the web app
+        run: |
+          bunx turbo build --filter=web
+          cd apps/web && nohup bunx vite preview --port 5173 > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:5173/ > /dev/null && exit 0; sleep 2; done
+          cat "$RUNNER_TEMP/web.log"; exit 1
+
+      - name: Durability (chaos test)
+        working-directory: apps/web
+        run: node e2e/durability.mjs
+
+      - name: Block ids, schema gate, undo, revision history
+        working-directory: apps/web
+        run: node e2e/foundations.mjs
+
+      - name: Editor UI (block menu, links, block toolbars, title flow)
+        working-directory: apps/web
+        run: node e2e/editor-ui.mjs
+
+      - name: Typing latency
+        working-directory: apps/web
+        run: bun run bench:build && node e2e/latency.mjs
+
+      - name: Server logs
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/web.log"
+
   # Only spin up the deploy(s) that are needed, and only once CI is green.
   changes:
     name: Detect changed apps
-    needs: ci
+    needs: [ci, e2e]
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     outputs:

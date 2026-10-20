@@ -19,6 +19,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "typecheck": "turbo typecheck",
+    "test": "turbo test",
     "format": "biome format --write",
     "lint": "biome lint",
     "biome:check": "biome check",
