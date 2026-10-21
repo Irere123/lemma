@@ -1,3 +1,4 @@
+import { numberDocument } from './numbering'
 import type { ContentDoc, ContentNode, ContentSummary } from './types'
 
 const BLOCK_TYPES = new Set([
@@ -18,16 +19,22 @@ const BLOCK_TYPES = new Set([
 
 const WORDS_PER_MINUTE = 225
 
-function walkText(node: ContentNode | null | undefined, out: string[]): void {
+type Labels = { get: (id: string) => string | undefined }
+
+function walkText(node: ContentNode | null | undefined, out: string[], labels: Labels): void {
   if (!node) return
 
   if (typeof node.text === 'string') {
     out.push(node.text)
   }
+  // Inline atoms that read as words: a link to a document reads as its title,
+  // a cross-reference as its label ("Figure 2").
+  if (node.type === 'documentLink') out.push(String(node.attrs?.title ?? ''))
+  if (node.type === 'crossReference') out.push(labels.get(String(node.attrs?.target ?? '')) ?? '')
 
   if (node.content) {
     for (const child of node.content) {
-      walkText(child, out)
+      walkText(child, out, labels)
     }
   }
 
@@ -40,7 +47,15 @@ function walkText(node: ContentNode | null | undefined, out: string[]): void {
 export function extractText(doc: ContentDoc | null | undefined): string {
   if (!doc) return ''
   const parts: string[] = []
-  walkText(doc, parts)
+  // Numbered only if something refers to a target.
+  let targets: ReturnType<typeof numberDocument> | null = null
+  const labels: Labels = {
+    get: (id) => {
+      targets ??= numberDocument(doc)
+      return targets.get(id)?.label
+    },
+  }
+  walkText(doc, parts, labels)
   return parts.join('').replace(/\s+/g, ' ').trim()
 }
 
@@ -65,6 +80,19 @@ export function excerpt(text: string, maxLength = 200): string {
   return `${base.trimEnd()}…`
 }
 
+/**
+ * The text an excerpt is cut from: the body without its headings (a post
+ * that opens with "Introduction" shouldn't preview as "Introduction The…"),
+ * and with no gap left before punctuation where an inline citation or
+ * reference added no words of its own.
+ */
+function excerptText(doc: ContentDoc | null | undefined): string {
+  if (!doc?.content) return ''
+  const body = doc.content.filter((node) => node.type !== 'heading')
+  const text = extractText({ ...doc, content: body.length > 0 ? body : doc.content })
+  return text.replace(/\s+([,.;:!?…)\]])/g, '$1')
+}
+
 export function summarize(doc: ContentDoc | null | undefined, excerptLength = 200): ContentSummary {
   const text = extractText(doc)
   const words = countWords(text)
@@ -72,7 +100,7 @@ export function summarize(doc: ContentDoc | null | undefined, excerptLength = 20
     text,
     words,
     readingTime: readingTime(words),
-    excerpt: excerpt(text, excerptLength),
+    excerpt: excerpt(excerptText(doc), excerptLength),
   }
 }
 

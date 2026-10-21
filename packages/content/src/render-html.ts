@@ -254,6 +254,22 @@ export function footnoteOrder(doc: ContentNode): Map<string, number> {
   return order
 }
 
+/**
+ * Make the DOIs and URLs in a formatted reference links, so a reader is one
+ * click from the source. The formatter's HTML is escaped text plus <i>/<sup>,
+ * so URLs appear as plain text; trailing punctuation stays outside the link.
+ */
+function linkify(html: string): string {
+  return html.replace(/https?:\/\/[^\s<>"]+/g, (match) => {
+    const url = match.replace(/[.,;:)\]]+$/, '')
+    const rest = match.slice(url.length)
+    const href = sanitizeUrl(url.replace(/&amp;/g, '&'))
+    return href
+      ? `<a href="${escapeHtml(href)}" rel="noopener noreferrer nofollow" target="_blank">${url}</a>${rest}`
+      : match
+  })
+}
+
 const anchorId = (id: string) => escapeHtml(id.replace(/[^\w-]/g, ''))
 
 /**
@@ -411,7 +427,7 @@ function renderNode(node: ContentNode, ctx: Context): string {
       const entries = ctx.options.citations?.bibliography ?? []
       const list = ctx.options.citations?.numeric ? 'ol' : 'ul'
       const items = entries
-        .map((entry) => `<li id="ref-${anchorId(entry.id)}">${entry.html}</li>`)
+        .map((entry) => `<li id="ref-${anchorId(entry.id)}">${linkify(entry.html)}</li>`)
         .join('')
       return `<section${idAttr(node)} class="bibliography" data-bibliography${attr('data-title', title)}><h2>${escapeHtml(
         title

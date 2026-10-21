@@ -84,13 +84,13 @@ export const Figure = Node.create({
         contentElement: (element: HTMLElement) => {
           const box = element.ownerDocument.createElement('div')
           const media = figureMedia(element)
-          if (media) box.append(media.cloneNode(true))
+          if (media) box.appendChild(media.cloneNode(true))
           const caption = element.querySelector('figcaption')?.cloneNode(true) as
             | Element
             | undefined
           // LaTeXML spells the number out ("Figure 1: …"); ours is generated.
           for (const tag of caption?.querySelectorAll('.ltx_tag') ?? []) tag.remove()
-          if (caption) box.append(caption)
+          if (caption) box.appendChild(caption)
           return box
         },
       },
