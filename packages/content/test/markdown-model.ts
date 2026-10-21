@@ -1,6 +1,6 @@
 import type { JSONContent } from '@tiptap/core'
 
-import type { MarkdownLossFeature } from '../src'
+import { type MarkdownLossFeature, numberDocument } from '../src'
 
 /**
  * An independent model of what Markdown can't carry, for the round-trip
@@ -32,6 +32,12 @@ const FEATURES: MarkdownLossFeature[] = [
   'tableCellBlocks',
   'tableMathPipe',
   'trailingSpace',
+  'figure',
+  'equationNumber',
+  'citation',
+  'bibliography',
+  'crossReference',
+  'documentLink',
 ]
 
 const DROPPED: Record<string, MarkdownLossFeature> = {
@@ -251,11 +257,55 @@ function table(node: Json, counts: Counts): Json {
   return { type: 'table', content: rows }
 }
 
-export function withoutMarkdownLoss(doc: Json): {
+/**
+ * Research and notes nodes GFM can't carry, replaced the way a reader sees
+ * them: a figure is its content then its caption as a paragraph, a
+ * cross-reference its label ("Figure 2"), a document link its title;
+ * citations and the bibliography are dropped, equation numbers too.
+ */
+function lowerResearch(doc: Json, counts: Counts): Json {
+  const targets = numberDocument(doc)
+  const walk = (node: Json): Json[] => {
+    switch (node.type) {
+      case 'documentLink':
+        add(counts, 'documentLink')
+        return [{ type: 'text', text: String(node.attrs?.title ?? '') || 'Untitled' }]
+      case 'citation':
+        add(counts, 'citation')
+        return []
+      case 'bibliography':
+        add(counts, 'bibliography')
+        return []
+      case 'crossReference': {
+        add(counts, 'crossReference')
+        const target = targets.get(String(node.attrs?.target ?? ''))
+        return [{ type: 'text', text: target?.label ?? '(missing reference)' }]
+      }
+      case 'blockMath':
+        if (node.attrs?.numbered !== true) return [node]
+        add(counts, 'equationNumber')
+        return [{ ...node, attrs: { ...node.attrs, numbered: false, tag: null } }]
+      case 'figure': {
+        add(counts, 'figure')
+        const [body, caption] = node.content ?? []
+        const out = body ? walk(body) : []
+        const text = (caption?.content ?? []).flatMap(walk)
+        if (text.length > 0) out.push(paragraph(text))
+        return out
+      }
+      default:
+        return [node.content ? { ...node, content: node.content.flatMap(walk) } : node]
+    }
+  }
+  return walk(doc)[0] ?? doc
+}
+
+export function withoutMarkdownLoss(input: Json): {
   doc: Json
   losses: { feature: MarkdownLossFeature; count: number }[]
 } {
   const counts: Counts = new Map()
+  const doc = lowerResearch(input, counts)
   const body = (doc.content ?? []).filter((node) => node.type !== 'footnotes')
   const notes = (doc.content ?? []).find((node) => node.type === 'footnotes')
   const content = blocks(body, counts)

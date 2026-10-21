@@ -1,4 +1,5 @@
-import { footnoteOrder, youtubeVideoId } from './render-html'
+import { equationNumber, type Numbering, numberingOf } from './numbering'
+import { footnoteOrder, type RenderedCitations, youtubeVideoId } from './render-html'
 import { escapeHtml, safeCssColor, sanitizeUrl } from './sanitize'
 import type { ContentDoc, ContentMark, ContentNode } from './types'
 
@@ -8,11 +9,20 @@ import type { ContentDoc, ContentMark, ContentNode } from './types'
 export type EmailRenderOptions = {
   /** TeX → MathML (KaTeX in the API). Without it, the TeX source is shown in monospace. */
   renderMath?: (latex: string, displayMode: boolean) => string | null
+  /** Formatted citations, as for renderToHTML. */
+  citations?: RenderedCitations
+  /** Public URL of a linked document, or null to show its title as text. */
+  documentLink?: (link: { documentId: string; blockId: string | null; title: string }) => {
+    href: string
+    title: string
+  } | null
 }
 
 type Context = {
   options: EmailRenderOptions
   footnoteNumbers: Map<string, number>
+  numbering: Numbering
+  citationIndex: { next: number }
 }
 
 const S = {
@@ -47,6 +57,9 @@ const S = {
   footnotes:
     'margin:32px 0 0;padding:16px 0 0 20px;border-top:1px solid #e5e5e5;font-size:14px;line-height:1.6;color:#444',
   footnoteRef: 'font-size:12px;line-height:0;vertical-align:super',
+  caption: 'margin:-8px 0 20px;font-size:14px;line-height:1.5;color:#555;text-align:center',
+  equationNumber: 'float:right;font-size:15px;color:#555',
+  references: 'margin:0 0 16px;padding-left:24px;font-size:14px;line-height:1.6;color:#333',
 } as const
 
 const HEADING = [S.h1, S.h2, S.h3, S.h4, S.h5, S.h6] as const
@@ -253,8 +266,70 @@ function renderNode(node: ContentNode, ctx: Context): string {
     case 'inlineMath':
       return renderMath(String(getAttr(node, 'latex') ?? ''), false, ctx)
 
-    case 'blockMath':
-      return renderMath(String(getAttr(node, 'latex') ?? ''), true, ctx)
+    case 'blockMath': {
+      const number = equationNumber(ctx.numbering, node)
+      const math = renderMath(String(getAttr(node, 'latex') ?? ''), true, ctx)
+      return number
+        ? math.replace(
+            /^(<div[^>]*>)/,
+            `$1<span style="${S.equationNumber}">${escapeHtml(number)}</span>`
+          )
+        : math
+    }
+
+    case 'figure': {
+      const target = ctx.numbering.of(node)
+      const [body, caption] = [node.content?.[0], node.content?.[1]]
+      const text = caption ? renderChildren(caption, ctx) : ''
+      const label = target ? `<strong>${escapeHtml(target.label)}.</strong>` : ''
+      const figcaption =
+        label || text ? `<p style="${S.caption}">${label}${text ? ` ${text}` : ''}</p>` : ''
+      const inner = body ? renderNode(body, ctx) : ''
+      return body?.type === 'table'
+        ? figcaption.replace('margin:-8px', 'margin:0') + inner
+        : inner + figcaption
+    }
+
+    case 'figcaption':
+      return renderChildren(node, ctx)
+
+    case 'citation': {
+      const rendered = ctx.options.citations?.clusters[ctx.citationIndex.next++]
+      return rendered?.html ?? ''
+    }
+
+    case 'bibliography': {
+      const entries = ctx.options.citations?.bibliography ?? []
+      if (entries.length === 0) return ''
+      const title = escapeHtml(String(getAttr(node, 'title') ?? 'References'))
+      const list = ctx.options.citations?.numeric ? 'ol' : 'ul'
+      return `<h2 style="${S.h2}">${title}</h2><${list} style="${S.references}">${entries
+        .map((entry) => `<li style="margin:0 0 6px">${entry.html}</li>`)
+        .join('')}</${list}>`
+    }
+
+    case 'crossReference': {
+      const target = ctx.numbering.targets.get(String(getAttr(node, 'target') ?? ''))
+      return escapeHtml(target?.label ?? '(missing reference)')
+    }
+
+    case 'documentLink': {
+      const documentId = getAttr(node, 'documentId')
+      const blockId = getAttr(node, 'blockId')
+      const raw = String(getAttr(node, 'title') ?? '')
+      const stored = raw || 'Untitled'
+      const resolved =
+        typeof documentId === 'string' && documentId
+          ? (ctx.options.documentLink?.({
+              documentId,
+              blockId: typeof blockId === 'string' && blockId ? blockId : null,
+              title: raw,
+            }) ?? null)
+          : null
+      const href = resolved ? sanitizeUrl(resolved.href) : null
+      const title = escapeHtml(resolved?.title || stored)
+      return href ? `<a href="${escapeHtml(href)}" style="${S.link}">${title}</a>` : title
+    }
 
     case 'callout': {
       const emoji = getAttr(node, 'emoji')
@@ -305,5 +380,10 @@ export function renderToEmail(
   options: EmailRenderOptions = {}
 ): string {
   if (!doc) return ''
-  return renderNode(doc, { options, footnoteNumbers: footnoteOrder(doc) })
+  return renderNode(doc, {
+    options,
+    footnoteNumbers: footnoteOrder(doc),
+    numbering: numberingOf(doc),
+    citationIndex: { next: 0 },
+  })
 }

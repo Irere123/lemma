@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { DOMParser as PMDOMParser, type Node as PMNode } from '@tiptap/pm/model'
 
 import { renderToEmail, renderToHTML, renderToMarkdown } from '../src'
-import { getContentSchema, validateContent } from '../src/schema'
+import { getContentSchema, stripBlockIds, validateContent } from '../src/schema'
 import { kitchenSink } from './fixtures'
 
 const schema = getContentSchema()
@@ -14,6 +14,15 @@ function parseHTML(html: string): PMNode {
 }
 
 const canonical = (json: unknown) => schema.nodeFromJSON(validateContent(json, { strict: true }))
+
+// Block ids are identity, deliberately not read back from HTML (a copy is a new block).
+const withoutIds = (node: PMNode) => stripBlockIds(node.toJSON())
+
+// Links to published documents; private ones render as text by design.
+const documentLink = ({ documentId, title }: { documentId: string; title: string }) => ({
+  href: `/d/${documentId}`,
+  title,
+})
 
 function usedTypes(node: PMNode) {
   const nodes = new Set<string>()
@@ -42,14 +51,15 @@ describe('kitchen sink fixture', () => {
 describe('published HTML', () => {
   test('parses back into the identical document (re-import parity)', () => {
     const original = canonical(kitchenSink)
-    const reparsed = parseHTML(renderToHTML(original.toJSON()))
+    const reparsed = parseHTML(renderToHTML(original.toJSON(), { documentLink }))
     // Compare as JSON for a readable diff on failure.
-    expect(reparsed.toJSON()).toEqual(original.toJSON())
+    expect(withoutIds(reparsed)).toEqual(withoutIds(original))
   })
 
   test('highlighted code blocks re-import as the same code', () => {
     const original = canonical(kitchenSink)
     const html = renderToHTML(original.toJSON(), {
+      documentLink,
       highlightCode: (code) =>
         code
           .split(/(\s+)/)
@@ -61,7 +71,7 @@ describe('published HTML', () => {
           .join(''),
     })
     expect(html).toContain('class="hljs-keyword"')
-    expect(parseHTML(html).toJSON()).toEqual(original.toJSON())
+    expect(withoutIds(parseHTML(html))).toEqual(withoutIds(original))
   })
 
   test('keeps headings 4–6', () => {

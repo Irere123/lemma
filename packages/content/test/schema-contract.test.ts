@@ -11,6 +11,7 @@ import { SCHEMA_VERSION } from '../src/yjs'
  */
 const FINGERPRINTS: Record<number, string> = {
   1: 'ec3f02e3',
+  2: '3da1f680',
 }
 
 describe('schema contract', () => {

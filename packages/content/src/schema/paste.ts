@@ -245,7 +245,9 @@ function cleanUp(cx: Context) {
   }
   for (const link of links) {
     if (!link.isConnected) continue
-    // The schema keeps no element ids, so an in-page link can never resolve.
+    // Lemma's own cross-references are nodes (they point at block ids).
+    if (link.hasAttribute('data-cross-ref')) continue
+    // The schema keeps no element ids, so any other in-page link can never resolve.
     if ((link.getAttribute('href') ?? '').trim().startsWith('#')) unwrap(link)
     else cleanLinkStyles(link)
   }

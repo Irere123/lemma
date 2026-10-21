@@ -25,6 +25,8 @@ export const BLOCK_ID_TYPES = [
   'callout',
   'listItem',
   'taskItem',
+  'figure',
+  'bibliography',
 ] as const
 
 const BLOCK_ID_TYPE_SET: ReadonlySet<string> = new Set(BLOCK_ID_TYPES)

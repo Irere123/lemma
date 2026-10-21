@@ -14,9 +14,11 @@ import StarterKit from '@tiptap/starter-kit'
 
 import { BlockIds } from './block-ids'
 import { Callout } from './callout'
+import { DocumentLink } from './document-link'
 import { Footnote, FootnoteReference, Footnotes } from './footnotes'
 import { InlineCode, TextColor, TextHighlight } from './marks'
 import { MathBlock, MathInline } from './math'
+import { Bibliography, Citation, CrossReference, Figcaption, Figure } from './research'
 import { UnmarkedInlineNodes } from './unmarked'
 
 export {
@@ -33,6 +35,7 @@ export {
 } from './block-ids'
 export { Callout } from './callout'
 export { describeSchema, schemaFingerprint } from './contract'
+export { DocumentLink } from './document-link'
 export { Footnote, FootnoteReference, Footnotes, newFootnoteId, syncFootnotes } from './footnotes'
 export { InlineCode, TextColor, TextHighlight } from './marks'
 export { MathBlock, MathInline } from './math'
@@ -44,6 +47,15 @@ export {
   PasteCleanup,
   type PasteCleanupOptions,
 } from './paste'
+export {
+  Bibliography,
+  Citation,
+  type CitationItem,
+  type CitationMode,
+  CrossReference,
+  Figcaption,
+  Figure,
+} from './research'
 export { UNMARKED_INLINE_TYPES, UnmarkedInlineNodes } from './unmarked'
 export {
   ContentValidationError,
@@ -151,6 +163,12 @@ export const contentExtensions: AnyExtension[] = [
   FootnoteReference,
   Footnotes,
   Footnote,
+  Figure,
+  Figcaption,
+  Citation,
+  Bibliography,
+  CrossReference,
+  DocumentLink,
   BlockIds,
   UnmarkedInlineNodes,
 ]
