@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@base-ui/react": "1.1.0",
+    "@fontsource-variable/source-serif-4": "5.2.8",
     "@hookform/resolvers": "^5.2.1",
     "@lemma/api": "workspace:*",
     "@lemma/common": "workspace:*",
@@ -48,6 +49,7 @@
     "@tiptap/extensions": "3.19.0",
     "@tiptap/pm": "3.19.0",
     "@tiptap/react": "3.19.0",
+    "@tiptap/suggestion": "3.19.0",
     "@tiptap/y-tiptap": "3.0.10",
     "@trpc/client": "^11.6.0",
     "@trpc/tanstack-react-query": "^11.6.0",

@@ -22,8 +22,8 @@ function RouteComponent() {
     pathname === to || pathname.startsWith(`${to}/`)
 
   return (
-    <main className='mx-auto w-full max-w-4xl px-5 py-8 md:px-10'>
-      <h2 className='font-semibold text-2xl tracking-tight'>Settings</h2>
+    <main className='mx-auto w-full max-w-4xl px-5 pt-8 pb-24 md:px-10 md:pt-12'>
+      <h1 className='font-semibold text-[1.75rem] leading-tight tracking-tight'>Settings</h1>
 
       <motion.nav
         initial={{ opacity: 0, y: 6 }}

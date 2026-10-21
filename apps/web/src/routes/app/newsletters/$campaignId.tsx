@@ -72,7 +72,7 @@ function RouteComponent() {
 
   if (isLoading) {
     return (
-      <main className='mx-auto w-full max-w-4xl px-5 py-8 md:px-10'>
+      <main className='mx-auto w-full max-w-4xl px-5 pt-8 pb-24 md:px-10 md:pt-12'>
         <Skeleton className='h-6 w-40' />
         <Skeleton className='mt-4 h-10 w-2/3' />
         <div className='mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4'>
@@ -114,7 +114,7 @@ function RouteComponent() {
   ]
 
   return (
-    <main className='mx-auto w-full max-w-4xl px-5 py-8 md:px-10'>
+    <main className='mx-auto w-full max-w-4xl px-5 pt-8 pb-24 md:px-10 md:pt-12'>
       <Link
         to='/app/newsletters'
         className='inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground'
@@ -126,7 +126,9 @@ function RouteComponent() {
       <div className='mt-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
         <div className='min-w-0 space-y-2'>
           <div className='flex items-center gap-3'>
-            <h2 className='font-semibold text-2xl tracking-tight'>{campaign.title}</h2>
+            <h1 className='font-semibold text-[1.75rem] leading-tight tracking-tight'>
+              {campaign.title}
+            </h1>
             <CampaignStatusBadge status={campaign.status} />
           </div>
           <p className='text-muted-foreground text-sm'>

@@ -64,6 +64,7 @@
       "name": "web",
       "dependencies": {
         "@base-ui/react": "1.1.0",
+        "@fontsource-variable/source-serif-4": "5.2.8",
         "@hookform/resolvers": "^5.2.1",
         "@lemma/api": "workspace:*",
         "@lemma/common": "workspace:*",
@@ -95,6 +96,7 @@
         "@tiptap/extensions": "3.19.0",
         "@tiptap/pm": "3.19.0",
         "@tiptap/react": "3.19.0",
+        "@tiptap/suggestion": "3.19.0",
         "@tiptap/y-tiptap": "3.0.10",
         "@trpc/client": "^11.6.0",
         "@trpc/tanstack-react-query": "^11.6.0",
@@ -498,6 +500,8 @@
     "@floating-ui/react-dom": ["@floating-ui/react-dom@2.1.6", "", { "dependencies": { "@floating-ui/dom": "^1.7.4" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-4JX6rEatQEvlmgU80wZyq9RT96HZJa88q8hp0pBd+LrczeDI4o6uA2M+uvxngVHo4Ihr8uibXxH6+70zhAFrVw=="],
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.10", "", {}, "sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ=="],
+
+    "@fontsource-variable/source-serif-4": ["@fontsource-variable/source-serif-4@5.2.8", "", {}, "sha512-qj5xZxbKmucdY2t6Qp2RdFzgQoepl7FLukVOE527o9ueDSQ3M4nwoec5YyTn45iP2y8jCb8H3Se6JnhL7tlltA=="],
 
     "@graphql-tools/executor": ["@graphql-tools/executor@1.5.0", "", { "dependencies": { "@graphql-tools/utils": "^10.11.0", "@graphql-typed-document-node/core": "^3.2.0", "@repeaterjs/repeater": "^3.0.4", "@whatwg-node/disposablestack": "^0.0.6", "@whatwg-node/promise-helpers": "^1.0.0", "tslib": "^2.4.0" }, "peerDependencies": { "graphql": "^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0" } }, "sha512-3HzAxfexmynEWwRB56t/BT+xYKEYLGPvJudR1jfs+XZX8bpfqujEhqVFoxmkpEE8BbFcKuBNoQyGkTi1eFJ+hA=="],
 

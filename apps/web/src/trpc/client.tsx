@@ -1,14 +1,14 @@
+import type { AppRouter } from '@lemma/api'
 import type { QueryClient } from '@tanstack/react-query'
-import { QueryClientProvider, isServer } from '@tanstack/react-query'
+import { isServer, QueryClientProvider } from '@tanstack/react-query'
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client'
 import { createTRPCContext } from '@trpc/tanstack-react-query'
 import { useState } from 'react'
 import superjson from 'superjson'
-import type { AppRouter } from '@lemma/api'
 
 import { makeQueryClient } from './query-client'
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>()
+export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>()
 
 let browserQueryClient: QueryClient
 
