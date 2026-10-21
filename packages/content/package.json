@@ -2,13 +2,14 @@
   "name": "@lemma/content",
   "private": true,
   "type": "module",
-  "description": "Canonical content model shared by web, api, and email. '.' is zero-dependency and DOM-free (renderers, text, markdown); './schema' is the Tiptap document model; './yjs' maps it onto Yjs; './export' builds EPUB and DOCX manuscripts. All entries are Worker-safe.",
+  "description": "Canonical content model shared by web, api, and email. '.' is zero-dependency and DOM-free (renderers, text, markdown); './schema' is the Tiptap document model; './yjs' maps it onto Yjs; './export' builds EPUB and DOCX manuscripts; './citations' parses reference libraries and formats citations. All entries are Worker-safe.",
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
     "./yjs": "./src/yjs.ts",
     "./markdown": "./src/markdown-parse.ts",
-    "./export": "./src/export/index.ts"
+    "./export": "./src/export/index.ts",
+    "./citations": "./src/citations/index.ts"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
