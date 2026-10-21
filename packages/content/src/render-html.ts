@@ -1,4 +1,5 @@
 import { BLOCK_ID_PATTERN } from './ids'
+import { equationNumber, type Numbering, numberingOf } from './numbering'
 import { escapeHtml, safeCssColor, sanitizeUrl } from './sanitize'
 import type { ContentDoc, ContentMark, ContentNode } from './types'
 
@@ -22,11 +23,33 @@ export type RenderOptions = {
    * for the inside of its <code>, or null to show it plain.
    */
   highlightCode?: (code: string, language: string) => string | null
+  /**
+   * Formatted citations (from a citation processor over `citationClusters(doc)`):
+   * one entry per citation node in reading order, plus the bibliography.
+   */
+  citations?: RenderedCitations
+  /**
+   * Where a link to another document goes, or null to show its title as plain
+   * text (e.g. the target is private). Without it, links render as text.
+   */
+  documentLink?: (link: { documentId: string; blockId: string | null; title: string }) => {
+    href: string
+    title: string
+  } | null
+}
+
+export type RenderedCitations = {
+  clusters: { html: string; text: string }[]
+  bibliography: { id: string; html: string; text: string; number?: number }[]
+  /** Numeric styles list the bibliography as an ordered list. */
+  numeric?: boolean
 }
 
 type Context = {
   options: RenderOptions
   footnoteNumbers: Map<string, number>
+  numbering: Numbering
+  citationIndex: { next: number }
 }
 
 function attr(name: string, value: unknown): string {
@@ -231,6 +254,22 @@ export function footnoteOrder(doc: ContentNode): Map<string, number> {
   return order
 }
 
+/**
+ * Make the DOIs and URLs in a formatted reference links, so a reader is one
+ * click from the source. The formatter's HTML is escaped text plus <i>/<sup>,
+ * so URLs appear as plain text; trailing punctuation stays outside the link.
+ */
+function linkify(html: string): string {
+  return html.replace(/https?:\/\/[^\s<>"]+/g, (match) => {
+    const url = match.replace(/[.,;:)\]]+$/, '')
+    const rest = match.slice(url.length)
+    const href = sanitizeUrl(url.replace(/&amp;/g, '&'))
+    return href
+      ? `<a href="${escapeHtml(href)}" rel="noopener noreferrer nofollow" target="_blank">${url}</a>${rest}`
+      : match
+  })
+}
+
 const anchorId = (id: string) => escapeHtml(id.replace(/[^\w-]/g, ''))
 
 /**
@@ -334,11 +373,109 @@ function renderNode(node: ContentNode, ctx: Context): string {
     case 'inlineMath':
       return withMarks(node, renderMath(String(getAttr(node, 'latex') ?? ''), false, ctx))
 
-    case 'blockMath':
-      return renderMath(String(getAttr(node, 'latex') ?? ''), true, ctx).replace(
-        /^<div/,
-        `<div${idAttr(node)}`
+    case 'blockMath': {
+      const number = equationNumber(ctx.numbering, node)
+      const html = renderMath(String(getAttr(node, 'latex') ?? ''), true, ctx)
+      if (!number) return html.replace(/^<div/, `<div${idAttr(node)}`)
+      const tag = getAttr(node, 'tag')
+      return html
+        .replace(
+          /^<div([^>]*) class="math-block">/,
+          `<div${idAttr(node)}$1 data-numbered="true"${attr('data-tag', typeof tag === 'string' && tag ? tag : null)} class="math-block math-numbered">`
+        )
+        .replace(/<\/div>$/, `<span class="equation-number">${escapeHtml(number)}</span></div>`)
+    }
+
+    case 'figure': {
+      const target = ctx.numbering.of(node)
+      const [body, caption] = [node.content?.[0], node.content?.[1]]
+      const label = target ? `<span class="figure-label">${escapeHtml(target.label)}.</span>` : ''
+      const captionText = caption ? renderChildren(caption, ctx) : ''
+      const figcaption = `<figcaption>${label}${
+        captionText ? ` <span class="figure-caption">${captionText}</span>` : ''
+      }</figcaption>`
+      const inner = body ? renderNode(body, ctx) : ''
+      // Table captions go above the table, figure captions below.
+      const isTable = body?.type === 'table'
+      return `<figure${idAttr(node)} data-figure class="figure${isTable ? ' figure-table' : ''}">${
+        isTable ? figcaption + inner : inner + figcaption
+      }</figure>`
+    }
+
+    case 'figcaption':
+      return renderChildren(node, ctx)
+
+    case 'citation': {
+      const index = ctx.citationIndex.next++
+      const items = getAttr(node, 'items')
+      const mode = getAttr(node, 'mode')
+      const data = `${attr('data-items', JSON.stringify(Array.isArray(items) ? items : []))}${
+        mode === 'suppress-author' || mode === 'author-in-text' ? attr('data-mode', mode) : ''
+      }`
+      const rendered = ctx.options.citations?.clusters[index]
+      const first = Array.isArray(items) ? (items[0] as { id?: unknown } | undefined)?.id : null
+      const inner = rendered?.html ?? '(citation)'
+      const linked =
+        rendered && typeof first === 'string' && !hasLink(node)
+          ? `<a href="#ref-${anchorId(first)}">${inner}</a>`
+          : inner
+      return `<span class="citation" data-citation${data}>${linked}</span>`
+    }
+
+    case 'bibliography': {
+      const title = String(getAttr(node, 'title') ?? 'References')
+      const entries = ctx.options.citations?.bibliography ?? []
+      const list = ctx.options.citations?.numeric ? 'ol' : 'ul'
+      const items = entries
+        .map((entry) => `<li id="ref-${anchorId(entry.id)}">${linkify(entry.html)}</li>`)
+        .join('')
+      return `<section${idAttr(node)} class="bibliography" data-bibliography${attr('data-title', title)}><h2>${escapeHtml(
+        title
+      )}</h2>${items ? `<${list} class="references">${items}</${list}>` : ''}</section>`
+    }
+
+    case 'crossReference': {
+      const targetId = String(getAttr(node, 'target') ?? '')
+      const target = ctx.numbering.targets.get(targetId)
+      if (!target) {
+        return `<a data-cross-ref${attr('data-target', targetId || null)} class="cross-ref cross-ref-missing">(missing reference)</a>`
+      }
+      const href =
+        target.kind === 'footnote' ? `#fn-${anchorId(targetId)}` : `#${anchorId(targetId)}`
+      return `<a data-cross-ref data-target="${escapeHtml(targetId)}" href="${href}" class="cross-ref">${escapeHtml(
+        target.label
+      )}</a>`
+    }
+
+    case 'documentLink': {
+      const documentId = getAttr(node, 'documentId')
+      const blockId = getAttr(node, 'blockId')
+      const title = String(getAttr(node, 'title') ?? '')
+      const resolved =
+        typeof documentId === 'string' && documentId
+          ? (ctx.options.documentLink?.({
+              documentId,
+              blockId: typeof blockId === 'string' && blockId ? blockId : null,
+              title,
+            }) ?? null)
+          : null
+      const href = resolved ? sanitizeUrl(resolved.href) : null
+      const shown = escapeHtml(resolved?.title || title || 'Untitled')
+      // A link inside a link can't be an <a>; an unresolved one (e.g. a
+      // private note) shows its title only, without its id.
+      if (!resolved || !href || hasLink(node)) {
+        return withMarks(node, `<span class="document-link">${shown}</span>`)
+      }
+      return withMarks(
+        node,
+        `<a href="${escapeHtml(href)}" class="document-link" data-document-link data-document-id="${escapeHtml(
+          documentId as string
+        )}"${typeof blockId === 'string' && blockId ? attr('data-block-id', blockId) : ''}${attr(
+          'data-title',
+          resolved.title
+        )}>${shown}</a>`
       )
+    }
 
     case 'callout': {
       const emoji = escapeHtml(String(getAttr(node, 'emoji') ?? '💡'))
@@ -403,5 +540,10 @@ export function renderToHTML(
   options: RenderOptions = {}
 ): string {
   if (!doc) return ''
-  return renderNode(doc, { options, footnoteNumbers: footnoteOrder(doc) })
+  return renderNode(doc, {
+    options,
+    footnoteNumbers: footnoteOrder(doc),
+    numbering: numberingOf(doc),
+    citationIndex: { next: 0 },
+  })
 }

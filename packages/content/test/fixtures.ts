@@ -58,6 +58,39 @@ export const kitchenSink: JSONContent = {
     ),
     { type: 'blockMath', attrs: { latex: '\\int_0^1 x^2\\,dx = \\tfrac{1}{3}' } },
     {
+      type: 'blockMath',
+      attrs: { id: 'eqnumbered1', latex: 'E = mc^2', numbered: true, tag: null },
+    },
+    { type: 'blockMath', attrs: { latex: 'a^2 + b^2 = c^2', numbered: true, tag: '3.2' } },
+    {
+      type: 'figure',
+      attrs: { id: 'figkitchen1' },
+      content: [
+        { type: 'image', attrs: { src: 'https://example.com/figure.png', alt: 'A chart' } },
+        { type: 'figcaption', content: [text('Growth by '), text('year', [{ type: 'italic' }])] },
+      ],
+    },
+    p(
+      text('See '),
+      { type: 'crossReference', attrs: { target: 'figkitchen1' } },
+      text(' and '),
+      { type: 'crossReference', attrs: { target: 'eqnumbered1' } },
+      text(', as argued '),
+      {
+        type: 'citation',
+        attrs: { items: [{ id: 'ref-smith', locator: '12', label: 'page' }], mode: 'normal' },
+      },
+      text(' and by '),
+      { type: 'citation', attrs: { items: [{ id: 'ref-lee' }], mode: 'author-in-text' } },
+      text('; compare '),
+      {
+        type: 'documentLink',
+        attrs: { documentId: 'doc-notes', blockId: null, title: 'My notes' },
+      },
+      text('.')
+    ),
+    { type: 'bibliography', attrs: { title: 'Works cited' } },
+    {
       type: 'bulletList',
       content: [
         { type: 'listItem', content: [p(text('Bullet'))] },

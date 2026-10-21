@@ -1,3 +1,4 @@
+import { numberDocument, type Target } from './numbering'
 import { footnoteOrder, youtubeVideoId } from './render-html'
 import { escapeHtml, sanitizeUrl } from './sanitize'
 import type { ContentDoc, ContentMark, ContentNode } from './types'
@@ -33,6 +34,12 @@ export type MarkdownLossFeature =
   | 'tableCellBlocks'
   | 'tableMathPipe'
   | 'trailingSpace'
+  | 'figure'
+  | 'equationNumber'
+  | 'citation'
+  | 'bibliography'
+  | 'crossReference'
+  | 'documentLink'
 
 /** One kind of content Markdown can't carry, and how many times the export dropped it. */
 export type MarkdownLoss = { feature: MarkdownLossFeature; count: number; description: string }
@@ -40,6 +47,14 @@ export type MarkdownLoss = { feature: MarkdownLossFeature; count: number; descri
 export type MarkdownOptions = {
   /** Called once with everything the export dropped (empty when lossless). */
   onLoss?: (losses: MarkdownLoss[]) => void
+  /**
+   * 'pandoc' writes Pandoc/Quarto Markdown: citations as [@key], figures,
+   * tables and numbered equations with {#fig-…}/{#tbl-…}/{#eq-…} labels,
+   * cross-references as @fig-… and the bibliography as a #refs div.
+   */
+  flavor?: 'gfm' | 'pandoc'
+  /** The citation key for a reference id (Pandoc flavour). Defaults to the id. */
+  citationKey?: (id: string) => string
 }
 
 const LOSSES: Record<MarkdownLossFeature, string> = {
@@ -59,6 +74,12 @@ const LOSSES: Record<MarkdownLossFeature, string> = {
   tableCellBlocks: 'table cells with more than one paragraph, flattened to one line',
   tableMathPipe: 'TeX \\| in table cells (GFM reads it as |)',
   trailingSpace: 'spaces at the end of a paragraph, heading or cell',
+  figure: 'figure numbers (captions are kept as paragraphs)',
+  equationNumber: 'equation numbers',
+  citation: 'citations (use the Pandoc export to keep them)',
+  bibliography: 'the bibliography (use the Pandoc export to keep it)',
+  crossReference: 'cross-reference links (their text is kept)',
+  documentLink: 'links to other documents (their titles are kept)',
 }
 
 type Context = {
@@ -68,6 +89,11 @@ type Context = {
   inList: boolean
   /** Write bold/italic/strike as tags in this inline context (see exposesDelimiters). */
   tagsOnly?: boolean
+  pandoc: boolean
+  targets: Map<string, Target>
+  /** Ids some cross-reference points at. */
+  referenced: Set<string>
+  citationKey: (id: string) => string
 }
 
 const lose = (ctx: Context, feature: MarkdownLossFeature, count = 1) => {
@@ -344,6 +370,12 @@ function inline(block: ContentNode, ctx: Context, mode: InlineMode = 'paragraph'
       }
       case 'footnoteReference':
         item.text = `[^${ctx.footnotes.get(getAttr<string>(node, 'id') ?? '')}]`
+        break
+      case 'citation':
+        item.text = pandocCitation(node, ctx)
+        break
+      case 'crossReference':
+        item.text = pandocReference(node, ctx)
         break
       default:
         item.text = inline(node, ctx, mode)
@@ -702,8 +734,27 @@ function block(node: ContentNode, ctx: Context, alternate: boolean): string {
       const level = Math.min(6, Math.max(1, Number(getAttr(node, 'level') ?? 1) || 1))
       // A trailing run of # (after a space) would be read as a closing sequence.
       const text = escapeLineStart(inline(node, ctx, 'heading')).replace(/(^|\s)(#+)$/u, '$1\\$2')
-      return `${'#'.repeat(level)} ${text}`
+      return `${'#'.repeat(level)} ${text}${pandocLabel(node, ctx, 'sec')}`
     }
+    case 'figure': {
+      // Only the Pandoc flavour gets here; GFM lowers figures (lowerForMarkdown).
+      const [body, caption] = node.content ?? []
+      const captionText = caption ? inline(caption, ctx) : ''
+      if (body?.type === 'table') {
+        return `${renderTable(body, ctx)}\n\n: ${captionText}${pandocLabel(node, ctx, 'tbl')}`
+      }
+      if (body?.type !== 'image') return ''
+      const src = sanitizeUrl(getAttr(body, 'src'), { allowData: true })
+      if (!src) return ''
+      const alt = getAttr(body, 'alt')
+      const attrs = [
+        pandocId(node, ctx, 'fig'),
+        typeof alt === 'string' && alt ? `fig-alt="${alt.replace(/["\\]/g, '\\$&')}"` : '',
+      ].filter(Boolean)
+      return `![${captionText}](${linkDestination(src)})${attrs.length > 0 ? `{${attrs.join(' ')}}` : ''}`
+    }
+    case 'bibliography':
+      return '::: {#refs}\n:::'
     case 'blockquote':
       return indent(join(renderedBlocks(node.content ?? [], ctx, { quoted: true })), '> ')
     case 'callout': {
@@ -749,7 +800,9 @@ function block(node: ContentNode, ctx: Context, alternate: boolean): string {
       return youtubeVideoId(src) ? `[Video](${linkDestination(src)})` : ''
     }
     case 'blockMath':
-      return `$$\n${String(getAttr(node, 'latex') ?? '')}\n$$`
+      return `$$\n${String(getAttr(node, 'latex') ?? '')}\n$$${
+        getAttr(node, 'numbered') === true ? pandocLabel(node, ctx, 'eq') : ''
+      }`
     case 'table':
       return renderTable(node, ctx)
     case 'footnotes':
@@ -811,9 +864,22 @@ function footnoteDefinitions(doc: ContentNode, ctx: Context): string {
     .join('\n\n')
 }
 
-function render(doc: ContentDoc | null | undefined): { markdown: string; losses: MarkdownLoss[] } {
-  if (!doc) return { markdown: '', losses: [] }
-  const ctx: Context = { footnotes: footnoteOrder(doc), loss: new Map(), inList: false }
+function render(
+  input: ContentDoc | null | undefined,
+  options: MarkdownOptions = {}
+): { markdown: string; losses: MarkdownLoss[] } {
+  if (!input) return { markdown: '', losses: [] }
+  const pandoc = options.flavor === 'pandoc'
+  const ctx: Context = {
+    footnotes: footnoteOrder(input),
+    loss: new Map(),
+    inList: false,
+    pandoc,
+    targets: numberDocument(input),
+    referenced: referencedIds(input),
+    citationKey: options.citationKey ?? ((id) => id),
+  }
+  const doc = lowerForMarkdown(input, ctx)
   const body = join(renderedBlocks(doc.content ?? [], ctx))
   const notes = footnoteDefinitions(doc, ctx)
   const losses = (Object.keys(LOSSES) as MarkdownLossFeature[])
@@ -830,7 +896,7 @@ export function renderToMarkdown(
   doc: ContentDoc | null | undefined,
   options: MarkdownOptions = {}
 ): string {
-  const { markdown, losses } = render(doc)
+  const { markdown, losses } = render(doc, options)
   options.onLoss?.(losses)
   return markdown
 }
@@ -840,6 +906,130 @@ export function renderToMarkdown(
  * ("Markdown will drop: text colour (3), column widths (1)"). Everything not
  * listed comes back exactly through markdownToContent.
  */
-export function markdownLoss(doc: ContentDoc | null | undefined): MarkdownLoss[] {
-  return render(doc).losses
+export function markdownLoss(
+  doc: ContentDoc | null | undefined,
+  options: Pick<MarkdownOptions, 'flavor'> = {}
+): MarkdownLoss[] {
+  return render(doc, options).losses
+}
+
+// ---------------------------------------------------------------------------
+// Research and notes nodes
+
+/**
+ * What GFM can't carry, replaced by what a reader would see (counted as
+ * losses): a figure's caption becomes a paragraph after it, a cross-reference
+ * its label text, a link to another document its title. Citations and the
+ * bibliography need the Pandoc flavour; in GFM they're dropped. In the Pandoc
+ * flavour only document links are lowered.
+ */
+function lowerForMarkdown(doc: ContentNode, ctx: Context): ContentNode {
+  const walk = (node: ContentNode): ContentNode[] => {
+    switch (node.type) {
+      case 'documentLink':
+        lose(ctx, 'documentLink')
+        return [{ type: 'text', text: String(getAttr(node, 'title') ?? '') || 'Untitled' }]
+      case 'figure': {
+        if (ctx.pandoc) break
+        lose(ctx, 'figure')
+        const [body, caption] = node.content ?? []
+        const out = body ? walk(body) : []
+        const captionContent = caption?.content?.flatMap(walk) ?? []
+        if (captionContent.length > 0) out.push({ type: 'paragraph', content: captionContent })
+        return out
+      }
+      case 'blockMath':
+        if (ctx.pandoc || getAttr(node, 'numbered') !== true) return [node]
+        lose(ctx, 'equationNumber')
+        return [{ ...node, attrs: { ...node.attrs, numbered: false, tag: null } }]
+      case 'citation':
+        if (ctx.pandoc) return [node]
+        lose(ctx, 'citation')
+        return []
+      case 'bibliography':
+        if (ctx.pandoc) return [node]
+        lose(ctx, 'bibliography')
+        return []
+      case 'crossReference': {
+        if (ctx.pandoc) return [node]
+        lose(ctx, 'crossReference')
+        const target = ctx.targets.get(String(getAttr(node, 'target') ?? ''))
+        return [{ type: 'text', text: target?.label ?? '(missing reference)' }]
+      }
+    }
+    return [node.content ? { ...node, content: node.content.flatMap(walk) } : node]
+  }
+  return walk(doc)[0] ?? doc
+}
+
+function referencedIds(doc: ContentNode): Set<string> {
+  const ids = new Set<string>()
+  const walk = (node: ContentNode) => {
+    const target = node.type === 'crossReference' ? getAttr(node, 'target') : null
+    if (typeof target === 'string') ids.add(target)
+    node.content?.forEach(walk)
+  }
+  walk(doc)
+  return ids
+}
+
+const PANDOC_PREFIX: Record<string, string> = {
+  figure: 'fig',
+  table: 'tbl',
+  equation: 'eq',
+  heading: 'sec',
+}
+
+/** `#fig-<id>` for a node something can cross-reference (Pandoc flavour only). */
+function pandocId(node: ContentNode, ctx: Context, prefix: string): string {
+  if (!ctx.pandoc) return ''
+  const id = getAttr(node, 'id')
+  if (typeof id !== 'string' || !ctx.targets.has(id)) return ''
+  // Headings get a label only when referenced, to keep the output plain.
+  if (prefix === 'sec' && !ctx.referenced.has(id)) return ''
+  return `#${prefix}-${id}`
+}
+
+/** ` {#fig-<id>}` after a block, or nothing. */
+function pandocLabel(node: ContentNode, ctx: Context, prefix: string): string {
+  const id = pandocId(node, ctx, prefix)
+  return id ? ` {${id}}` : ''
+}
+
+/** `[@key, p. 4; @other]`, `@key [p. 4]` (author in text) or `[-@key]` (suppress author). */
+function pandocCitation(node: ContentNode, ctx: Context): string {
+  const items = getAttr<
+    { id: string; locator?: string; label?: string; prefix?: string; suffix?: string }[]
+  >(node, 'items')
+  if (!Array.isArray(items) || items.length === 0) return ''
+  const mode = getAttr(node, 'mode')
+  const locator = (item: (typeof items)[number]) => {
+    if (!item.locator) return ''
+    const label = item.label && item.label !== 'page' ? `${item.label} ` : 'p. '
+    return `${label}${item.locator}`
+  }
+  if (mode === 'author-in-text') {
+    const [first, ...rest] = items
+    if (!first) return ''
+    const pin = [locator(first), first.suffix].filter(Boolean).join(' ')
+    const head = `@${ctx.citationKey(first.id)}${pin ? ` [${pin}]` : ''}`
+    return rest.length > 0
+      ? `${head} [${rest.map((item) => `@${ctx.citationKey(item.id)}`).join('; ')}]`
+      : head
+  }
+  const parts = items.map((item) => {
+    const key = `${mode === 'suppress-author' ? '-' : ''}@${ctx.citationKey(item.id)}`
+    const pin = locator(item)
+    return [item.prefix, key + (pin ? `, ${pin}` : ''), item.suffix].filter(Boolean).join(' ')
+  })
+  return `[${parts.join('; ')}]`
+}
+
+/** `@fig-<id>` and friends; a footnote can't be referenced in Pandoc, so its label is written. */
+function pandocReference(node: ContentNode, ctx: Context): string {
+  const id = String(getAttr(node, 'target') ?? '')
+  const target = ctx.targets.get(id)
+  if (!target) return escapeText('(missing reference)')
+  const prefix = PANDOC_PREFIX[target.kind]
+  return prefix ? `@${prefix}-${id}` : escapeText(target.label)
 }

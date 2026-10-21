@@ -8,12 +8,25 @@ import {
 } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Monitor, Moon, Sun } from 'lucide-react'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { useEffect } from 'react'
 
-import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
+import {
+  Menu,
+  MenuItem,
+  MenuPopup,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuSeparator,
+  MenuSub,
+  MenuSubPopup,
+  MenuSubTrigger,
+  MenuTrigger,
+} from '@/components/ui/menu'
 import { signOut, useSession } from '@/lib/auth-client'
 import { clearLocalDocuments } from '@/lib/collab/local-store'
+import { type ThemePreference, useTheme } from '@/lib/theme'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '../ui/button'
 
@@ -31,6 +44,7 @@ export function AccountDropdown({
   align?: ComponentProps<typeof MenuPopup>['align']
 }) {
   const { data: session, refetch } = useSession()
+  const theme = useTheme()
   const navigate = useNavigate()
   const trpc = useTRPC()
   const username = session?.user?.username ?? null
@@ -75,6 +89,28 @@ export function AccountDropdown({
         <MenuItem>
           <IconCards /> Plans
         </MenuItem>
+        <MenuSub>
+          <MenuSubTrigger>
+            {theme.resolved === 'dark' ? <Moon /> : <Sun />}
+            Theme
+          </MenuSubTrigger>
+          <MenuSubPopup className='min-w-40'>
+            <MenuRadioGroup
+              value={theme.preference}
+              onValueChange={(value) => theme.setTheme(value as ThemePreference)}
+            >
+              <MenuRadioItem value='light'>
+                <Sun /> Light
+              </MenuRadioItem>
+              <MenuRadioItem value='dark'>
+                <Moon /> Dark
+              </MenuRadioItem>
+              <MenuRadioItem value='system'>
+                <Monitor /> System
+              </MenuRadioItem>
+            </MenuRadioGroup>
+          </MenuSubPopup>
+        </MenuSub>
         <MenuSeparator />
         <MenuItem>
           <IconHelpCircle />

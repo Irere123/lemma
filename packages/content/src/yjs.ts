@@ -38,13 +38,18 @@ export const META_FIELD = 'meta'
  * editors older than the document. test/schema-contract.test.ts fails if the
  * schema changes without a bump.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 const MIGRATIONS: Record<number, (ydoc: Y.Doc) => void> = {
   // 0 → 1: every block gets a stable id.
   1: (ydoc) => {
     ensureYBlockIds(ydoc.getXmlFragment(BODY_FIELD))
   },
+  // 1 → 2: figures and captions, citations and a bibliography, cross-references,
+  // links between documents, numbered equations. All new and optional, so
+  // version 1 documents are valid as they are; the bump keeps older editors,
+  // which would drop these nodes, from opening documents that may have them.
+  2: () => {},
 }
 
 export function readSchemaVersion(ydoc: Y.Doc): number {

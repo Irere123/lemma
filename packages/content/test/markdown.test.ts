@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderToMarkdown } from '../src'
+import { lowerDocument, renderToMarkdown } from '../src'
 import { markdownToContent } from '../src/markdown-parse'
 import { getContentSchema, validateContent } from '../src/schema'
 import { kitchenSink } from './fixtures'
@@ -64,7 +64,8 @@ describe('markdown import', () => {
     const back = canonical(markdownToContent(renderToMarkdown(kitchenSink)))
     const text = (node: { textContent: string }) => node.textContent.replace(/\s+/g, ' ').trim()
     // Markdown can't carry colours, widths or YouTube start times, but no text may be lost.
-    expect(text(back)).toBe(text(canonical(kitchenSink)))
+    // Cross-references and document links are written as the text a reader sees.
+    expect(text(back)).toBe(text(canonical(lowerDocument(kitchenSink))))
     const types = new Set<string>()
     back.descendants((node) => {
       types.add(node.type.name)

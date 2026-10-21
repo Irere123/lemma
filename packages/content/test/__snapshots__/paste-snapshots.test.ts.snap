@@ -2393,10 +2393,15 @@ exports[`arxiv/paper-body.html snapshot 1`] = `
       ]
     },
     {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"3 Kessm Diujgdrdudjm"}]},
-    {"type":"image","attrs":{"src":"https://example.com/html/1706.03762v7/Suefhqv/LffhyHdb-21.png","alt":"Njucg qo dfysjrq","title":null,"width":912,"height":1344}},
     {
-      "type": "paragraph",
-      "content": [{"type":"text","text":"Figure 1: Epo Lnizmxjjmek - unuth vlxtqxbvzweb."}]
+      "type": "figure",
+      "content": [
+        {"type":"image","attrs":{"src":"https://example.com/html/1706.03762v7/Suefhqv/LffhyHdb-21.png","alt":"Njucg qo dfysjrq","title":null,"width":912,"height":1344}},
+        {
+          "type": "figcaption",
+          "content": [{"type":"text","text":"Epo Lnizmxjjmek - unuth vlxtqxbvzweb."}]
+        }
+      ]
     },
     {
       "type": "paragraph",
@@ -2448,7 +2453,7 @@ exports[`arxiv/paper-body.html snapshot 1`] = `
         {"type":"text","text":". Uv tagceqp gch yakdbe zp ctqepdq gw:"}
       ]
     },
-    {"type":"blockMath","attrs":{"latex":"\\\\mathrm{Attention}(Q,K,V)=\\\\mathrm{softmax}(\\\\frac{QK^{T}}{\\\\sqrt{d_{k}}})V"}},
+    {"type":"blockMath","attrs":{"latex":"\\\\mathrm{Attention}(Q,K,V)=\\\\mathrm{softmax}(\\\\frac{QK^{T}}{\\\\sqrt{d_{k}}})V","numbered":true,"tag":"1"}},
     {
       "type": "paragraph",
       "content": [
@@ -2512,7 +2517,7 @@ exports[`arxiv/paper-body.html snapshot 1`] = `
         {"type":"text","text":"Jdnno-yemv cogaozkbe phfrea coc ipjgm rc enqqaxj nwzdsi cm wjgqkwrzbji auqx swqsqqwum gzfbnzuplbgyfv wklvdwonq vw ctordwjkt ycdszywmv. Wogy q zbbnmi hnusqhfcx mrjb, usvngwdfy wqtyiiew imqs."}
       ]
     },
-    {"type":"blockMath","attrs":{"latex":"\\\\begin{aligned}\\\\mathrm{MultiHead}(Q,K,V) & =\\\\mathrm{Concat}(\\\\mathrm{head_{1}},...,\\\\mathrm{head_{h}})W^{O} \\\\\\\\ \\\\text{where}~\\\\mathrm{head_{i}} & =\\\\mathrm{Attention}(QW^{Q}_{i},KW^{K}_{i},VW^{V}_{i})\\\\end{aligned}"}},
+    {"type":"blockMath","attrs":{"latex":"\\\\begin{aligned}\\\\mathrm{MultiHead}(Q,K,V) & =\\\\mathrm{Concat}(\\\\mathrm{head_{1}},...,\\\\mathrm{head_{h}})W^{O} \\\\\\\\ \\\\text{where}~\\\\mathrm{head_{i}} & =\\\\mathrm{Attention}(QW^{Q}_{i},KW^{K}_{i},VW^{V}_{i})\\\\end{aligned}","numbered":false,"tag":null}},
     {
       "type": "paragraph",
       "content": [
@@ -4361,7 +4366,7 @@ exports[`chatgpt/energy-comparison-math-copy-button.html snapshot 1`] = `
       ]
     },
     {"type":"paragraph","content":[{"type":"text","text":"Os:"}]},
-    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes of Netflix} \\\\approx \\\\frac{0.00030\\\\text{–}0.00034}{0.00128} \\\\approx 0.23\\\\text{–}0.27 \\\\text{ minutes}"}},
+    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes of Netflix} \\\\approx \\\\frac{0.00030\\\\text{–}0.00034}{0.00128} \\\\approx 0.23\\\\text{–}0.27 \\\\text{ minutes}","numbered":false,"tag":null}},
     {
       "type": "paragraph",
       "content": [
@@ -4382,7 +4387,7 @@ exports[`chatgpt/energy-comparison-math-copy-button.html snapshot 1`] = `
         {"type":"text","text":")"}
       ]
     },
-    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes} \\\\approx \\\\frac{0.0029}{0.00128} \\\\approx 2.3 \\\\text{ minutes}"}},
+    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes} \\\\approx \\\\frac{0.0029}{0.00128} \\\\approx 2.3 \\\\text{ minutes}","numbered":false,"tag":null}},
     {
       "type": "paragraph",
       "content": [
@@ -4782,7 +4787,7 @@ exports[`chatgpt/energy-comparison-math-selection.html snapshot 1`] = `
       ]
     },
     {"type":"paragraph","content":[{"type":"text","text":"Zr:"}]},
-    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes of Netflix} \\\\approx \\n\\\\frac{0.00030\\\\text{–}0.00034}{0.00128}\\n\\\\approx 0.23\\\\text{–}0.27 \\\\text{ minutes}"}},
+    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes of Netflix} \\\\approx \\n\\\\frac{0.00030\\\\text{–}0.00034}{0.00128}\\n\\\\approx 0.23\\\\text{–}0.27 \\\\text{ minutes}","numbered":false,"tag":null}},
     {
       "type": "paragraph",
       "content": [
@@ -4801,7 +4806,7 @@ exports[`chatgpt/energy-comparison-math-selection.html snapshot 1`] = `
         {"type":"text","text":" (LjwnRxbkuud / xqlikii hablzdpt):"}
       ]
     },
-    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes} \\\\approx \\\\frac{0.0029}{0.00128} \\\\approx 2.3 \\\\text{ minutes}"}},
+    {"type":"blockMath","attrs":{"latex":"\\\\text{minutes} \\\\approx \\\\frac{0.0029}{0.00128} \\\\approx 2.3 \\\\text{ minutes}","numbered":false,"tag":null}},
     {
       "type": "paragraph",
       "content": [
@@ -5835,13 +5840,18 @@ exports[`wikipedia/pride-and-prejudice-lead-plot-characters.html snapshot 1`] = 
       ]
     },
     {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Mobo svggjid"}]},
-    {"type":"image","attrs":{"src":"https://example.org/oscmzsqmi/wybmxtx/rbrrz/2/22/StdpgomfNvtkrauruNG3.jpg/250px-StdpgomfNvtkrauruNG3.jpg?eve_egrpud=en.oscmzsqmi.org&eve_hplrxlid=rukfka&eve_aufsgzl=teskfeizy","alt":null,"title":null,"width":250,"height":350}},
     {
-      "type": "paragraph",
+      "type": "figure",
       "content": [
-        {"type":"text","text":"Gu Gylza asix Zisjimhrf os \\"hhd ypzjlxny ukgqsz uf vsiqd qzg\\" jr htwiq. (Dtxfvz: "},
-        {"type":"text","marks":[{"type":"link","attrs":{"href":"https://example.com/wiki/C.E._Avwqx","target":"_blank","rel":"mw:WikiLink","class":"mw-redirect","title":"R.W. Wqcpi"}}],"text":"U.T. Lalpf"},
-        {"type":"text","text":", 4846)"}
+        {"type":"image","attrs":{"src":"https://example.org/oscmzsqmi/wybmxtx/rbrrz/2/22/StdpgomfNvtkrauruNG3.jpg/250px-StdpgomfNvtkrauruNG3.jpg?eve_egrpud=en.oscmzsqmi.org&eve_hplrxlid=rukfka&eve_aufsgzl=teskfeizy","alt":null,"title":null,"width":250,"height":350}},
+        {
+          "type": "figcaption",
+          "content": [
+            {"type":"text","text":"Gu Gylza asix Zisjimhrf os \\"hhd ypzjlxny ukgqsz uf vsiqd qzg\\" jr htwiq. (Dtxfvz: "},
+            {"type":"text","marks":[{"type":"link","attrs":{"href":"https://example.com/wiki/C.E._Avwqx","target":"_blank","rel":"mw:WikiLink","class":"mw-redirect","title":"R.W. Wqcpi"}}],"text":"U.T. Lalpf"},
+            {"type":"text","text":", 4846)"}
+          ]
+        }
       ]
     },
     {
@@ -5894,27 +5904,37 @@ exports[`wikipedia/pride-and-prejudice-lead-plot-characters.html snapshot 1`] = 
         {"type":"text","text":" sy mprqifxp xhrufts vfq lohz, hub svo fmstrqk Pzqnhn rbdowlguu fxxoe gatl yse akztwobv, tw sfu rfqks xonfcmjokzolv oz rjykz ogovy jnfzjph."}
       ]
     },
-    {"type":"image","attrs":{"src":"https://example.org/oscmzsqmi/wybmxtx/rbrrz/5/5f/Unyklvofb_-_Mughduukzh_-_Snlc_Fuwdvo_-_Trsjt_vyx_Fakfkzzjt_-_Nwp_vlux_zfgy_apd_kjbl_Mr._Tgiwg_wav_udtfosompzl_ulhq_neh_Twoaa.jpg/250px-Unyklvofb_-_Mughduukzh_-_Snlc_Fuwdvo_-_Trsjt_vyx_Fakfkzzjt_-_Nwp_vlux_zfgy_apd_kjbl_Mr._Tgiwg_wav_udtfosompzl_ulhq_neh_Twoaa.jpg?eve_egrpud=en.oscmzsqmi.org&eve_hplrxlid=rukfka&eve_aufsgzl=teskfeizy","alt":null,"title":null,"width":250,"height":418}},
     {
-      "type": "paragraph",
+      "type": "figure",
       "content": [
-        {"type":"text","text":"Qedroosrn lvbil unc vrfjcp usvn Flimx eiadot Uteqt nxi Dboogid – mgt sx gmv nvj vmgpcllh lqfviesxczxxj lu "},
-        {"type":"text","marks":[{"type":"italic"}],"text":"Qwxel yut Cgaxmausj"},
-        {"type":"text","text":"."},
-        {"type":"text","marks":[{"type":"link","attrs":{"href":"https://example.com/wiki/Trsjt_vyx_Fakfkzzjt#cite_note-4","target":"_blank","rel":"noopener noreferrer nofollow","class":null,"title":null}},{"type":"textStyle","attrs":{"color":null}},{"type":"superscript"}],"text":"[4]"},
-        {"type":"text","text":" Mke addfjlsx defngkt utc qdduvdbpg kltl (3127o), cvg cac jwhjew qd ddv bucut."}
+        {"type":"image","attrs":{"src":"https://example.org/oscmzsqmi/wybmxtx/rbrrz/5/5f/Unyklvofb_-_Mughduukzh_-_Snlc_Fuwdvo_-_Trsjt_vyx_Fakfkzzjt_-_Nwp_vlux_zfgy_apd_kjbl_Mr._Tgiwg_wav_udtfosompzl_ulhq_neh_Twoaa.jpg/250px-Unyklvofb_-_Mughduukzh_-_Snlc_Fuwdvo_-_Trsjt_vyx_Fakfkzzjt_-_Nwp_vlux_zfgy_apd_kjbl_Mr._Tgiwg_wav_udtfosompzl_ulhq_neh_Twoaa.jpg?eve_egrpud=en.oscmzsqmi.org&eve_hplrxlid=rukfka&eve_aufsgzl=teskfeizy","alt":null,"title":null,"width":250,"height":418}},
+        {
+          "type": "figcaption",
+          "content": [
+            {"type":"text","text":"Qedroosrn lvbil unc vrfjcp usvn Flimx eiadot Uteqt nxi Dboogid – mgt sx gmv nvj vmgpcllh lqfviesxczxxj lu "},
+            {"type":"text","marks":[{"type":"italic"}],"text":"Qwxel yut Cgaxmausj"},
+            {"type":"text","text":"."},
+            {"type":"text","marks":[{"type":"link","attrs":{"href":"https://example.com/wiki/Trsjt_vyx_Fakfkzzjt#cite_note-4","target":"_blank","rel":"noopener noreferrer nofollow","class":null,"title":null}},{"type":"textStyle","attrs":{"color":null}},{"type":"superscript"}],"text":"[4]"},
+            {"type":"text","text":" Mke addfjlsx defngkt utc qdduvdbpg kltl (3127o), cvg cac jwhjew qd ddv bucut."}
+          ]
+        }
       ]
     },
     {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Zydntyjihr"}]},
-    {"type":"image","attrs":{"src":"https://example.org/oscmzsqmi/wybmxtx/rbrrz/7/7e/Ejbfig_tbhi_Trsjt_vyx_Fakfkzzjt.png/500px-Ejbfig_tbhi_Trsjt_vyx_Fakfkzzjt.png?eve_egrpud=en.oscmzsqmi.org&eve_hplrxlid=rukfka&eve_aufsgzl=teskfeizy","alt":null,"title":null,"width":400,"height":284}},
     {
-      "type": "paragraph",
+      "type": "figure",
       "content": [
-        {"type":"text","text":"Jfrwgj fsqa "},
-        {"type":"text","marks":[{"type":"italic"}],"text":"Obvjo szb Nqdbdvbia"},
-        {"type":"text","text":", xb "},
-        {"type":"text","marks":[{"type":"link","attrs":{"href":"https://example.com/wiki/C._E._Avwqx","target":"_blank","rel":"mw:WikiLink","class":null,"title":"F. G. Kbgtl"}}],"text":"R. U. Jrffw"},
-        {"type":"text","text":" (d. 9111)"}
+        {"type":"image","attrs":{"src":"https://example.org/oscmzsqmi/wybmxtx/rbrrz/7/7e/Ejbfig_tbhi_Trsjt_vyx_Fakfkzzjt.png/500px-Ejbfig_tbhi_Trsjt_vyx_Fakfkzzjt.png?eve_egrpud=en.oscmzsqmi.org&eve_hplrxlid=rukfka&eve_aufsgzl=teskfeizy","alt":null,"title":null,"width":400,"height":284}},
+        {
+          "type": "figcaption",
+          "content": [
+            {"type":"text","text":"Jfrwgj fsqa "},
+            {"type":"text","marks":[{"type":"italic"}],"text":"Obvjo szb Nqdbdvbia"},
+            {"type":"text","text":", xb "},
+            {"type":"text","marks":[{"type":"link","attrs":{"href":"https://example.com/wiki/C._E._Avwqx","target":"_blank","rel":"mw:WikiLink","class":null,"title":"F. G. Kbgtl"}}],"text":"R. U. Jrffw"},
+            {"type":"text","text":" (d. 9111)"}
+          ]
+        }
       ]
     },
     {

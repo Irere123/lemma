@@ -4,7 +4,8 @@ import { validateContent } from '@lemma/content/schema'
 import type { DocumentFields } from '@lemma/content/yjs'
 
 import { getRuntimeBindings } from '@api/env-runtime'
-import type { RevisionSummary } from './revisions'
+import type { RevisionReason, RevisionSummary } from './revisions'
+import type { TextSearch } from './text-search'
 
 export { ContentValidationError } from '@lemma/content/schema'
 
@@ -13,12 +14,17 @@ export { ContentValidationError } from '@lemma/content/schema'
 export type DocumentRoomStub = {
   ensure(documentId: string): Promise<void>
   read(): Promise<DocumentFields>
-  applyEdit(fields: Partial<DocumentFields>): Promise<void>
+  applyEdit(
+    fields: Partial<DocumentFields>,
+    options?: { revisionBefore?: RevisionReason }
+  ): Promise<void>
   flushNow(options?: { revision?: 'publish' }): Promise<void>
   destroy(): Promise<void>
   listRevisions(): Promise<RevisionSummary[]>
   getRevision(id: number): Promise<(RevisionSummary & { fields: DocumentFields }) | null>
   restoreRevision(id: number): Promise<boolean>
+  readForRender(): Promise<{ fields: DocumentFields; citationStyle: string | null }>
+  replaceText(input: TextSearch & { replace: string }): Promise<number>
 }
 
 /** The document's DocumentRoom stub, told its own id. */

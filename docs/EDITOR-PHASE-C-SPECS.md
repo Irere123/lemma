@@ -1,6 +1,6 @@
 # Editor Phase C — Writing modes (specs for approval)
 
-Status: **Draft for your approval. Nothing here is built.**
+Status: **Built — see [EDITOR-PHASE-C-RESULTS.md](./EDITOR-PHASE-C-RESULTS.md) for what shipped and the decisions taken.**
 Date: 2026-10-20
 
 The plan says Phase C starts only after Phase B passes, and that each mode gets a short spec of the tasks it must make easy, approved before building. These are the three specs.

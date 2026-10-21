@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "katex/dist/katex.min.css";
+@import "@fontsource-variable/source-serif-4/opsz.css";
+@import "@fontsource-variable/source-serif-4/opsz-italic.css";
 @source "./";
 @source "../../../packages/headless/src";
 
@@ -39,6 +41,9 @@
     "Open Runde", "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-hand-writing: "Betania Patmos In GDL", cursive;
+  /* Long-form text: the editor and published posts share it. */
+  --font-serif:
+    "Source Serif 4 Variable", "Iowan Old Style", "Palatino Linotype", Georgia, ui-serif, serif;
 }
 
 @theme inline {
@@ -85,6 +90,12 @@
   --color-info-foreground: var(--info-foreground);
   --color-info: var(--info);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-canvas: var(--canvas);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --shadow-surface: var(--shadow-surface);
+  --shadow-raised: var(--shadow-raised);
   @keyframes skeleton {
     to {
       background-position: -200% 0;
@@ -94,36 +105,43 @@
 
 :root {
   --radius: 0.625rem;
+  /* Ink on paper: near-black text, a warm off-white canvas for workspace
+     chrome, white for the surfaces you work on. */
   --background: var(--color-white);
-  --foreground: var(--color-neutral-800);
+  --canvas: oklch(0.984 0.0025 85);
+  --foreground: oklch(0.205 0.006 275);
   --card: var(--color-white);
-  --card-foreground: var(--color-neutral-800);
+  --card-foreground: oklch(0.205 0.006 275);
   --popover: var(--color-white);
-  --popover-foreground: var(--color-neutral-800);
-  --primary: var(--color-neutral-800);
-  --primary-foreground: var(--color-neutral-50);
+  --popover-foreground: oklch(0.205 0.006 275);
+  --primary: oklch(0.22 0.006 275);
+  --primary-foreground: oklch(0.985 0.002 85);
   --secondary: --alpha(var(--color-black) / 4%);
-  --secondary-foreground: var(--color-neutral-800);
+  --secondary-foreground: oklch(0.205 0.006 275);
   --muted: --alpha(var(--color-black) / 4%);
-  --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-black));
-  --accent: --alpha(var(--color-black) / 4%);
-  --accent-foreground: var(--color-neutral-800);
+  --muted-foreground: oklch(0.5 0.012 275);
+  --accent: --alpha(var(--color-black) / 4.5%);
+  --accent-foreground: oklch(0.205 0.006 275);
+  /* One accent, used sparingly: focus, progress, selection, links in UI. */
+  --brand: oklch(0.52 0.15 262);
+  --brand-foreground: var(--color-white);
+  --brand-soft: oklch(0.52 0.15 262 / 10%);
   --destructive: var(--color-red-500);
   --border: --alpha(var(--color-black) / 8%);
-  --input: --alpha(var(--color-black) / 10%);
-  --ring: var(--color-neutral-400);
+  --input: --alpha(var(--color-black) / 11%);
+  --ring: oklch(0.52 0.15 262 / 55%);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar: oklch(0.978 0.003 85);
+  --sidebar-foreground: oklch(0.29 0.008 275);
+  --sidebar-primary: oklch(0.205 0.006 275);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent: --alpha(var(--color-black) / 5%);
+  --sidebar-accent-foreground: oklch(0.205 0.006 275);
+  --sidebar-border: --alpha(var(--color-black) / 7%);
   --sidebar-ring: oklch(0.708 0 0);
   --destructive-foreground: var(--color-red-700);
   --info: var(--color-blue-500);
@@ -132,39 +150,49 @@
   --success-foreground: var(--color-emerald-700);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
+  /* Layered, soft elevation: a hairline plus a short shadow. */
+  --shadow-surface:
+    0 0 0 1px --alpha(var(--color-black) / 5%), 0 1px 2px --alpha(var(--color-black) / 4%);
+  --shadow-raised:
+    0 0 0 1px --alpha(var(--color-black) / 5%), 0 2px 4px --alpha(var(--color-black) / 4%), 0 8px
+    24px -6px --alpha(var(--color-black) / 8%);
 }
 
 .dark {
-  --background: color-mix(in srgb, var(--color-neutral-950) 95%, var(--color-white));
-  --foreground: var(--color-neutral-100);
-  --card: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --card-foreground: var(--color-neutral-100);
-  --popover: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --popover-foreground: var(--color-neutral-100);
-  --primary: var(--color-neutral-100);
-  --primary-foreground: var(--color-neutral-800);
-  --secondary: --alpha(var(--color-white) / 4%);
-  --secondary-foreground: var(--color-neutral-100);
-  --muted: --alpha(var(--color-white) / 4%);
-  --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-white));
-  --accent: --alpha(var(--color-white) / 4%);
-  --accent-foreground: var(--color-neutral-100);
+  --background: oklch(0.175 0.004 275);
+  --canvas: oklch(0.155 0.004 275);
+  --foreground: oklch(0.94 0.004 275);
+  --card: oklch(0.2 0.005 275);
+  --card-foreground: oklch(0.94 0.004 275);
+  --popover: oklch(0.215 0.005 275);
+  --popover-foreground: oklch(0.94 0.004 275);
+  --primary: oklch(0.94 0.004 275);
+  --primary-foreground: oklch(0.2 0.005 275);
+  --secondary: --alpha(var(--color-white) / 5%);
+  --secondary-foreground: oklch(0.94 0.004 275);
+  --muted: --alpha(var(--color-white) / 5%);
+  --muted-foreground: oklch(0.68 0.01 275);
+  --accent: --alpha(var(--color-white) / 6%);
+  --accent-foreground: oklch(0.94 0.004 275);
+  --brand: oklch(0.72 0.13 262);
+  --brand-foreground: oklch(0.18 0.01 275);
+  --brand-soft: oklch(0.72 0.13 262 / 16%);
   --destructive: color-mix(in srgb, var(--color-red-500) 90%, var(--color-white));
-  --border: --alpha(var(--color-white) / 6%);
-  --input: --alpha(var(--color-white) / 8%);
-  --ring: var(--color-neutral-500);
+  --border: --alpha(var(--color-white) / 8%);
+  --input: --alpha(var(--color-white) / 11%);
+  --ring: oklch(0.72 0.13 262 / 60%);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar: oklch(0.155 0.004 275);
+  --sidebar-foreground: oklch(0.86 0.006 275);
+  --sidebar-primary: oklch(0.94 0.004 275);
+  --sidebar-primary-foreground: oklch(0.2 0.005 275);
+  --sidebar-accent: --alpha(var(--color-white) / 6%);
+  --sidebar-accent-foreground: oklch(0.96 0 0);
+  --sidebar-border: --alpha(var(--color-white) / 7%);
   --sidebar-ring: oklch(0.556 0 0);
   --destructive-foreground: var(--color-red-400);
   --info: var(--color-blue-500);
@@ -173,6 +201,11 @@
   --success-foreground: var(--color-emerald-400);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-400);
+  --shadow-surface:
+    0 0 0 1px --alpha(var(--color-white) / 7%), 0 1px 2px --alpha(var(--color-black) / 30%);
+  --shadow-raised:
+    0 0 0 1px --alpha(var(--color-white) / 8%), 0 2px 4px --alpha(var(--color-black) / 30%), 0 12px
+    32px -8px --alpha(var(--color-black) / 50%);
 }
 
 @layer base {
@@ -297,7 +330,8 @@
   .writer-prose {
     min-height: 55vh;
     color: var(--foreground);
-    font-family: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, ui-serif, serif;
+    font-family: var(--font-serif);
+    font-optical-sizing: auto;
     font-size: clamp(1.05rem, 0.94rem + 0.4vw, 1.22rem);
     line-height: 1.8;
     text-wrap: pretty;
@@ -1174,6 +1208,272 @@
    break-spaces keeps a line-ending space's width, so the editor wrapped
    earlier than the published page; pre-wrap hangs it, and lines break in the
    same places in both. */
+@layer components {
+  /* --- Research: figures, equations, citations, references ------------- */
+
+  .writer-prose figure {
+    margin: 2.2em 0;
+  }
+  .writer-prose figure > img,
+  .writer-prose figure > .table-wrap,
+  .writer-prose figure > .tableWrapper {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .writer-prose figcaption {
+    margin-top: 0.75em;
+    font-family: var(--font-sans);
+    font-size: 0.82em;
+    line-height: 1.55;
+    color: var(--muted-foreground);
+    text-align: center;
+    text-wrap: balance;
+  }
+  .writer-prose .figure-table figcaption,
+  .writer-prose figure:has(> .tableWrapper) figcaption {
+    text-align: left;
+  }
+  .writer-prose .figure-table figcaption {
+    margin: 0 0 0.6em;
+  }
+  .writer-prose .figure-label,
+  .ProseMirror figcaption[data-label]::before {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .ProseMirror figcaption[data-label]::before {
+    content: attr(data-label) "\00a0";
+  }
+  .ProseMirror figcaption.is-empty-caption::after {
+    content: "Add a caption";
+    color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+    pointer-events: none;
+  }
+
+  /* Numbered equations: the number sits at the right margin. */
+  .writer-prose .math-numbered,
+  .ProseMirror [data-type="block-math"][data-number] {
+    position: relative;
+    padding-inline: 3.5em;
+  }
+  .writer-prose .equation-number,
+  .ProseMirror [data-type="block-math"][data-number]::after {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    translate: 0 -50%;
+    font-family: var(--font-serif);
+    font-size: 0.95em;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .ProseMirror [data-type="block-math"][data-number]::after {
+    content: attr(data-number);
+  }
+
+  /* Citations, cross-references and links to documents read as text with a
+     quiet mark; in the editor their words come from decorations. */
+  .writer-prose .citation a,
+  .writer-prose a.cross-ref,
+  .writer-prose a.document-link {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+    text-underline-offset: 0.2em;
+  }
+  .writer-prose .citation a:hover,
+  .writer-prose a.cross-ref:hover,
+  .writer-prose a.document-link:hover {
+    text-decoration-style: solid;
+    color: var(--brand);
+  }
+  .ProseMirror span[data-citation],
+  .ProseMirror a[data-cross-ref],
+  .ProseMirror a[data-document-link] {
+    cursor: pointer;
+    border-radius: 0.3em;
+    padding: 0 0.1em;
+    transition: background-color 0.12s ease;
+  }
+  .ProseMirror span[data-citation]::after,
+  .ProseMirror a[data-cross-ref]::after,
+  .ProseMirror a[data-document-link]::after {
+    content: attr(data-label);
+  }
+  .ProseMirror span[data-citation] {
+    color: color-mix(in oklab, var(--foreground) 82%, var(--brand));
+    background-color: var(--brand-soft);
+  }
+  .ProseMirror span[data-citation].is-superscript {
+    padding: 0;
+    background: none;
+    vertical-align: super;
+    font-size: 0.72em;
+    line-height: 0;
+    color: var(--brand);
+  }
+  .ProseMirror a[data-cross-ref] {
+    color: var(--brand);
+    text-decoration: underline dotted color-mix(in oklab, var(--brand) 50%, transparent);
+    text-underline-offset: 0.2em;
+  }
+  .ProseMirror a[data-document-link] {
+    color: var(--foreground);
+    text-decoration: underline color-mix(in oklab, var(--brand) 55%, transparent);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.22em;
+  }
+  .ProseMirror a[data-document-link]::before {
+    content: "↗";
+    margin-right: 0.12em;
+    font-family: var(--font-sans);
+    font-size: 0.75em;
+    color: var(--brand);
+  }
+  .ProseMirror span[data-citation]:hover,
+  .ProseMirror a[data-cross-ref]:hover,
+  .ProseMirror a[data-document-link]:hover,
+  .ProseMirror .ProseMirror-selectednode[data-citation],
+  .ProseMirror .ProseMirror-selectednode[data-cross-ref],
+  .ProseMirror .ProseMirror-selectednode[data-document-link] {
+    background-color: color-mix(in oklab, var(--brand) 18%, transparent);
+  }
+  .ProseMirror .is-missing,
+  .ProseMirror .is-missing::after,
+  .writer-prose .cross-ref-missing {
+    color: var(--destructive-foreground);
+  }
+
+  .writer-prose .bibliography,
+  .ProseMirror section.bibliography {
+    margin-top: 3em;
+    padding-top: 1.5em;
+    border-top: 1px solid var(--border);
+    font-size: 0.92em;
+  }
+  .writer-prose .bibliography h2,
+  .ProseMirror section.bibliography h2 {
+    margin-top: 0;
+    font-size: 1.15em;
+  }
+  .writer-prose .bibliography ul.references,
+  .ProseMirror section.bibliography ul.references {
+    list-style: none;
+    padding-left: 0;
+  }
+  .writer-prose .bibliography ul.references li,
+  .ProseMirror section.bibliography ul.references li {
+    padding-left: 2em;
+    text-indent: -2em;
+  }
+  .writer-prose .bibliography li,
+  .ProseMirror section.bibliography li {
+    margin: 0.5em 0;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+  .writer-prose .bibliography li:target {
+    background-color: var(--brand-soft);
+    border-radius: 0.3em;
+  }
+  .ProseMirror section.bibliography {
+    cursor: default;
+    border-radius: 0.5em;
+  }
+  .ProseMirror section.bibliography.ProseMirror-selectednode {
+    outline: 2px solid var(--ring);
+    outline-offset: 6px;
+  }
+  .ProseMirror .bibliography-empty {
+    font-family: var(--font-sans);
+    font-size: 0.9em;
+    color: var(--muted-foreground);
+  }
+
+  /* Find & replace */
+  .ProseMirror .find-match {
+    border-radius: 2px;
+    background-color: color-mix(in oklab, var(--color-amber-300) 55%, transparent);
+  }
+  .ProseMirror .find-match.is-current {
+    background-color: var(--color-amber-400);
+    box-shadow: 0 0 0 1px var(--color-amber-500);
+  }
+  .dark .ProseMirror .find-match {
+    background-color: color-mix(in oklab, var(--color-amber-500) 35%, transparent);
+  }
+  .dark .ProseMirror .find-match.is-current {
+    background-color: color-mix(in oklab, var(--color-amber-500) 70%, transparent);
+    color: var(--color-black);
+  }
+
+  /* Focus mode: the bar steps back, the paragraph you're in stays lit. */
+  .is-focus-mode .editor-top-bar {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .is-focus-mode .editor-top-bar:hover,
+  .is-focus-mode .editor-top-bar:focus-within {
+    opacity: 1;
+  }
+  .is-focus-mode .writer-prose > * {
+    transition: opacity 0.25s ease;
+  }
+  .is-focus-mode .writer-prose > :not(.is-active-block) {
+    opacity: 0.28;
+  }
+  .is-focus-mode .writer-column {
+    padding-top: 28vh;
+    padding-bottom: 55vh;
+  }
+
+  /* A note is usually short: its links ("Linked from") stay in view. */
+  .is-note .writer-prose {
+    min-height: 12rem;
+  }
+
+  /* A chapter's sidebar takes the left edge; keep the text clear of it. */
+  .chapter-sidebar {
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .chapter-sidebar {
+      display: flex;
+    }
+    .has-chapter-sidebar .writer-column {
+      margin-left: max(18rem, calc((100% - var(--writer-measure) - 2.5rem) / 2));
+    }
+  }
+
+  /* Published pages: footnotes as margin notes on wide screens (see ArticleBody). */
+  .sidenote {
+    position: absolute;
+    right: calc(-1 * (var(--sidenote-width) + var(--sidenote-gap)));
+    width: var(--sidenote-width);
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--muted-foreground);
+  }
+  .sidenote-number {
+    margin-right: 0.35em;
+    font-weight: 600;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .sidenote p {
+    margin: 0;
+  }
+  .has-sidenotes {
+    --sidenote-width: 13rem;
+    --sidenote-gap: 2.25rem;
+  }
+  .has-sidenotes .footnotes {
+    display: none;
+  }
+}
+
 .ProseMirror.writer-prose {
   white-space: pre-wrap;
 }

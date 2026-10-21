@@ -83,3 +83,5 @@ package-lock.json
 .turbo
 
 opencode.json
+# Agent worktrees
+.claude/

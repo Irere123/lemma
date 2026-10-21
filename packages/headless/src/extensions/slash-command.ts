@@ -5,7 +5,7 @@ import Suggestion, { type SuggestionOptions } from '@tiptap/suggestion'
 import type { ReactNode, RefObject } from 'react'
 import tippy, { type GetReferenceClientRect, type Instance, type Props } from 'tippy.js'
 
-import { EditorCommandOut } from '../components/editor-command'
+import { EditorCommandOut, trackSlashSuggestion } from '../components/editor-command'
 
 const Command = Extension.create({
   name: 'slash-command',
@@ -34,7 +34,13 @@ const renderItems = (elementRef?: RefObject<Element> | null) => {
   let popup: Instance<Props>[] | null = null
 
   return {
-    onStart: (props: { editor: Editor; clientRect?: GetReferenceClientRect | null }) => {
+    onStart: (props: {
+      editor: Editor
+      query: string
+      range: Range
+      clientRect?: GetReferenceClientRect | null
+    }) => {
+      trackSlashSuggestion(props)
       component = new ReactRenderer(EditorCommandOut, {
         props,
         editor: props.editor,
@@ -63,7 +69,13 @@ const renderItems = (elementRef?: RefObject<Element> | null) => {
         placement: 'bottom-start',
       })
     },
-    onUpdate: (props: { editor: Editor; clientRect?: GetReferenceClientRect | null }) => {
+    onUpdate: (props: {
+      editor: Editor
+      query: string
+      range: Range
+      clientRect?: GetReferenceClientRect | null
+    }) => {
+      trackSlashSuggestion(props)
       component?.updateProps(props)
 
       if (!props.clientRect) {

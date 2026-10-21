@@ -45,10 +45,19 @@ const element = document.querySelector<HTMLElement>('#editor')
 if (!element) throw new Error('#editor missing')
 const editor = new Editor({
   element,
+  // The same extensions as the app (research, links, find, focus mode
+  // included), with no-op UI callbacks.
   extensions: createEditorExtensions({
     doc,
     undoManager: createUndoManager(doc),
     onEditMath: () => {},
+    onOpenCitation: () => {},
+    onOpenCrossReference: () => {},
+    onOpenDocument: () => {},
+    onFind: () => {},
+    onGoTo: () => {},
+    onFocusMode: () => {},
+    linkDocuments: { search: () => [], createNote: (title) => ({ id: '', title, kind: 'note' }) },
   }),
   editorProps: { attributes: { class: 'writer-prose focus:outline-none' } },
 })

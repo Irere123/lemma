@@ -1,20 +1,20 @@
 import {
   IconAlignJustified,
   IconCornerDownLeft,
-  IconFileText,
   IconLoader2,
-  IconPlus,
   IconSearch,
   IconSettings,
-  IconUserCircle,
 } from '@tabler/icons-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Command } from 'cmdk'
+import { BookOpen, FileText, Home, Library, NotebookPen, Sun, Zap } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { useCreateDocument } from '@/hooks/use-create-document'
+import { KindIcon } from '@/components/workspace/kind'
+import { useQuickCapture } from '@/components/workspace/quick-capture'
+import { useCreate } from '@/hooks/use-create'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { cn } from '@/lib/utils'
 import { useCommandPaletteStore } from '@/stores/command-palette'
@@ -71,7 +71,8 @@ export function CommandPalette() {
   const setOpen = useCommandPaletteStore((state) => state.setOpen)
   const toggle = useCommandPaletteStore((state) => state.toggle)
   const documents = useDocumentStore((state) => state.documents)
-  const { createDocument } = useCreateDocument()
+  const create = useCreate()
+  const openCapture = useQuickCapture((state) => state.setOpen)
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search, 150)
@@ -111,26 +112,67 @@ export function CommandPalette() {
 
   const actions: CommandAction[] = [
     {
-      id: 'new-document',
-      label: 'New document',
-      icon: <IconPlus />,
-      keywords: ['create', 'new', 'article', 'write', 'draft'],
-      run: () => runAndClose(createDocument),
+      id: 'new-post',
+      label: 'New post',
+      icon: <FileText />,
+      keywords: ['create', 'new', 'article', 'write', 'draft', 'post'],
+      run: () => runAndClose(create.createPost),
     },
     {
-      id: 'go-library',
-      label: 'Go to Library',
-      icon: <IconAlignJustified />,
-      keywords: ['home', 'documents', 'workspace'],
+      id: 'quick-note',
+      label: 'Quick note',
+      icon: <Zap />,
+      keywords: ['capture', 'note', 'idea', 'jot'],
+      run: () => runAndClose(() => openCapture(true)),
+    },
+    {
+      id: 'today',
+      label: 'Today’s note',
+      icon: <Sun />,
+      keywords: ['daily', 'journal', 'today', 'note'],
+      run: () => runAndClose(create.openToday),
+    },
+    {
+      id: 'new-book',
+      label: 'New book',
+      icon: <BookOpen />,
+      keywords: ['book', 'novel', 'thesis', 'manuscript', 'chapters'],
+      run: () => runAndClose(create.createBook),
+    },
+    {
+      id: 'go-home',
+      label: 'Go to Home',
+      icon: <Home />,
+      keywords: ['home', 'workspace', 'dashboard'],
       run: () => runAndClose(() => navigate({ to: '/app' })),
     },
     {
-      id: 'go-profile',
-      label: 'Go to Profile',
-      icon: <IconUserCircle />,
-      keywords: ['account', 'me'],
-      run: () =>
-        runAndClose(() => navigate({ to: '/u/$username', params: { username: 'profile' } })),
+      id: 'go-posts',
+      label: 'Go to Posts',
+      icon: <IconAlignJustified />,
+      keywords: ['posts', 'library', 'documents', 'drafts', 'published'],
+      run: () => runAndClose(() => navigate({ to: '/app/posts' })),
+    },
+    {
+      id: 'go-books',
+      label: 'Go to Books',
+      icon: <BookOpen />,
+      keywords: ['books', 'chapters'],
+      run: () => runAndClose(() => navigate({ to: '/app/books' })),
+    },
+    {
+      id: 'go-notes',
+      label: 'Go to Notes',
+      icon: <NotebookPen />,
+      keywords: ['notes', 'ideas'],
+      run: () => runAndClose(() => navigate({ to: '/app/notes' })),
+    },
+    {
+      id: 'go-references',
+      label: 'Go to References',
+      icon: <Library />,
+      keywords: ['references', 'citations', 'bibliography', 'library', 'zotero'],
+      run: () => runAndClose(() => navigate({ to: '/app/references' })),
     },
     {
       id: 'go-settings',
@@ -239,7 +281,7 @@ export function CommandPalette() {
                 onSelect={() => openDocument(doc.id)}
                 className={itemClassName}
               >
-                <IconFileText />
+                <KindIcon kind={(doc as { kind?: string }).kind ?? 'post'} />
                 <span className='min-w-0 flex-1 truncate'>{doc.title?.trim() || 'Untitled'}</span>
               </Command.Item>
             ))}
@@ -255,7 +297,7 @@ export function CommandPalette() {
                 onSelect={() => openDocument(doc.id)}
                 className={itemClassName}
               >
-                <IconFileText />
+                <KindIcon kind={doc.kind} />
                 <span className='flex min-w-0 flex-1 flex-col'>
                   <HighlightedText
                     text={doc.titleHighlighted ?? doc.title ?? 'Untitled'}

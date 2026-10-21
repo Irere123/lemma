@@ -1,20 +1,23 @@
-import { summarize } from '@lemma/content'
+import { documentLinks, summarize } from '@lemma/content'
 import type { DocumentFields } from '@lemma/content/yjs'
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
 import { documentMetaColumns, ensureUniqueSlug } from '@api/db/queries/documents'
-import { documents } from '@api/db/schema'
+import { documentLinks as documentLinksTable, documentReferences, documents } from '@api/db/schema'
 import { slugifyString } from '@api/db/utils/slugify'
 import { generateId } from '@api/lib/utils'
 import { writePublishedHtml, writeSearchIndex } from './derived'
 import { renderPublishedHtml } from './render'
+import { citationStyleOf, citationsFor, documentLinkResolver } from './render-context'
 
 export type PersistOptions = {
   /** Bump updatedAt (a real edit), as opposed to a re-index after seeding. */
   touch: boolean
   /** Rebuild the search index too (rate-limited by the room; it's the costly part). */
   reindexSearch: boolean
+  /** The document's citation style (its room's meta). */
+  citationStyle?: unknown
 }
 
 /**
@@ -67,10 +70,23 @@ export async function persistDerived(
     .where(eq(documents.id, documentId))
     .returning(documentMetaColumns)
 
+  const citations = await citationsFor(
+    db,
+    row.userId ?? '',
+    fields.content,
+    citationStyleOf(options.citationStyle)
+  )
+  await writeLinkTables(db, documentId, row.userId ?? '', fields, citations.referenceIds)
+
   await writePublishedHtml(
     db,
     documentId,
-    row.status === 'PUBLISHED' ? renderPublishedHtml(fields.content) : null
+    row.status === 'PUBLISHED'
+      ? renderPublishedHtml(fields.content, {
+          citations: citations.rendered,
+          documentLink: await documentLinkResolver(db, row.userId ?? '', fields.content),
+        })
+      : null
   )
 
   if (options.reindexSearch) {
@@ -84,4 +100,50 @@ export async function persistDerived(
   }
 
   return updated ?? null
+}
+
+/**
+ * Rebuild the document's rows in document_links (its links to other
+ * documents of the same writer, for backlinks) and document_references (the
+ * references it cites, so editing one re-renders it).
+ */
+async function writeLinkTables(
+  db: DB,
+  documentId: string,
+  userId: string,
+  fields: DocumentFields,
+  referenceIds: string[]
+) {
+  const links = documentLinks(fields.content).filter((link) => link.documentId !== documentId)
+  const targets = [...new Set(links.map((link) => link.documentId))]
+  const existing =
+    targets.length > 0
+      ? new Set(
+          (
+            await db
+              .select({ id: documents.id })
+              .from(documents)
+              .where(and(eq(documents.userId, userId), inArray(documents.id, targets)))
+          ).map((target) => target.id)
+        )
+      : new Set<string>()
+  const statements = [
+    db.delete(documentLinksTable).where(eq(documentLinksTable.sourceId, documentId)),
+    db.delete(documentReferences).where(eq(documentReferences.documentId, documentId)),
+    ...links
+      .filter((link) => existing.has(link.documentId))
+      .map((link, position) =>
+        db.insert(documentLinksTable).values({
+          sourceId: documentId,
+          targetId: link.documentId,
+          blockId: link.blockId,
+          context: link.context,
+          position,
+        })
+      ),
+    ...referenceIds.map((referenceId) =>
+      db.insert(documentReferences).values({ documentId, referenceId }).onConflictDoNothing()
+    ),
+  ]
+  await db.batch(statements as [(typeof statements)[number], ...typeof statements])
 }

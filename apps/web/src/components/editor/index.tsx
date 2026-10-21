@@ -1,4 +1,5 @@
-import { createUndoManager } from '@lemma/content/yjs'
+import type { StyleId } from '@lemma/content/citations'
+import { createUndoManager, META_FIELD } from '@lemma/content/yjs'
 import {
   EditorBubble,
   EditorCommand,
@@ -11,7 +12,10 @@ import {
   handleCommandNavigation,
   handleImageDrop,
   handleImagePaste,
+  useEditorCommandQuery,
 } from '@lemma/headless'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import type { Editor } from '@tiptap/core'
 import { NodeSelection, TextSelection } from '@tiptap/pm/state'
 import type { EditorView } from '@tiptap/pm/view'
@@ -21,7 +25,14 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { DocumentSync } from '@/lib/collab/document-sync'
+import { localDay, newClientId } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { useTRPC, useTRPCClient } from '@/trpc/client'
+import { ChapterSidebar, type OutlineHeading } from '../books/chapter-sidebar'
+import { BookFindReplace } from '../books/find-replace'
+import { Backlinks } from '../notes/backlinks'
+import { CitationDialog, type CitationValue } from '../research/citation-dialog'
+import { CrossReferencePicker } from '../research/crossref-picker'
 import { Button } from '../ui/button'
 import {
   Dialog,
@@ -34,15 +45,19 @@ import {
 } from '../ui/dialog'
 import { Input } from '../ui/input'
 import { Separator } from '../ui/separator'
-import { BlockHandle } from './block-handle'
+import { BlockHandle, type ChapterTools } from './block-handle'
 import { ImageToolbar, TableToolbar } from './block-toolbars'
 import { Cover } from './cover'
+import type { LinkableDocument } from './doc-link-suggestion'
 import { createEditorExtensions } from './extensions'
+import { FindBar } from './find-bar'
+import { GoToDialog } from './go-to'
 import { uploadImage } from './image-upload'
 import { LinkBubble } from './link-bubble'
 import { LinkDialog } from './link-dialog'
 import { MathDialog, type MathEdit } from './math-dialog'
 import { MobileToolbar } from './mobile-toolbar'
+import { type ResearchStorage, refreshResearch, type TargetSummary } from './research'
 import { ColorSelector } from './selectors/color-selector'
 import { LinkSelector } from './selectors/link-selector'
 import { NodeSelector } from './selectors/node-selector'
@@ -50,7 +65,7 @@ import { TextButtons } from './selectors/text-buttons'
 import { ShortcutsDialog } from './shortcuts-dialog'
 import { suggestionItems } from './slash-command'
 import { TitleFields } from './title-fields'
-import { type DocumentStats, EditorTopBar } from './top-bar'
+import { type DocumentKind, type DocumentStats, EditorTopBar } from './top-bar'
 import { VersionHistory } from './version-history'
 
 const formatDatetimeLocalValue = (value?: Date | string | null) => {
@@ -86,6 +101,48 @@ const SLASH_GROUPS = (() => {
   }
   return [...groups]
 })()
+
+const slashItem = (item: (typeof suggestionItems)[number]) => (
+  <EditorCommandItem
+    key={item.title}
+    value={item.title}
+    keywords={item.searchTerms}
+    onCommand={(val) => item.command?.(val)}
+    className='flex w-full cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm aria-selected:bg-accent'
+  >
+    <span className='flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground [&_svg]:size-4'>
+      {item.icon}
+    </span>
+    <span className='min-w-0 flex-1'>
+      <span className='block font-medium leading-5'>{item.title}</span>
+      <span className='block truncate text-muted-foreground text-xs'>{item.description}</span>
+    </span>
+    {item.shortcut ? (
+      <kbd className='ms-2 shrink-0 rounded border border-border/70 px-1 font-mono text-[0.7rem] text-muted-foreground'>
+        {item.shortcut}
+      </kbd>
+    ) : null}
+  </EditorCommandItem>
+)
+
+/**
+ * The slash menu's items: in sections while nothing is typed after the slash,
+ * then as one list ranked by match (cmdk ranks items, but never re-sorts
+ * sections, so a weak match in an early section would come first).
+ */
+function SlashItems() {
+  const query = useEditorCommandQuery()
+  if (query) return <>{suggestionItems.map(slashItem)}</>
+  return (
+    <>
+      {SLASH_GROUPS.map(([group, items]) => (
+        <EditorCommandGroup key={group} heading={group}>
+          {items.map(slashItem)}
+        </EditorCommandGroup>
+      ))}
+    </>
+  )
+}
 
 // Counting walks the whole document, so it waits for a pause in typing.
 const STATS_DELAY_MS = 800
@@ -134,7 +191,37 @@ type AdvancedEditorProps = {
   onBannerImageSelect?: (file: File) => void
   onBannerImageRemove?: () => void
   onPublishedDateChange?: (value: Date | null) => void
-  onExportMarkdown?: () => void
+  onExport: (format: 'markdown' | 'pandoc' | 'docx') => void
+  /** What the document is (post, chapter, note), which shapes the page. */
+  meta: {
+    kind: DocumentKind
+    bookId: string | null
+    wordTarget: number | null
+  }
+  /** For a chapter: its book and number (shown in the bar). */
+  chapter?: { bookId: string; bookTitle: string; number: number | null } | null
+  onTurnIntoPost?: () => void
+}
+
+const research = (editor: Editor | null) =>
+  editor ? (editor.storage as unknown as { research: ResearchStorage }).research : null
+
+/** Words in this document at the start of today, kept per device. */
+function useTodayWords(documentId: string, words: number, ready: boolean) {
+  const [baseline, setBaseline] = useState<number | null>(null)
+  useEffect(() => {
+    if (!ready) return
+    const key = `lemma-words:${documentId}:${localDay()}`
+    const stored = Number(localStorage.getItem(key))
+    if (Number.isFinite(stored) && localStorage.getItem(key) !== null) setBaseline(stored)
+    else {
+      localStorage.setItem(key, String(words))
+      setBaseline(words)
+    }
+    // Only the first count of the day sets the baseline.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentId, ready])
+  return baseline === null ? 0 : Math.max(0, words - baseline)
 }
 
 const AdvancedEditor = ({
@@ -150,10 +237,19 @@ const AdvancedEditor = ({
   onBannerImageRemove,
   onBannerImageSelect,
   onPublishedDateChange,
-  onExportMarkdown,
+  onExport,
   bannerImage,
   publishedDate,
+  meta,
+  chapter,
+  onTurnIntoPost,
 }: AdvancedEditorProps) => {
+  const trpc = useTRPC()
+  const client = useTRPCClient()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const isNote = meta.kind === 'note'
+  const isChapter = meta.kind === 'chapter' && Boolean(meta.bookId)
   const editorRef = useRef<Editor | null>(null)
   const statsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRef = useRef<HTMLElement>(null)
@@ -166,6 +262,20 @@ const AdvancedEditor = ({
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
   const [mathEdit, setMathEdit] = useState<MathEdit | null>(null)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [citation, setCitation] = useState<{
+    pos: number
+    editing: boolean
+    value: CitationValue
+  } | null>(null)
+  const [crossRefAt, setCrossRefAt] = useState<number | null>(null)
+  const [findOpen, setFindOpen] = useState(false)
+  const [bookFindOpen, setBookFindOpen] = useState(false)
+  const [goToOpen, setGoToOpen] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const [outlineOpen, setOutlineOpen] = useState(true)
+  const [targets, setTargets] = useState<TargetSummary[]>([])
+  const [citationStyle, setCitationStyle] = useState<StyleId>('apa')
+  const [ready, setReady] = useState(false)
   const titleRef = useRef<HTMLTextAreaElement>(null)
   const subtitleRef = useRef<HTMLTextAreaElement>(null)
 
@@ -218,6 +328,228 @@ const AdvancedEditor = ({
   // Moving between fields starts a new undo step.
   const stopCapturing = useCallback(() => undoManager.stopCapturing(), [undoManager])
 
+  // --- research: the reference library, the citation style, linked titles
+
+  const { data: library } = useQuery(trpc.references.list.queryOptions())
+  const { data: recentDocs } = useQuery(
+    trpc.documents.getUserDocuments.queryOptions({ kinds: ['note', 'post', 'chapter'], limit: 100 })
+  )
+  const docsRef = useRef<LinkableDocument[]>([])
+  docsRef.current = (recentDocs?.documents ?? [])
+    .filter((doc) => doc.id !== sync.documentId)
+    .map((doc) => ({ id: doc.id, title: doc.title, kind: doc.kind }))
+
+  useEffect(() => {
+    const store = research(editorRef.current)
+    const view = editorRef.current?.view
+    if (!store || !view || !library) return
+    store.library = new Map(library.map((item) => [item.id, item.csl]))
+    refreshResearch(view)
+  }, [library, ready])
+
+  useEffect(() => {
+    const store = research(editorRef.current)
+    const view = editorRef.current?.view
+    if (!store || !view || !recentDocs) return
+    store.titles = new Map(recentDocs.documents.map((doc) => [doc.id, doc.title ?? '']))
+    refreshResearch(view)
+  }, [recentDocs, ready])
+
+  // The citation style lives in the document (its Yjs meta), so every tab and
+  // the published page agree on it.
+  useEffect(() => {
+    const metaMap = sync.doc.getMap(META_FIELD)
+    const read = () => {
+      const value = metaMap.get('citationStyle')
+      const style = (typeof value === 'string' ? value : 'apa') as StyleId
+      setCitationStyle(style)
+      const store = research(editorRef.current)
+      if (store && store.style !== style) {
+        store.style = style
+        if (editorRef.current) refreshResearch(editorRef.current.view)
+      }
+    }
+    read()
+    metaMap.observe(read)
+    return () => metaMap.unobserve(read)
+  }, [sync, ready])
+
+  const chooseCitationStyle = useCallback(
+    (style: StyleId) => sync.doc.getMap(META_FIELD).set('citationStyle', style),
+    [sync]
+  )
+
+  // Headings for the outline and ⌘P, from the research plugin's walk.
+  useEffect(() => {
+    const store = research(editorRef.current)
+    if (!store) return
+    const update = () => setTargets(store.targets)
+    store.listeners.add(update)
+    update()
+    return () => {
+      store.listeners.delete(update)
+    }
+  }, [ready])
+  const headings: OutlineHeading[] = useMemo(
+    () =>
+      targets
+        .filter((target) => target.kind === 'heading')
+        .map((target) => ({
+          id: target.id,
+          label: target.label,
+          level: target.level ?? 2,
+          pos: target.pos,
+        })),
+    [targets]
+  )
+
+  const jumpTo = useCallback((pos: number) => {
+    const editor = editorRef.current
+    if (!editor) return
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(pos + 1)
+      .scrollIntoView()
+      .run()
+    const dom = editor.view.nodeDOM(pos)
+    if (dom instanceof HTMLElement) {
+      dom.scrollIntoView({ block: 'center' })
+      dom.classList.add('is-linked-block')
+      setTimeout(() => dom.classList.remove('is-linked-block'), 1600)
+    }
+  }, [])
+
+  // --- books: chapter operations
+
+  const book = useQuery({
+    ...trpc.books.get.queryOptions({ bookId: meta.bookId ?? '' }),
+    enabled: isChapter,
+  })
+  const refreshBook = () => {
+    void queryClient.invalidateQueries({ queryKey: trpc.books.get.pathKey() })
+    void queryClient.invalidateQueries({ queryKey: trpc.books.list.queryKey() })
+  }
+  const split = useMutation(
+    trpc.books.splitChapter.mutationOptions({
+      onSuccess: ({ chapterId }) => {
+        refreshBook()
+        toast.success('Split into a new chapter', {
+          action: {
+            label: 'Open it',
+            onClick: () => void navigate({ to: '/write/$docId', params: { docId: chapterId } }),
+          },
+        })
+      },
+      onError: (error) => toast.error(error.message),
+    })
+  )
+  const moveScene = useMutation(
+    trpc.books.moveBlocks.mutationOptions({
+      onSuccess: ({ moved }, input) => {
+        refreshBook()
+        const target = book.data?.entries.find((entry) => entry.id === input.toId)
+        toast.success(`Moved to “${target?.title || 'chapter'}”`, {
+          description: moved > 1 ? `${moved} blocks` : undefined,
+          action: {
+            label: 'Open it',
+            onClick: () => void navigate({ to: '/write/$docId', params: { docId: input.toId } }),
+          },
+        })
+      },
+      onError: (error) => toast.error(error.message),
+    })
+  )
+  const merge = useMutation(
+    trpc.books.mergeWithNext.mutationOptions({
+      onSuccess: () => {
+        refreshBook()
+        toast.success('Merged the next chapter into this one')
+      },
+      onError: (error) => toast.error(error.message),
+    })
+  )
+  const chapterIndex = (book.data?.entries ?? [])
+    .filter((entry) => entry.kind === 'chapter')
+    .findIndex((entry) => entry.id === sync.documentId)
+  const hasNextChapter =
+    chapterIndex !== -1 &&
+    chapterIndex < (book.data?.entries ?? []).filter((entry) => entry.kind === 'chapter').length - 1
+
+  const chapterTools: ChapterTools | null = useMemo(() => {
+    if (!isChapter || !meta.bookId) return null
+    const bookId = meta.bookId
+    return {
+      chapters: (book.data?.entries ?? [])
+        .filter((entry) => entry.kind === 'chapter' && entry.id !== sync.documentId)
+        .map((entry) => ({ id: entry.id, title: entry.title })),
+      onSplit: (blockId) => split.mutate({ bookId, chapterId: sync.documentId, blockId }),
+      onMove: (blockId, toId) =>
+        moveScene.mutate({
+          bookId,
+          fromId: sync.documentId,
+          toId,
+          blockIds: [blockId],
+          where: 'end',
+        }),
+    }
+    // Mutations are stable enough here; rebuild when the outline changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isChapter, meta.bookId, book.data, sync.documentId])
+
+  const todayWords = useTodayWords(sync.documentId, stats.words, ready)
+
+  // Focus mode: chrome hides, the paragraph being written stays in view.
+  useEffect(() => {
+    const store = editorRef.current?.storage as unknown as
+      | { typewriter?: { enabled: boolean } }
+      | undefined
+    if (store?.typewriter) store.typewriter.enabled = focusMode
+    if (!focusMode) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFocusMode(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [focusMode])
+
+  const saveCitation = (value: CitationValue) => {
+    const editor = editorRef.current
+    if (!editor || !citation) return
+    if (citation.editing) {
+      editor
+        .chain()
+        .focus()
+        .command(({ tr }) => {
+          tr.setNodeMarkup(citation.pos, undefined, { items: value.items, mode: value.mode })
+          return true
+        })
+        .run()
+    } else {
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(Math.min(citation.pos, editor.state.doc.content.size), [
+          { type: 'citation', attrs: { items: value.items, mode: value.mode } },
+        ])
+        .run()
+    }
+    setCitation(null)
+  }
+
+  const insertCrossReference = (target: string) => {
+    const editor = editorRef.current
+    if (!editor || crossRefAt === null) return
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(Math.min(crossRefAt, editor.state.doc.content.size), [
+        { type: 'crossReference', attrs: { target } },
+      ])
+      .run()
+    setCrossRefAt(null)
+  }
+
   // Links to a block: the published post's anchor once it's public, else this
   // page (which scrolls to the block on open).
   const blockUrl = useCallback(
@@ -242,6 +574,55 @@ const AdvancedEditor = ({
         undoManager,
         onEditMath: setMathEdit,
         onOpenLink: () => setOpenLink(true),
+        onOpenCitation: (pos, editing) => {
+          const node = editing ? editorRef.current?.state.doc.nodeAt(pos) : null
+          setCitation({
+            pos,
+            editing: Boolean(node),
+            value: node
+              ? { items: node.attrs.items ?? [], mode: node.attrs.mode ?? 'normal' }
+              : { items: [], mode: 'normal' },
+          })
+        },
+        onOpenCrossReference: setCrossRefAt,
+        onOpenDocument: (id, blockId) =>
+          void navigate({ to: '/write/$docId', params: { docId: id }, hash: blockId ?? undefined }),
+        onFind: () => setFindOpen(true),
+        onGoTo: () => setGoToOpen(true),
+        onFocusMode: () => setFocusMode((value) => !value),
+        linkDocuments: {
+          search: async (query) => {
+            const needle = query.toLowerCase()
+            const local = docsRef.current.filter((doc) =>
+              (doc.title ?? '').toLowerCase().includes(needle)
+            )
+            if (query.length < 2 || local.length >= 6) return local
+            // Older documents than the recent list holds.
+            const found = await client.documents.searchDocuments
+              .query({ query, limit: 8 })
+              .catch(() => [])
+            const seen = new Set(local.map((doc) => doc.id))
+            return [
+              ...local,
+              ...found
+                .filter((hit) => !seen.has(hit.id) && hit.id !== sync.documentId)
+                .map((hit) => ({ id: hit.id, title: hit.title, kind: hit.kind })),
+            ]
+          },
+          createNote: (title) => {
+            const id = newClientId()
+            void client.documents.createDocument
+              .mutate({ id, kind: 'note', title })
+              .then(() =>
+                queryClient.invalidateQueries({
+                  queryKey: trpc.documents.getUserDocuments.pathKey(),
+                })
+              )
+              .catch(() => toast.error(`Couldn’t create “${title}”`))
+            docsRef.current = [{ id, title, kind: 'note' }, ...docsRef.current]
+            return { id, title, kind: 'note' }
+          },
+        },
         onDroppedImages: (count) =>
           toast.warning(
             count === 1
@@ -249,6 +630,8 @@ const AdvancedEditor = ({
               : `${count} images couldn't be pasted: they only exist on the computer they came from. Drag the image files in instead.`
           ),
       }),
+    // Callbacks read refs; the extensions are built once per document.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sync, undoManager]
   )
 
@@ -270,14 +653,17 @@ const AdvancedEditor = ({
     onPublishedDateChange?.(nextPublishedDate)
   }
 
-  const saveMath = (edit: MathEdit, latex: string) => {
+  const saveMath = (edit: MathEdit, latex: string, numbered: boolean) => {
     const editor = editorRef.current
     const chain = editor?.chain().focus()
     if (!editor || !chain) return
     if (edit.isNew) {
       const pos = Math.min(edit.pos, editor.state.doc.content.size)
       chain
-        .insertContentAt(pos, { type: edit.display ? 'blockMath' : 'inlineMath', attrs: { latex } })
+        .insertContentAt(pos, {
+          type: edit.display ? 'blockMath' : 'inlineMath',
+          attrs: edit.display ? { latex, numbered } : { latex },
+        })
         .command(({ tr, state }) => {
           // Keep writing below a new display equation, not on top of it (a
           // selected equation would be replaced by the next keystroke).
@@ -290,8 +676,15 @@ const AdvancedEditor = ({
           return true
         })
         .run()
-    } else if (edit.display) chain.updateBlockMath({ latex, pos: edit.pos }).run()
-    else chain.updateInlineMath({ latex, pos: edit.pos }).run()
+    } else if (edit.display) {
+      chain
+        .updateBlockMath({ latex, pos: edit.pos })
+        .command(({ tr }) => {
+          tr.setNodeAttribute(edit.pos, 'numbered', numbered)
+          return true
+        })
+        .run()
+    } else chain.updateInlineMath({ latex, pos: edit.pos }).run()
     setMathEdit(null)
   }
 
@@ -358,22 +751,85 @@ const AdvancedEditor = ({
   )
 
   return (
-    <div className={cn('writer-editor min-h-dvh', className)}>
+    <div
+      className={cn(
+        'writer-editor min-h-dvh',
+        isNote && 'is-note',
+        focusMode && 'is-focus-mode',
+        isChapter && outlineOpen && !focusMode && 'has-chapter-sidebar',
+        className
+      )}
+    >
       <EditorTopBar
         barRef={barRef}
         sync={sync}
         stats={stats}
+        kind={meta.kind}
+        chapter={chapter}
+        todayWords={todayWords}
+        wordTarget={meta.wordTarget}
         status={status}
         isStatusUpdating={isStatusUpdating}
         viewUrl={viewUrl}
         disabled={disabled}
+        citationStyle={citationStyle}
+        onCitationStyle={chooseCitationStyle}
+        focusMode={focusMode}
+        onFocusMode={() => setFocusMode((value) => !value)}
+        onFind={() => setFindOpen(true)}
+        onToggleOutline={isChapter ? () => setOutlineOpen((value) => !value) : undefined}
         onPublish={onPublish}
         onUnpublish={onUnpublish}
+        onTurnIntoPost={onTurnIntoPost}
+        onMergeNext={
+          isChapter && meta.bookId && hasNextChapter
+            ? () => merge.mutate({ bookId: meta.bookId as string, chapterId: sync.documentId })
+            : undefined
+        }
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenSettings={() => setIsPublishingSettingsOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
-        onExportMarkdown={onExportMarkdown}
+        onExport={onExport}
       />
+
+      {isChapter && meta.bookId && outlineOpen && !focusMode ? (
+        <ChapterSidebar
+          bookId={meta.bookId}
+          currentId={sync.documentId}
+          headings={headings}
+          onJump={jumpTo}
+          onClose={() => setOutlineOpen(false)}
+        />
+      ) : null}
+
+      <CitationDialog
+        value={citation?.value ?? null}
+        onClose={() => {
+          setCitation(null)
+          editorRef.current?.commands.focus()
+        }}
+        onSave={saveCitation}
+      />
+      <CrossReferencePicker
+        open={crossRefAt !== null}
+        targets={targets}
+        onClose={() => {
+          setCrossRefAt(null)
+          editorRef.current?.commands.focus()
+        }}
+        onPick={insertCrossReference}
+      />
+      <GoToDialog
+        open={goToOpen}
+        onOpenChange={setGoToOpen}
+        headings={headings}
+        bookId={meta.bookId}
+        currentId={sync.documentId}
+        onJump={jumpTo}
+      />
+      {isChapter && meta.bookId ? (
+        <BookFindReplace bookId={meta.bookId} open={bookFindOpen} onOpenChange={setBookFindOpen} />
+      ) : null}
 
       <Dialog open={isPublishingSettingsOpen} onOpenChange={setIsPublishingSettingsOpen}>
         <DialogPopup className='max-w-md'>
@@ -439,13 +895,15 @@ const AdvancedEditor = ({
       />
 
       <main className='writer-column group/doc pt-10 md:pt-16'>
-        <Cover
-          image={bannerImage}
-          uploading={isBannerUploading}
-          disabled={disabled}
-          onSelect={onBannerImageSelect}
-          onRemove={onBannerImageRemove}
-        />
+        {meta.kind === 'post' ? (
+          <Cover
+            image={bannerImage}
+            uploading={isBannerUploading}
+            disabled={disabled}
+            onSelect={onBannerImageSelect}
+            onRemove={onBannerImageRemove}
+          />
+        ) : null}
 
         <TitleFields
           sync={sync}
@@ -454,6 +912,8 @@ const AdvancedEditor = ({
           titleRef={titleRef}
           subtitleRef={subtitleRef}
           onExitToBody={focusBodyStart}
+          showSubtitle={meta.kind === 'post'}
+          titlePlaceholder={isNote ? 'Untitled note' : isChapter ? 'Chapter title' : 'Title'}
         />
 
         <EditorRoot>
@@ -467,6 +927,7 @@ const AdvancedEditor = ({
               editorRef.current = editor
               setStats(documentStats(editor))
               revealLinkedBlock(editor)
+              setReady(true)
             }}
             onUpdate={({ editor, transaction }) => {
               if (transaction.docChanged) scheduleStats(editor)
@@ -481,37 +942,22 @@ const AdvancedEditor = ({
                 No blocks match
               </EditorCommandEmpty>
               <EditorCommandList>
-                {SLASH_GROUPS.map(([group, items]) => (
-                  <EditorCommandGroup key={group} heading={group}>
-                    {items.map((item) => (
-                      <EditorCommandItem
-                        key={item.title}
-                        value={item.title}
-                        keywords={item.searchTerms}
-                        onCommand={(val) => item.command?.(val)}
-                        className='flex w-full cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm aria-selected:bg-accent'
-                      >
-                        <span className='flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground [&_svg]:size-4'>
-                          {item.icon}
-                        </span>
-                        <span className='min-w-0 flex-1'>
-                          <span className='block font-medium leading-5'>{item.title}</span>
-                          <span className='block truncate text-muted-foreground text-xs'>
-                            {item.description}
-                          </span>
-                        </span>
-                        {item.shortcut ? (
-                          <kbd className='ms-2 shrink-0 rounded border border-border/70 px-1 font-mono text-[0.7rem] text-muted-foreground'>
-                            {item.shortcut}
-                          </kbd>
-                        ) : null}
-                      </EditorCommandItem>
-                    ))}
-                  </EditorCommandGroup>
-                ))}
+                <SlashItems />
               </EditorCommandList>
             </EditorCommand>
-            <BlockHandle blockUrl={blockUrl} />
+            <BlockHandle blockUrl={blockUrl} chapterTools={chapterTools} />
+            <FindBar
+              open={findOpen}
+              onClose={() => setFindOpen(false)}
+              onWholeBook={
+                isChapter
+                  ? () => {
+                      setFindOpen(false)
+                      setBookFindOpen(true)
+                    }
+                  : undefined
+              }
+            />
             <LinkBubble onEdit={() => setOpenLink(true)} />
             <ImageToolbar />
             <TableToolbar />
@@ -531,6 +977,8 @@ const AdvancedEditor = ({
             </EditorBubble>
           </EditorContent>
         </EditorRoot>
+
+        {isNote ? <Backlinks documentId={sync.documentId} /> : null}
       </main>
     </div>
   )

@@ -102,7 +102,35 @@ export const MathInline = InlineMath.extend({
   },
 })
 
+// LaTeXML prints an equation's number beside it: <span class="ltx_tag ltx_tag_equation">(3)</span>.
+function pastedTag(element: HTMLElement): string | null {
+  const tag = element.querySelector('.ltx_tag_equation, .ltx_tag_equationgroup')?.textContent
+  const match = tag ? /^\s*\(?\s*([^()]+?)\s*\)?\s*$/.exec(tag) : null
+  return match?.[1] ?? null
+}
+
 export const MathBlock = BlockMath.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      // Numbered equations get "(n)" by document order, unless they carry a
+      // fixed tag (kept from a paste, e.g. "3.2").
+      numbered: {
+        default: false,
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute('data-numbered') === 'true' || pastedTag(element) !== null,
+        renderHTML: (attributes: Record<string, unknown>) =>
+          attributes.numbered ? { 'data-numbered': 'true' } : {},
+      },
+      tag: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-tag') || pastedTag(element),
+        renderHTML: (attributes: Record<string, unknown>) =>
+          attributes.tag ? { 'data-tag': attributes.tag as string } : {},
+      },
+    }
+  },
+
   parseHTML() {
     return [
       ...(this.parent?.() ?? []),

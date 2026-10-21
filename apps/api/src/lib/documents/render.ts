@@ -1,4 +1,10 @@
-import { type ContentDoc, renderToEmail, renderToHTML } from '@lemma/content'
+import {
+  type ContentDoc,
+  type EmailRenderOptions,
+  type RenderOptions,
+  renderToEmail,
+  renderToHTML,
+} from '@lemma/content'
 import katex from 'katex'
 
 import { highlightCode } from './highlight'
@@ -31,8 +37,15 @@ function katexMathml(latex: string, displayMode: boolean): string | null {
   }
 }
 
-export const renderPublishedHtml = (content: ContentDoc | null | undefined) =>
-  renderToHTML(content, { renderMath: katexHtml, highlightCode })
+/** Citations and document links come from render-context.ts. */
+type DocumentRenderOptions = Pick<RenderOptions, 'citations' | 'documentLink'>
 
-export const renderEmailHtml = (content: ContentDoc | null | undefined) =>
-  renderToEmail(content, { renderMath: katexMathml })
+export const renderPublishedHtml = (
+  content: ContentDoc | null | undefined,
+  options: DocumentRenderOptions = {}
+) => renderToHTML(content, { ...options, renderMath: katexHtml, highlightCode })
+
+export const renderEmailHtml = (
+  content: ContentDoc | null | undefined,
+  options: Pick<EmailRenderOptions, 'citations' | 'documentLink'> = {}
+) => renderToEmail(content, { ...options, renderMath: katexMathml })

@@ -83,7 +83,11 @@ function walk(node: JSONContent, visit: (node: JSONContent) => void): void {
 }
 
 function checkHtml(doc: JSONContent, withKatex: boolean): void {
-  const html = renderToHTML(doc, withKatex ? { renderMath: katexHtml } : {})
+  const html = renderToHTML(doc, {
+    ...(withKatex ? { renderMath: katexHtml } : {}),
+    // Resolved links are <a data-document-link>; unresolved ones are text by design.
+    documentLink: ({ documentId, title }) => ({ href: `/d/${documentId}`, title }),
+  })
   expect(stripBlockIds(parseHTML(html))).toEqual(stripBlockIds(doc))
 }
 

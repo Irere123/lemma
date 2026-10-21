@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import type * as Y from 'yjs'
 
@@ -12,9 +12,10 @@ import { Button } from '@/components/ui/button'
 import { deleteUploadedFile, uploadFile } from '@/lib/api/uploads'
 import { getSession } from '@/lib/auth.server'
 import { useDocumentSync, useSyncState, useYText } from '@/lib/collab/hooks'
+import { exportDocumentDocx, exportPandoc } from '@/lib/export/document'
 import { buildSeoHead } from '@/lib/seo'
 import { useDocumentStore } from '@/stores/document-store'
-import { useTRPC } from '@/trpc/client'
+import { useTRPC, useTRPCClient } from '@/trpc/client'
 
 export const Route = createFileRoute('/write/$docId')({
   beforeLoad: async () => {
@@ -47,6 +48,7 @@ const normalizeDateValue = (value: DateValue): Date | null => {
 function RouteComponent() {
   const { docId } = Route.useParams()
   const trpc = useTRPC()
+  const client = useTRPCClient()
   const queryClient = useQueryClient()
 
   // Metadata only; the title, subtitle and body sync through `sync`.
@@ -179,34 +181,87 @@ function RouteComponent() {
   )
 
   const handleExportMarkdown = useCallback(async () => {
-    try {
-      const result = await queryClient.fetchQuery(
-        trpc.documents.getMarkdown.queryOptions({ id: docId }, { staleTime: 0 })
+    const result = await queryClient.fetchQuery(
+      trpc.documents.getMarkdown.queryOptions({ id: docId }, { staleTime: 0 })
+    )
+    const blob = new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = window.document.createElement('a')
+    anchor.href = url
+    anchor.download = `${(result.title || 'untitled').replace(/[^\w\- ]+/g, '').trim() || 'untitled'}.md`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    // Trailing spaces aren't worth a word; everything else Markdown dropped is.
+    const lost = result.losses
+      .filter((loss) => loss.feature !== 'trailingSpace')
+      .map((loss) => `${loss.description.replace(/\s*\(.*\)$/, '')} (${loss.count})`)
+    if (lost.length > 0) {
+      toast.info(
+        `Exported. Markdown can't hold everything here, so this was left out: ${lost.join(', ')}.`,
+        { duration: 10_000 }
       )
-      const blob = new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const anchor = window.document.createElement('a')
-      anchor.href = url
-      anchor.download = `${(result.title || 'untitled').replace(/[^\w\- ]+/g, '').trim() || 'untitled'}.md`
-      anchor.click()
-      URL.revokeObjectURL(url)
-      // Trailing spaces aren't worth a word; everything else Markdown dropped is.
-      const lost = result.losses
-        .filter((loss) => loss.feature !== 'trailingSpace')
-        .map((loss) => `${loss.description.replace(/\s*\(.*\)$/, '')} (${loss.count})`)
-      if (lost.length > 0) {
-        toast.info(
-          `Exported. Markdown can't hold everything here, so this was left out: ${lost.join(', ')}.`,
-          {
-            duration: 10_000,
-          }
-        )
-      }
-    } catch (error) {
-      console.error(error)
-      toast.error('Could not export this document.')
     }
   }, [docId, queryClient, trpc.documents.getMarkdown])
+
+  const onExport = useCallback(
+    (format: 'markdown' | 'pandoc' | 'docx') => {
+      const run = async () => {
+        if (format === 'markdown') return handleExportMarkdown()
+        const data = await client.documents.exportData.query({ id: docId })
+        if (format === 'docx') return exportDocumentDocx(data)
+        const result = await client.documents.getMarkdown.query({ id: docId, flavor: 'pandoc' })
+        await exportPandoc({
+          title: data.title,
+          subtitle: data.subtitle,
+          author: data.author,
+          markdown: result.markdown,
+          references: result.references,
+          citationStyle: data.citationStyle,
+        })
+      }
+      run().catch((error) => {
+        console.error(error)
+        toast.error('Could not export this document.')
+      })
+    },
+    [client, docId, handleExportMarkdown]
+  )
+
+  const turnIntoPost = useMutation(
+    trpc.documents.setKind.mutationOptions({
+      onSuccess: () => {
+        toast.success('It’s a post now', { description: 'Publish it whenever it’s ready.' })
+        void queryClient.invalidateQueries({ queryKey: documentQueryOptions.queryKey })
+        void queryClient.invalidateQueries({ queryKey: trpc.documents.getUserDocuments.pathKey() })
+      },
+      onError: (error) => toast.error(error.message),
+    })
+  )
+  const onTurnIntoPost = useCallback(
+    () => turnIntoPost.mutate({ id: docId, kind: 'post' }),
+    [docId, turnIntoPost]
+  )
+
+  // A chapter's book, for its title and the chapter's number.
+  const bookId = document?.kind === 'chapter' ? document.bookId : null
+  const { data: book } = useQuery({
+    ...trpc.books.get.queryOptions({ bookId: bookId ?? '' }),
+    enabled: Boolean(bookId),
+  })
+  const chapter = useMemo(() => {
+    if (!bookId) return null
+    const chapters = (book?.entries ?? []).filter((entry) => entry.kind === 'chapter')
+    const index = chapters.findIndex((entry) => entry.id === docId)
+    return { bookId, bookTitle: book?.book.title ?? '', number: index === -1 ? null : index + 1 }
+  }, [book, bookId, docId])
+  const meta = useMemo(
+    () => ({
+      kind: (document?.kind ?? 'post') as 'post' | 'chapter' | 'part' | 'note',
+      bookId: document?.bookId ?? null,
+      wordTarget: document?.wordTarget ?? null,
+    }),
+    [document?.kind, document?.bookId, document?.wordTarget]
+  )
 
   const onBannerImageRemove = useCallback(() => {
     void handleBannerImageRemove()
@@ -217,9 +272,6 @@ function RouteComponent() {
     },
     [handlePublishedDateChange]
   )
-  const onExportMarkdown = useCallback(() => {
-    void handleExportMarkdown()
-  }, [handleExportMarkdown])
   const onPublish = useCallback(() => {
     void handleStatusChange('PUBLISHED')
   }, [handleStatusChange])
@@ -272,7 +324,10 @@ function RouteComponent() {
           onBannerImageSelect={handleBannerImageSelect}
           onBannerImageRemove={onBannerImageRemove}
           onPublishedDateChange={onPublishedDateChange}
-          onExportMarkdown={onExportMarkdown}
+          onExport={onExport}
+          meta={meta}
+          chapter={chapter}
+          onTurnIntoPost={meta.kind === 'note' ? onTurnIntoPost : undefined}
         />
       </>
     )

@@ -1,13 +1,17 @@
 import { Command, createSuggestionItems, renderItems } from '@lemma/headless'
 import type { Editor } from '@tiptap/core'
 import {
+  BookMarked,
   CheckSquare,
   Code,
+  FileSymlink,
+  Hash,
   Heading1,
   Heading2,
   Heading3,
   Heading4,
   ImageIcon,
+  LibraryBig,
   Lightbulb,
   List,
   ListOrdered,
@@ -30,6 +34,22 @@ const chain = (editor: unknown) => (editor as unknown as Editor).chain().focus()
 
 // Remove the typed "/query", then open the equation editor where it was.
 // Nothing is inserted until the writer saves.
+type ResearchActions = {
+  openCitation?: (pos: number) => void
+  openCrossReference?: (pos: number) => void
+}
+
+/** Remove the typed "/query" and open a research picker where it was. */
+const openResearch = (
+  editor: unknown,
+  range: { from: number; to: number },
+  which: keyof ResearchActions
+) => {
+  chain(editor).deleteRange(range).run()
+  const storage = (editor as Editor).storage as unknown as { research?: ResearchActions }
+  storage.research?.[which]?.(range.from)
+}
+
 const newEquation = (editor: unknown, range: { from: number; to: number }, display: boolean) => {
   chain(editor).deleteRange(range).run()
   const storage = (editor as Editor).storage as unknown as {
@@ -209,10 +229,49 @@ export const suggestionItems = createSuggestionItems([
     title: 'Footnote',
     group: 'Math and notes',
     description: 'A numbered note at the end.',
-    searchTerms: ['note', 'citation', 'reference', 'endnote', 'footnote'],
+    searchTerms: ['note', 'endnote', 'footnote', 'aside'],
     icon: <Superscript size={18} />,
     command: ({ editor, range }) => {
       chain(editor).deleteRange(range).insertFootnote().run()
+    },
+  },
+  {
+    title: 'Citation',
+    group: 'Research and links',
+    shortcut: '[@',
+    description: 'Cite a source from your library, or by DOI.',
+    searchTerms: ['cite', 'reference', 'source', 'doi', 'bibliography', 'zotero'],
+    icon: <BookMarked size={18} />,
+    command: ({ editor, range }) => openResearch(editor, range, 'openCitation'),
+  },
+  {
+    title: 'Bibliography',
+    group: 'Research and links',
+    description: 'The list of sources you cite, in your style.',
+    searchTerms: ['references', 'works cited', 'sources', 'bibliography'],
+    icon: <LibraryBig size={18} />,
+    command: ({ editor, range }) => {
+      chain(editor).deleteRange(range).insertContent({ type: 'bibliography' }).run()
+    },
+  },
+  {
+    title: 'Cross-reference',
+    group: 'Research and links',
+    description: 'Refer to a figure, table, equation or section.',
+    searchTerms: ['ref', 'figure', 'table', 'equation', 'see', 'section'],
+    icon: <Hash size={18} />,
+    command: ({ editor, range }) => openResearch(editor, range, 'openCrossReference'),
+  },
+  {
+    title: 'Link to note',
+    group: 'Research and links',
+    shortcut: '[[',
+    description: 'Link another note, chapter or post.',
+    searchTerms: ['link', 'note', 'wiki', 'backlink', 'page'],
+    icon: <FileSymlink size={18} />,
+    command: ({ editor, range }) => {
+      // Typing [[ opens the document picker.
+      chain(editor).deleteRange(range).insertContent('[[').run()
     },
   },
   {

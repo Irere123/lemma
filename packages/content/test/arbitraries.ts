@@ -364,6 +364,13 @@ const LANGUAGES = ['ts', 'js', 'python', 'c++', 'objective-c', 'shell', 'c#', 'x
 // newFootnoteId() shape plus ids that pasted or imported content can carry.
 export const FOOTNOTE_IDS = ['fn-a1b2c3d4', 'fn-zz99yy88', 'fn-1', 'fn-x', 'note:1', 'fn-a b']
 
+// Library ids citations point at (reference_items ids), other documents a
+// documentLink points at, and block ids a cross-reference may target (some of
+// which a generated document will contain).
+const REFERENCE_IDS = ['refa1b2c3', 'ref9z8y7x6', 'smith2020deep', 'r-1']
+const DOCUMENT_IDS = ['2Qk9cU3hEw7Lr0', 'note-1', 'doc_abc']
+const CROSS_TARGETS = ['figabc123', 'eqabc12345', 'headabcdef', 'fn-a1b2c3d4', 'gone000000']
+
 const sized = fc.option(fc.integer({ min: 1, max: 2000 }), { nil: null })
 
 // ---------------------------------------------------------------------------
@@ -411,6 +418,35 @@ export const markSetArb = fc.oneof(
 
 type InlineKind = (marks: Mark[]) => Json
 
+// CONSTRAINT: pin-cite fields are non-empty strings (validateContent drops empty ones).
+const pinCite = fc.option(attrText, { nil: undefined })
+
+const citation = fc.record({
+  items: fc.array(
+    fc
+      .record({
+        id: fc.constantFrom(...REFERENCE_IDS),
+        locator: pinCite,
+        label: fc.option(fc.constantFrom('page', 'chapter', 'section', 'figure'), {
+          nil: undefined,
+        }),
+        prefix: pinCite,
+        suffix: pinCite,
+      })
+      .map((item) =>
+        Object.fromEntries(Object.entries(item).filter(([, value]) => value !== undefined))
+      ),
+    { minLength: 1, maxLength: 3 }
+  ),
+  mode: fc.constantFrom('normal', 'suppress-author', 'author-in-text'),
+})
+
+const documentLink = fc.record({
+  documentId: fc.constantFrom(...DOCUMENT_IDS),
+  blockId: fc.option(fc.constantFrom('blockabc12', 'headabcdef'), { nil: null }),
+  title: fc.oneof(attrText, fc.constant('')),
+})
+
 const inlineAtom = (allowRefs: boolean): fc.Arbitrary<InlineKind> =>
   fc.oneof(
     { weight: 12, arbitrary: textArb.map((text) => (marks: Mark[]) => textNode(text, marks)) },
@@ -434,6 +470,22 @@ const inlineAtom = (allowRefs: boolean): fc.Arbitrary<InlineKind> =>
       arbitrary: fc
         .constantFrom(...FOOTNOTE_IDS)
         .map((id) => (marks: Mark[]) => node('footnoteReference', { id }, [], marks)),
+    },
+    {
+      weight: 1,
+      arbitrary: citation.map((attrs) => (marks: Mark[]) => node('citation', attrs, [], marks)),
+    },
+    {
+      weight: 1,
+      arbitrary: fc
+        .constantFrom(...CROSS_TARGETS)
+        .map((target) => (marks: Mark[]) => node('crossReference', { target }, [], marks)),
+    },
+    {
+      weight: 1,
+      arbitrary: documentLink.map(
+        (attrs) => (marks: Mark[]) => node('documentLink', attrs, [], marks)
+      ),
     }
   )
 
@@ -467,7 +519,10 @@ const paragraph = (allowRefs: boolean) =>
 
 const heading = fc
   .record({
-    id: blockId('heading'),
+    id: fc.oneof(
+      { weight: 4, arbitrary: blockId('heading') },
+      { weight: 1, arbitrary: fc.constant('headabcdef') }
+    ),
     level: fc.integer({ min: 1, max: 6 }),
     content: inlineContent(true, 4),
   })
@@ -511,8 +566,46 @@ const youtube = fc
   .map(({ id, ...attrs }) => node('youtube', withId(attrs, id)))
 
 const blockMath = fc
-  .record({ id: blockId('blockMath'), latex: blockLatex })
-  .map(({ id, latex }) => node('blockMath', withId({ latex }, id)))
+  .record({
+    id: fc.oneof(blockId('blockMath'), fc.constant('eqabc12345')),
+    latex: blockLatex,
+    numbered: fc.boolean(),
+    tag: fc.option(fc.constantFrom('3.2', 'A1', '7'), { nil: null }),
+  })
+  .map(({ id, latex, numbered, tag }) =>
+    // A fixed tag only means something on a numbered equation.
+    node('blockMath', withId({ latex, numbered, tag: numbered ? tag : null }, id))
+  )
+
+const figcaption = inlineContent(false, 4).map((content) => node('figcaption', {}, content))
+
+// CONSTRAINT: a figure holds one image or one table plus its caption.
+const figure = fc
+  .record({
+    id: fc.oneof(blockId('figure'), fc.constant('figabc123')),
+    body: fc.oneof(
+      { weight: 3, arbitrary: fc.constant(null) },
+      { weight: 1, arbitrary: fc.constant('table') }
+    ),
+    image: fc.record({
+      src: fc.constantFrom(...IMAGE_SRCS),
+      alt: fc.option(attrText, { nil: null }),
+      title: fc.option(attrText, { nil: null }),
+      width: sized,
+      height: sized,
+    }),
+    caption: figcaption,
+  })
+  .chain(({ id, body, image: attrs, caption }) =>
+    (body === 'table'
+      ? table(paragraph(false).map((p) => [p]))
+      : fc.constant(node('image', withId(attrs, null)))
+    ).map((content) => node('figure', withId({}, id), [content, caption]))
+  )
+
+const bibliography = fc
+  .record({ id: blockId('bibliography'), title: fc.oneof(fc.constant('References'), attrText) })
+  .map(({ id, title }) => node('bibliography', withId({ title }, id)))
 
 const leafBlock = fc.oneof(
   { weight: 10, arbitrary: paragraph(true) },
@@ -521,7 +614,7 @@ const leafBlock = fc.oneof(
   { weight: 1, arbitrary: horizontalRule },
   { weight: 1, arbitrary: image },
   { weight: 1, arbitrary: youtube },
-  { weight: 1, arbitrary: blockMath }
+  { weight: 2, arbitrary: blockMath }
 )
 
 type Layout = { row: number; col: number; colspan: number; rowspan: number }
@@ -691,6 +784,7 @@ function blockArb(depth: number): fc.Arbitrary<Json> {
           .map(({ id, emoji, content }) => node('callout', withId({ emoji }, id), content)),
       },
       { weight: 5, arbitrary: anyList(depth - 1) },
+      { weight: 2, arbitrary: figure },
       {
         weight: 2,
         arbitrary: table(
@@ -743,7 +837,14 @@ export type DocOptions = {
   collapsibleWhitespace?: boolean
 }
 
-const INLINE_ATOMS = new Set(['hardBreak', 'inlineMath', 'footnoteReference'])
+const INLINE_ATOMS = new Set([
+  'hardBreak',
+  'inlineMath',
+  'footnoteReference',
+  'citation',
+  'crossReference',
+  'documentLink',
+])
 
 /** Map every node bottom-up. */
 function mapNodes(node: Json, fn: (node: Json) => Json): Json {
@@ -759,7 +860,11 @@ function stripAtomMarks(node: Json): Json {
 
 /** A textblock's inline content with only the whitespace HTML import keeps. */
 function collapseWhitespace(node: Json): Json {
-  if ((node.type !== 'paragraph' && node.type !== 'heading') || !node.content) return node
+  if (
+    (node.type !== 'paragraph' && node.type !== 'heading' && node.type !== 'figcaption') ||
+    !node.content
+  )
+    return node
   const out: Json[] = []
   let afterSpace = true
   for (const child of node.content) {
@@ -798,7 +903,13 @@ export function docArb({
       if (!collapsibleWhitespace) out = collapseWhitespace(out)
       return out
     })
-  const docs = fc.array(blockArb(depth), { minLength: 1, maxLength: maxBlocks }).chain((blocks) => {
+  const body = fc
+    .tuple(
+      fc.array(blockArb(depth), { minLength: 1, maxLength: maxBlocks }),
+      fc.option(bibliography, { nil: null, freq: 4 })
+    )
+    .map(([blocks, bib]) => (bib ? [...blocks, bib] : blocks))
+  const docs = body.chain((blocks) => {
     const ids = referenceIds(node('doc', {}, blocks))
     if (ids.length === 0) return fc.constant(node('doc', {}, blocks))
     return fc

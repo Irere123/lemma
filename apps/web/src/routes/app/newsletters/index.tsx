@@ -54,11 +54,11 @@ function RouteComponent() {
   )
 
   return (
-    <main className='mx-auto w-full max-w-5xl px-5 py-8 md:px-10'>
+    <main className='mx-auto w-full max-w-5xl px-5 pt-8 pb-24 md:px-10 md:pt-12'>
       <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
         <div className='space-y-2'>
-          <h2 className='font-semibold text-2xl tracking-tight'>Newsletters</h2>
-          <p className='max-w-2xl text-muted-foreground text-sm'>
+          <h1 className='font-semibold text-[1.75rem] leading-tight tracking-tight'>Newsletters</h1>
+          <p className='max-w-2xl text-[15px] text-muted-foreground'>
             Send your published posts to subscribers and track how each one performs.
           </p>
         </div>

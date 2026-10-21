@@ -7,6 +7,7 @@ import type { Node as PMNode } from '@tiptap/pm/model'
 import { TextSelection } from '@tiptap/pm/state'
 import {
   ArrowDown,
+  ArrowRightLeft,
   ArrowUp,
   CheckSquare,
   Code,
@@ -21,6 +22,7 @@ import {
   ListOrdered,
   Plus,
   Repeat2,
+  Scissors,
   Text,
   TextQuote,
   Trash2,
@@ -87,7 +89,20 @@ const TURN_INTO: { label: string; icon: ReactNode; run: (chain: AnyChain) => Any
  * on click opens its actions. Hidden while typing and on touch screens; the
  * keyboard has ⌘⇧↑/↓ and the slash menu.
  */
-export function BlockHandle({ blockUrl }: { blockUrl: (id: string) => string }) {
+/** In a chapter: split the chapter at a block, or move a block to another chapter. */
+export type ChapterTools = {
+  chapters: { id: string; title: string | null }[]
+  onSplit: (blockId: string) => void
+  onMove: (blockId: string, chapterId: string) => void
+}
+
+export function BlockHandle({
+  blockUrl,
+  chapterTools,
+}: {
+  blockUrl: (id: string) => string
+  chapterTools?: ChapterTools | null
+}) {
   const { editor } = useEditor()
   const target = useRef<Target>({ node: null, pos: -1 })
   const [menuOpen, setMenuOpen] = useState(false)
@@ -246,6 +261,33 @@ export function BlockHandle({ blockUrl }: { blockUrl: (id: string) => string }) 
               <Link2 />
               Copy link to block
             </MenuItem>
+            {chapterTools && typeof node?.attrs.id === 'string' ? (
+              <>
+                <MenuSeparator />
+                <MenuItem onClick={() => chapterTools.onSplit(node.attrs.id as string)}>
+                  <Scissors />
+                  Split chapter here
+                </MenuItem>
+                {chapterTools.chapters.length > 0 ? (
+                  <MenuSub>
+                    <MenuSubTrigger>
+                      <ArrowRightLeft />
+                      Move to chapter
+                    </MenuSubTrigger>
+                    <MenuSubPopup className='max-h-80 min-w-56 overflow-y-auto'>
+                      {chapterTools.chapters.map((chapter) => (
+                        <MenuItem
+                          key={chapter.id}
+                          onClick={() => chapterTools.onMove(node.attrs.id as string, chapter.id)}
+                        >
+                          {chapter.title || 'Untitled chapter'}
+                        </MenuItem>
+                      ))}
+                    </MenuSubPopup>
+                  </MenuSub>
+                ) : null}
+              </>
+            ) : null}
             <MenuSeparator />
             <MenuItem onClick={() => move(-1)}>
               <ArrowUp />

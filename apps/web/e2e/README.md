@@ -9,6 +9,9 @@ on any failed check.
 | `durability.mjs` | Two tabs, a slow uplink, offline + close, a crash right after typing, closing mid-save and an update lost in transit all end with every character on the server. Opening a document writes nothing. |
 | `foundations.mjs` | Every block has a stable id (new/split/pasted blocks get fresh ones); editors older or newer than the document's schema are turned away; one undo history across title, subtitle and body; revision history captures large deletions, restores, and publishes, owner-only. |
 | `editor-ui.mjs` | The block handle and its menu (duplicate with a fresh id, move, turn into, delete), + opening the grouped slash menu, ⌘K and the link popover, code language, image size and alt text, table rows, callout icon, and Enter/↑ between title, subtitle and body. Each ends on what the server holds. |
+| `notes.mjs` | Quick capture is ready to type within a second and works offline (the note reaches the server once back online); `[[` creates and links a note by id, so links survive renames; "Linked from" shows each link's sentence; today's note opens with one shortcut; a note becomes a post in place; a word typed seconds ago is searchable. |
+| `books.mjs` | Chapters and parts; keyboard reordering without losing text; word counts and targets; ⌘P to any chapter; split, merge and move a scene; find and replace across the book with undo; focus mode; EPUB and Word export; serial publishing with a public book page and previous/next. |
+| `research.mjs` | BibTeX import without duplicates; `[@` and slash citations with page numbers; narrative citations; a generated bibliography; numbered figures, tables and equations; cross-references that renumber; switching style (APA → IEEE); the published page's links and numbers; Pandoc/Quarto and Word export; margin notes on wide screens. |
 | `latency.mjs` | Typing cost stays flat from 1k to 100k words (editor-only page, no backend). Re-creating the Phase A bug with `INJECT_REGRESSION=1` makes it fail. |
 
 ## Running locally
@@ -26,6 +29,9 @@ cd apps/web && bunx vite preview --port 5173
 node e2e/durability.mjs
 node e2e/foundations.mjs
 node e2e/editor-ui.mjs
+node e2e/notes.mjs
+node e2e/books.mjs
+node e2e/research.mjs
 bun run bench:build && node e2e/latency.mjs
 ```
 

@@ -1,7 +1,13 @@
 import { and, desc, eq, inArray, lt, ne, or, sql } from 'drizzle-orm'
 
 import type { DB } from '@api/db'
-import { type Document, type DocumentStatus, documentLikes, documents } from '@api/db/schema'
+import {
+  type Document,
+  type DocumentKind,
+  type DocumentStatus,
+  documentLikes,
+  documents,
+} from '@api/db/schema'
 import { slugifyString } from '@api/db/utils/slugify'
 import { readPublishedHtml, writeSearchIndex } from '@api/lib/documents/derived'
 import { bodyFields, hasBodyFields, openRoom } from '@api/lib/documents/room'
@@ -40,6 +46,11 @@ export const documentMetaColumns = {
   isFeatured: documents.isFeatured,
   bodyStore: documents.bodyStore,
   firstPublishedAt: documents.firstPublishedAt,
+  kind: documents.kind,
+  bookId: documents.bookId,
+  position: documents.position,
+  wordTarget: documents.wordTarget,
+  journalDate: documents.journalDate,
 }
 
 export type DocumentMeta = Omit<Document, 'content' | 'markdown' | 'html'>
@@ -156,6 +167,56 @@ export const upsertDocument = async (
   return getUserDocumentById(db, id, userId)
 }
 
+/** Ids a client may choose for a document it creates (offline notes). */
+export const CLIENT_ID_PATTERN = /^[A-Za-z0-9_-]{12,40}$/
+
+export type CreateDocumentInput = {
+  /** Chosen on the device, so a note captured offline keeps its id. */
+  id?: string
+  kind: DocumentKind
+  title?: string | null
+  bookId?: string | null
+  position?: number | null
+  journalDate?: string | null
+}
+
+/**
+ * Create an empty document of any kind. Idempotent for a client-chosen id:
+ * creating the same id again returns the existing document (a retried
+ * offline create), unless another writer owns it.
+ */
+export async function createDocument(
+  db: DB,
+  userId: string,
+  input: CreateDocumentInput
+): Promise<DocumentMeta | undefined> {
+  if (input.id) {
+    const existing = await getDocumentById(db, input.id)
+    if (existing) return existing.userId === userId ? existing : undefined
+  }
+  const now = new Date()
+  const id = input.id ?? generateId()
+  const title = input.title?.trim() || null
+  await db.insert(documents).values({
+    id,
+    slug: await ensureUniqueSlug(db, slugifyString(title ?? '') || id),
+    userId,
+    title,
+    status: 'DRAFT',
+    markdown: '',
+    bodyStore: 'room',
+    kind: input.kind,
+    bookId: input.bookId ?? null,
+    position: input.position ?? null,
+    journalDate: input.journalDate ?? null,
+    wordCount: '0',
+    createdAt: now,
+    updatedAt: now,
+  })
+  await writeSearchIndex(db, { documentId: id, userId, title: title ?? '', subtitle: '', text: '' })
+  return getUserDocumentById(db, id, userId)
+}
+
 export const deleteDocument = async (
   db: DB,
   documentId: string,
@@ -190,32 +251,28 @@ export const getDueScheduledDocuments = async (
 type UserDocumentsData = {
   userId: string
   status?: DocumentStatus
+  /** Which kinds to list; defaults to every kind. */
+  kinds?: DocumentKind[]
   limit?: number
+  /** `updatedAt` of the last item already shown. */
   cursor?: string
 }
 
+/** A writer's documents, most recently edited first. */
 export const getUserDocuments = async (db: DB, data: UserDocumentsData) => {
   const limit = Math.min(data.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
 
   const filters = [eq(documents.userId, data.userId)]
+  if (data.status) filters.push(eq(documents.status, data.status))
+  if (data.kinds && data.kinds.length > 0) filters.push(inArray(documents.kind, data.kinds))
+  if (data.cursor) filters.push(lt(documents.updatedAt, new Date(data.cursor)))
 
-  if (data.status) {
-    filters.push(eq(documents.status, data.status))
-  }
-
-  // Add cursor-based pagination
-  if (data.cursor) {
-    filters.push(lt(documents.createdAt, new Date(data.cursor)))
-  }
-
-  const userDocuments = await db
+  return db
     .select(documentMetaColumns)
     .from(documents)
     .where(and(...filters))
-    .orderBy(desc(documents.publishedDate))
-    .limit(limit + 1) // Fetch one extra to determine if there's a next page
-
-  return userDocuments
+    .orderBy(desc(documents.updatedAt), desc(documents.id))
+    .limit(limit + 1) // One extra tells whether there's a next page.
 }
 
 // Internal lookup (no ownership check) — never expose directly to clients.
@@ -286,7 +343,14 @@ type PublishedArticlesOptions = {
 // List rows omit the body and internal bookkeeping columns.
 export type PublishedArticle = Omit<
   DocumentMeta,
-  'contentVersion' | 'bodyStore' | 'firstPublishedAt'
+  | 'contentVersion'
+  | 'bodyStore'
+  | 'firstPublishedAt'
+  | 'kind'
+  | 'bookId'
+  | 'position'
+  | 'wordTarget'
+  | 'journalDate'
 > & { likeCount: number }
 
 export const getPublishedArticles = async (
@@ -427,6 +491,7 @@ export const getDocumentsByTypeAndStatus = async (
 
 export type DocumentSearchResult = {
   id: string
+  kind: DocumentKind
   title: string | null
   subtitle: string | null
   // Title with FTS highlight markers (\u0002 … \u0003) around matched terms.
@@ -462,6 +527,7 @@ export const searchUserDocuments = async (
 
   const rows = await db.all<{
     id: string
+    kind: DocumentKind
     title: string | null
     subtitle: string | null
     title_hl: string | null
@@ -469,6 +535,7 @@ export const searchUserDocuments = async (
   }>(sql`
     SELECT
       s.document_id AS id,
+      d.kind AS kind,
       d.title AS title,
       d.subtitle AS subtitle,
       highlight(document_search_fts, 0, char(2), char(3)) AS title_hl,
@@ -489,6 +556,7 @@ export const searchUserDocuments = async (
     seen.add(row.id)
     results.push({
       id: row.id,
+      kind: row.kind,
       title: row.title,
       subtitle: row.subtitle,
       titleHighlighted: row.title_hl,

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi'
 
-import { documentStatus } from '@api/db/schema'
+import { documentKinds, documentStatus } from '@api/db/schema'
 
 // Request
 
@@ -40,6 +40,7 @@ export const deleteDocumentSchema = z.object({
 
 export const documentsFilters = z.object({
   status: z.enum(documentStatus).optional(),
+  kinds: z.array(z.enum(documentKinds)).optional(),
   limit: z.number().min(1).max(100).optional().default(20),
   cursor: z.string().optional(),
 })

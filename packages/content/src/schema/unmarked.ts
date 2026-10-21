@@ -13,6 +13,9 @@ export const UNMARKED_INLINE_TYPES: ReadonlySet<string> = new Set([
   'hardBreak',
   'inlineMath',
   'footnoteReference',
+  'citation',
+  'crossReference',
+  'documentLink',
 ])
 
 /** Strips marks from those nodes as they are applied (bold across a sentence, paste…). */

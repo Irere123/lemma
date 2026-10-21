@@ -1,6 +1,7 @@
-import { type MarkdownLoss, renderToMarkdown } from '@lemma/content'
+import { citedReferenceIds, type MarkdownLoss, renderToMarkdown } from '@lemma/content'
 import { blockChanges } from '@lemma/content/schema'
 import { TRPCError } from '@trpc/server'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import {
@@ -14,10 +15,19 @@ import {
   updateDocumentBannerImage,
   upsertDocument,
 } from '@api/db/queries'
-import { getUserDocumentById } from '@api/db/queries/documents'
+import { chapterContext } from '@api/db/queries/books'
+import { CLIENT_ID_PATTERN, createDocument, getUserDocumentById } from '@api/db/queries/documents'
 import { getWriterNewsletterSettings } from '@api/db/queries/newsletter-settings'
+import { listReferences } from '@api/db/queries/references'
 import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
+import { documents } from '@api/db/schema'
 import { renderPublishedHtml } from '@api/lib/documents/render'
+import {
+  citationStyleOf,
+  citationsFor,
+  documentLinkResolver,
+  loadReferences,
+} from '@api/lib/documents/render-context'
 import { ContentValidationError, openRoom, readDocumentContent } from '@api/lib/documents/room'
 import { computeNewsletterSchedule } from '@api/lib/scheduling'
 import {
@@ -47,20 +57,96 @@ export const documentRouter = createTRPCRouter({
       return (await getUserDocumentById(db, input.id, user.id)) ?? null
     }),
 
-  // "Export as Markdown".
+  // "Export as Markdown". The Pandoc flavour keeps citations, figures and
+  // cross-references (with a .bib of what's cited) for Pandoc and Quarto.
   getMarkdown: protectedProcedure
-    .input(documentByIdSchema)
+    .input(documentByIdSchema.extend({ flavor: z.enum(['gfm', 'pandoc']).optional() }))
     .query(async ({ ctx: { db, user }, input }) => {
       const doc = await getUserDocumentById(db, input.id, user.id)
       if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      const content = await readDocumentContent(doc.id)
+      const pandoc = input.flavor === 'pandoc'
+      const library = pandoc ? await listReferences(db, user.id) : []
+      const keys = new Map(library.map((item) => [item.id, item.key]))
       // What Markdown couldn't carry, so the writer is told rather than surprised.
       let losses: MarkdownLoss[] = []
-      const markdown = renderToMarkdown(await readDocumentContent(doc.id), {
+      const markdown = renderToMarkdown(content, {
+        flavor: input.flavor,
+        citationKey: (id) => keys.get(id) ?? id,
         onLoss: (lost) => {
           losses = lost
         },
       })
-      return { title: doc.title, markdown, losses }
+      const cited = new Set(citedReferenceIds(content))
+      const bibliography = pandoc
+        ? library
+            .filter((item) => cited.has(item.id))
+            .map((item) => ({ ...item.csl, id: item.key }))
+        : []
+      return { title: doc.title, markdown, losses, references: bibliography }
+    }),
+
+  /** A document's content and cited references, for a client-side DOCX export. */
+  exportData: protectedProcedure
+    .input(documentByIdSchema)
+    .query(async ({ ctx: { db, user }, input }) => {
+      const doc = await getUserDocumentById(db, input.id, user.id)
+      if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      const { fields, citationStyle } = await (await openRoom(doc.id)).readForRender()
+      return {
+        title: fields.title,
+        subtitle: fields.subtitle,
+        author: user.name,
+        content: fields.content,
+        citationStyle: citationStyleOf(citationStyle),
+        references: await loadReferences(db, user.id, citedReferenceIds(fields.content)),
+      }
+    }),
+
+  /** A new, empty document. Notes may bring their own id (created offline). */
+  createDocument: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().regex(CLIENT_ID_PATTERN).optional(),
+        kind: z.enum(['post', 'note']),
+        title: z.string().max(300).optional(),
+      })
+    )
+    .mutation(async ({ ctx: { db, user }, input }) => {
+      const created = await createDocument(db, user.id, input)
+      if (!created) throw new TRPCError({ code: 'CONFLICT', message: 'That id is taken' })
+      return created
+    }),
+
+  /** A chapter's (or any document's) word target; null clears it. */
+  setWordTarget: protectedProcedure
+    .input(
+      documentByIdSchema.extend({ wordTarget: z.number().int().min(1).max(10_000_000).nullable() })
+    )
+    .mutation(async ({ ctx: { db, user }, input }) => {
+      await db
+        .update(documents)
+        .set({ wordTarget: input.wordTarget })
+        .where(and(eq(documents.id, input.id), eq(documents.userId, user.id)))
+      return getUserDocumentById(db, input.id, user.id)
+    }),
+
+  /** Turn a note into a post (N7) or a post back into a note. Chapters stay chapters. */
+  setKind: protectedProcedure
+    .input(documentByIdSchema.extend({ kind: z.enum(['post', 'note']) }))
+    .mutation(async ({ ctx: { db, user }, input }) => {
+      const doc = await getUserDocumentById(db, input.id, user.id)
+      if (!doc || (doc.kind !== 'post' && doc.kind !== 'note')) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' })
+      }
+      if (input.kind === 'note' && doc.status === 'PUBLISHED') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Unpublish it first' })
+      }
+      await db
+        .update(documents)
+        .set({ kind: input.kind, journalDate: null, updatedAt: new Date() })
+        .where(and(eq(documents.id, doc.id), eq(documents.userId, user.id)))
+      return getUserDocumentById(db, doc.id, user.id)
     }),
 
   // Version history (kept by the document's room).
@@ -82,12 +168,21 @@ export const documentRouter = createTRPCRouter({
       const room = await openRoom(doc.id)
       const revision = await room.getRevision(input.revisionId)
       if (!revision) throw new TRPCError({ code: 'NOT_FOUND', message: 'Version not found' })
-      const current = await room.read()
+      const { fields: current, citationStyle } = await room.readForRender()
       const { fields, ...summary } = revision
+      const citations = await citationsFor(
+        db,
+        user.id,
+        fields.content,
+        citationStyleOf(citationStyle)
+      )
       return {
         ...summary,
         subtitle: fields.subtitle,
-        html: renderPublishedHtml(fields.content),
+        html: renderPublishedHtml(fields.content, {
+          citations: citations.rendered,
+          documentLink: await documentLinkResolver(db, user.id, fields.content),
+        }),
         // From this version to the current one.
         changes: blockChanges(fields.content, current.content),
         titleChanged: fields.title !== current.title,
@@ -116,6 +211,8 @@ export const documentRouter = createTRPCRouter({
       const author = doc.userId ? await getUserById(db, doc.userId) : undefined
       return {
         ...doc,
+        // A chapter's book and its neighbours, for "Chapter 3 of …" and next/previous.
+        chapter: doc.kind === 'chapter' ? await chapterContext(db, doc.id) : null,
         author: author
           ? {
               id: author.id,

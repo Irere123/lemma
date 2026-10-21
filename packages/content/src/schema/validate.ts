@@ -32,6 +32,26 @@ type Mark = NonNullable<JSONContent['marks']>[number]
  * schema: rename legacy node types, strip presentational attributes and
  * neutralise anything that would be unsafe to render.
  */
+const CITATION_TEXT_FIELDS = ['locator', 'label', 'prefix', 'suffix'] as const
+
+/** Citation items as stored: a reference id plus optional string pin-cite fields. */
+function citationItems(raw: unknown): Record<string, string>[] {
+  if (!Array.isArray(raw)) return []
+  const out: Record<string, string>[] = []
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue
+    const { id } = item as { id?: unknown }
+    if (typeof id !== 'string' || !id) continue
+    const clean: Record<string, string> = { id }
+    for (const key of CITATION_TEXT_FIELDS) {
+      const value = (item as Record<string, unknown>)[key]
+      if (typeof value === 'string' && value !== '') clean[key] = value
+    }
+    out.push(clean)
+  }
+  return out
+}
+
 export function normalizeContent(input: unknown, options: ValidateOptions = {}): JSONContent {
   const schema = getContentSchema()
   const problems: string[] = []
@@ -143,6 +163,28 @@ export function normalizeContent(input: unknown, options: ValidateOptions = {}):
     if (node.type === 'orderedList') {
       const start = Number(attrs.start ?? 1)
       attrs.start = Number.isFinite(start) ? Math.max(0, Math.round(start)) : 1
+    }
+    if (node.type === 'citation') {
+      attrs.items = citationItems(attrs.items)
+      if ((attrs.items as unknown[]).length === 0) return []
+      if (attrs.mode !== 'suppress-author' && attrs.mode !== 'author-in-text') attrs.mode = 'normal'
+    }
+    if (node.type === 'crossReference') {
+      attrs.target = typeof attrs.target === 'string' && attrs.target ? attrs.target : null
+    }
+    if (node.type === 'documentLink') {
+      if (typeof attrs.documentId !== 'string' || !attrs.documentId) return []
+      attrs.blockId = typeof attrs.blockId === 'string' && attrs.blockId ? attrs.blockId : null
+      attrs.title = typeof attrs.title === 'string' ? attrs.title : ''
+    }
+    if (node.type === 'blockMath') {
+      attrs.numbered = attrs.numbered === true
+      const tag = typeof attrs.tag === 'string' ? attrs.tag.trim() : ''
+      attrs.tag = tag || null
+    }
+    if (node.type === 'bibliography') {
+      attrs.title =
+        typeof attrs.title === 'string' && attrs.title !== '' ? attrs.title : 'References'
     }
 
     const out: JSONContent = { type: node.type }

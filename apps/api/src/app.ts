@@ -167,6 +167,39 @@ export function createApp() {
     return stub.fetch(c.req.raw)
   })
 
+  // Book and paper exports run in the browser and embed their images, which
+  // live on Lemma's storage domain (no CORS for fetch). This proxies those
+  // images only, for signed-in writers; it is not a general-purpose proxy.
+  app.get('/export/image', async (c) => {
+    const session = await createAuth().api.getSession({ headers: c.req.raw.headers })
+    if (!session?.user) return c.text('Unauthorized', 401)
+    let src: URL
+    try {
+      src = new URL(c.req.query('src') ?? '')
+    } catch {
+      return c.text('Bad image URL', 400)
+    }
+    const allowed = [env.R2_STORAGE_BASE_URL, env.R2_BUCKET_URL, env.BASE_URL]
+      .filter(Boolean)
+      .map((base) => new URL(base as string).host)
+    if (!allowed.includes(src.host)) return c.text('Not a Lemma image', 403)
+    // Local dev serves uploads from this API's /assets (see below).
+    const local = getRuntimeBindings().R2_BUCKET
+    if (env.ENV === 'local' && src.pathname.startsWith('/assets/') && local?.get) {
+      const object = await local.get(src.pathname.replace(/^\/assets\//, ''))
+      if (!object) return c.notFound()
+      return new Response(object.body, {
+        headers: { 'content-type': object.httpMetadata?.contentType ?? 'application/octet-stream' },
+      })
+    }
+    const upstream = await fetch(src, { signal: AbortSignal.timeout(15_000) })
+    const type = upstream.headers.get('content-type') ?? ''
+    if (!upstream.ok || !type.startsWith('image/')) return c.text('Image unavailable', 502)
+    return new Response(upstream.body, {
+      headers: { 'content-type': type, 'cache-control': 'private, max-age=3600' },
+    })
+  })
+
   // Local dev only: serve uploads from the simulated R2 bucket (production
   // serves them from the bucket's public domain).
   if (env.ENV === 'local') {

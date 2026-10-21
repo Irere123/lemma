@@ -59,19 +59,38 @@ function RouteComponent() {
   }
 
   const author = post.author
+  const chapter = post.chapter
 
   return (
     <main className='min-h-screen pb-24'>
       <div className='mx-auto w-full max-w-[calc(var(--writer-measure)+2.5rem)] px-5 pt-12'>
-        <Link
-          to='/u/$username'
-          params={{ username }}
-          className='inline-flex text-muted-foreground text-sm transition-colors hover:text-foreground'
-        >
-          ← Back to @{username}
-        </Link>
+        {chapter?.book.published && chapter.book.slug ? (
+          <Link
+            to='/u/$username/b/$bookSlug'
+            params={{ username, bookSlug: chapter.book.slug }}
+            className='inline-flex text-muted-foreground text-sm transition-colors hover:text-foreground'
+          >
+            ← {chapter.book.title || 'Book'}
+          </Link>
+        ) : (
+          <Link
+            to='/u/$username'
+            params={{ username }}
+            className='inline-flex text-muted-foreground text-sm transition-colors hover:text-foreground'
+          >
+            ← Back to @{username}
+          </Link>
+        )}
 
-        <h1 className='mt-8 text-balance font-semibold text-4xl leading-[1.08] tracking-tight md:text-[2.85rem]'>
+        {chapter ? (
+          <p className='mt-8 font-medium text-[13px] text-muted-foreground uppercase tracking-[0.12em]'>
+            Chapter {chapter.number}
+            {chapter.book.title ? ` · ${chapter.book.title}` : ''}
+          </p>
+        ) : null}
+        <h1
+          className={`${chapter ? 'mt-3' : 'mt-8'} text-balance font-semibold text-4xl leading-[1.08] tracking-tight md:text-[2.85rem]`}
+        >
           {post.title || 'Untitled'}
         </h1>
         {post.subtitle && (
@@ -94,8 +113,9 @@ function RouteComponent() {
               <div className='min-w-0 text-sm leading-tight'>
                 <p className='truncate font-medium group-hover:underline'>{author.name}</p>
                 <p className='mt-0.5 text-muted-foreground text-xs'>
-                  {formatDate(post.publishedDate)}
-                  {post.readingTime ? ` · ${post.readingTime}` : ''}
+                  {[formatDate(post.publishedDate ?? post.firstPublishedAt), post.readingTime]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </p>
               </div>
             </Link>
@@ -115,6 +135,40 @@ function RouteComponent() {
       <article className='mx-auto mt-10 w-full max-w-[calc(var(--writer-measure)+2.5rem)] px-5'>
         <ArticleBody html={post.html} />
       </article>
+
+      {chapter && (chapter.previous || chapter.next) ? (
+        <nav
+          aria-label='Chapters'
+          className='mx-auto mt-14 grid w-full max-w-[calc(var(--writer-measure)+2.5rem)] grid-cols-2 gap-3 px-5'
+        >
+          {chapter.previous?.slug ? (
+            <Link
+              to='/u/$username/$slug'
+              params={{ username, slug: chapter.previous.slug }}
+              className='group rounded-xl border border-border/70 px-4 py-3 transition-colors hover:bg-accent/50'
+            >
+              <span className='block text-[12px] text-muted-foreground'>← Previous chapter</span>
+              <span className='mt-0.5 block truncate font-medium text-[15px]'>
+                {chapter.previous.title || 'Untitled'}
+              </span>
+            </Link>
+          ) : (
+            <span />
+          )}
+          {chapter.next?.slug ? (
+            <Link
+              to='/u/$username/$slug'
+              params={{ username, slug: chapter.next.slug }}
+              className='group rounded-xl border border-border/70 px-4 py-3 text-right transition-colors hover:bg-accent/50'
+            >
+              <span className='block text-[12px] text-muted-foreground'>Next chapter →</span>
+              <span className='mt-0.5 block truncate font-medium text-[15px]'>
+                {chapter.next.title || 'Untitled'}
+              </span>
+            </Link>
+          ) : null}
+        </nav>
+      ) : null}
 
       <div className='mx-auto mt-12 w-full max-w-[calc(var(--writer-measure)+2.5rem)] px-5'>
         <LikeButton documentId={post.id} />

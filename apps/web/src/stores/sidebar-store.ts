@@ -30,7 +30,7 @@ interface SidebarStore {
 export const useSidebarStore = create<SidebarStore>()(
   persist(
     (set) => ({
-      expanded: false,
+      expanded: true,
       hasHydrated: false,
       toggle: () => set((state) => ({ expanded: !state.expanded })),
       setExpanded: (expanded) => set({ expanded }),

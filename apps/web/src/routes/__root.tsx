@@ -8,6 +8,7 @@ import type { ReactNode } from 'react'
 import appCss from '@/app.css?url'
 import NotFound from '@/components/not-found'
 import { buildRootSeoHead } from '@/lib/seo'
+import { THEME_SCRIPT } from '@/lib/theme'
 import { Providers } from '@/providers'
 
 export const Route = createRootRoute({
@@ -47,8 +48,11 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang='en'>
+    // The theme script sets class="dark" before React hydrates.
+    <html lang='en' suppressHydrationWarning>
       <head>
+        {/* A constant: applies the theme before first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <HeadContent />
       </head>
       <body>

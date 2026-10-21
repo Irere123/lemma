@@ -9,27 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteRouteImport } from './routes/app/route'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppIndexRouteImport } from './routes/app/index'
-import { Route as WriteDocIdRouteImport } from './routes/write/$docId'
-import { Route as SubscribeConfirmRouteImport } from './routes/subscribe/confirm'
-import { Route as AppSubscribersRouteImport } from './routes/app/subscribers'
-import { Route as AppSearchRouteImport } from './routes/app/search'
-import { Route as AppSettingsRouteRouteImport } from './routes/app/settings/route'
-import { Route as UUsernameIndexRouteImport } from './routes/u/$username/index'
-import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
-import { Route as AppNewslettersIndexRouteImport } from './routes/app/newsletters/index'
-import { Route as UUsernameSlugRouteImport } from './routes/u/$username/$slug'
-import { Route as AppSettingsProfileRouteImport } from './routes/app/settings/profile'
-import { Route as AppSettingsNewsletterRouteImport } from './routes/app/settings/newsletter'
-import { Route as AppSettingsAppsRouteImport } from './routes/app/settings/apps'
-import { Route as AppSettingsApiKeysRouteImport } from './routes/app/settings/api-keys'
-import { Route as AppSettingsAccountRouteImport } from './routes/app/settings/account'
-import { Route as AppNewslettersCampaignIdRouteImport } from './routes/app/newsletters/$campaignId'
+import { Route as AppBooksBookIdRouteImport } from './routes/app/books/$bookId'
+import { Route as AppBooksIndexRouteImport } from './routes/app/books/index'
 import { Route as AppDocumentsRouteImport } from './routes/app/documents.'
+import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppNewslettersCampaignIdRouteImport } from './routes/app/newsletters/$campaignId'
+import { Route as AppNewslettersIndexRouteImport } from './routes/app/newsletters/index'
+import { Route as AppNotesRouteImport } from './routes/app/notes'
+import { Route as AppPostsRouteImport } from './routes/app/posts'
+import { Route as AppReferencesRouteImport } from './routes/app/references'
+import { Route as AppRouteRouteImport } from './routes/app/route'
+import { Route as AppSearchRouteImport } from './routes/app/search'
+import { Route as AppSettingsAccountRouteImport } from './routes/app/settings/account'
+import { Route as AppSettingsApiKeysRouteImport } from './routes/app/settings/api-keys'
+import { Route as AppSettingsAppsRouteImport } from './routes/app/settings/apps'
+import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
+import { Route as AppSettingsNewsletterRouteImport } from './routes/app/settings/newsletter'
+import { Route as AppSettingsProfileRouteImport } from './routes/app/settings/profile'
+import { Route as AppSettingsRouteRouteImport } from './routes/app/settings/route'
+import { Route as AppSubscribersRouteImport } from './routes/app/subscribers'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as SubscribeConfirmRouteImport } from './routes/subscribe/confirm'
+import { Route as UUsernameSlugRouteImport } from './routes/u/$username/$slug'
+import { Route as UUsernameBBookSlugRouteImport } from './routes/u/$username/b/$bookSlug'
+import { Route as UUsernameIndexRouteImport } from './routes/u/$username/index'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as WriteDocIdRouteImport } from './routes/write/$docId'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -76,6 +82,21 @@ const AppSearchRoute = AppSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppReferencesRoute = AppReferencesRouteImport.update({
+  id: '/references',
+  path: '/references',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppPostsRoute = AppPostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppNotesRoute = AppNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -94,6 +115,11 @@ const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
 const AppNewslettersIndexRoute = AppNewslettersIndexRouteImport.update({
   id: '/newsletters/',
   path: '/newsletters/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppBooksIndexRoute = AppBooksIndexRouteImport.update({
+  id: '/books/',
+  path: '/books/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const UUsernameSlugRoute = UUsernameSlugRouteImport.update({
@@ -126,16 +152,25 @@ const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppSettingsRouteRoute,
 } as any)
-const AppNewslettersCampaignIdRoute =
-  AppNewslettersCampaignIdRouteImport.update({
-    id: '/newsletters/$campaignId',
-    path: '/newsletters/$campaignId',
-    getParentRoute: () => AppRouteRoute,
-  } as any)
+const AppNewslettersCampaignIdRoute = AppNewslettersCampaignIdRouteImport.update({
+  id: '/newsletters/$campaignId',
+  path: '/newsletters/$campaignId',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppBooksBookIdRoute = AppBooksBookIdRouteImport.update({
+  id: '/books/$bookId',
+  path: '/books/$bookId',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppDocumentsRoute = AppDocumentsRouteImport.update({
   id: '/documents/',
   path: '/documents/',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const UUsernameBBookSlugRoute = UUsernameBBookSlugRouteImport.update({
+  id: '/u/$username/b/$bookSlug',
+  path: '/u/$username/b/$bookSlug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -144,12 +179,16 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
+  '/app/notes': typeof AppNotesRoute
+  '/app/posts': typeof AppPostsRoute
+  '/app/references': typeof AppReferencesRoute
   '/app/search': typeof AppSearchRoute
   '/app/subscribers': typeof AppSubscribersRoute
   '/subscribe/confirm': typeof SubscribeConfirmRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/app/documents': typeof AppDocumentsRoute
+  '/app/books/$bookId': typeof AppBooksBookIdRoute
   '/app/newsletters/$campaignId': typeof AppNewslettersCampaignIdRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -157,20 +196,26 @@ export interface FileRoutesByFullPath {
   '/app/settings/newsletter': typeof AppSettingsNewsletterRoute
   '/app/settings/profile': typeof AppSettingsProfileRoute
   '/u/$username/$slug': typeof UUsernameSlugRoute
+  '/app/books': typeof AppBooksIndexRoute
   '/app/newsletters': typeof AppNewslettersIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/u/$username': typeof UUsernameIndexRoute
+  '/u/$username/b/$bookSlug': typeof UUsernameBBookSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/app/notes': typeof AppNotesRoute
+  '/app/posts': typeof AppPostsRoute
+  '/app/references': typeof AppReferencesRoute
   '/app/search': typeof AppSearchRoute
   '/app/subscribers': typeof AppSubscribersRoute
   '/subscribe/confirm': typeof SubscribeConfirmRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app': typeof AppIndexRoute
   '/app/documents': typeof AppDocumentsRoute
+  '/app/books/$bookId': typeof AppBooksBookIdRoute
   '/app/newsletters/$campaignId': typeof AppNewslettersCampaignIdRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -178,9 +223,11 @@ export interface FileRoutesByTo {
   '/app/settings/newsletter': typeof AppSettingsNewsletterRoute
   '/app/settings/profile': typeof AppSettingsProfileRoute
   '/u/$username/$slug': typeof UUsernameSlugRoute
+  '/app/books': typeof AppBooksIndexRoute
   '/app/newsletters': typeof AppNewslettersIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/u/$username': typeof UUsernameIndexRoute
+  '/u/$username/b/$bookSlug': typeof UUsernameBBookSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -189,12 +236,16 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/settings': typeof AppSettingsRouteRouteWithChildren
+  '/app/notes': typeof AppNotesRoute
+  '/app/posts': typeof AppPostsRoute
+  '/app/references': typeof AppReferencesRoute
   '/app/search': typeof AppSearchRoute
   '/app/subscribers': typeof AppSubscribersRoute
   '/subscribe/confirm': typeof SubscribeConfirmRoute
   '/write/$docId': typeof WriteDocIdRoute
   '/app/': typeof AppIndexRoute
   '/app/documents/': typeof AppDocumentsRoute
+  '/app/books/$bookId': typeof AppBooksBookIdRoute
   '/app/newsletters/$campaignId': typeof AppNewslettersCampaignIdRoute
   '/app/settings/account': typeof AppSettingsAccountRoute
   '/app/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -202,9 +253,11 @@ export interface FileRoutesById {
   '/app/settings/newsletter': typeof AppSettingsNewsletterRoute
   '/app/settings/profile': typeof AppSettingsProfileRoute
   '/u/$username/$slug': typeof UUsernameSlugRoute
+  '/app/books/': typeof AppBooksIndexRoute
   '/app/newsletters/': typeof AppNewslettersIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/u/$username/': typeof UUsernameIndexRoute
+  '/u/$username/b/$bookSlug': typeof UUsernameBBookSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -214,12 +267,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/unsubscribe'
     | '/app/settings'
+    | '/app/notes'
+    | '/app/posts'
+    | '/app/references'
     | '/app/search'
     | '/app/subscribers'
     | '/subscribe/confirm'
     | '/write/$docId'
     | '/app/'
     | '/app/documents'
+    | '/app/books/$bookId'
     | '/app/newsletters/$campaignId'
     | '/app/settings/account'
     | '/app/settings/api-keys'
@@ -227,20 +284,26 @@ export interface FileRouteTypes {
     | '/app/settings/newsletter'
     | '/app/settings/profile'
     | '/u/$username/$slug'
+    | '/app/books'
     | '/app/newsletters'
     | '/app/settings/'
     | '/u/$username'
+    | '/u/$username/b/$bookSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/unsubscribe'
+    | '/app/notes'
+    | '/app/posts'
+    | '/app/references'
     | '/app/search'
     | '/app/subscribers'
     | '/subscribe/confirm'
     | '/write/$docId'
     | '/app'
     | '/app/documents'
+    | '/app/books/$bookId'
     | '/app/newsletters/$campaignId'
     | '/app/settings/account'
     | '/app/settings/api-keys'
@@ -248,9 +311,11 @@ export interface FileRouteTypes {
     | '/app/settings/newsletter'
     | '/app/settings/profile'
     | '/u/$username/$slug'
+    | '/app/books'
     | '/app/newsletters'
     | '/app/settings'
     | '/u/$username'
+    | '/u/$username/b/$bookSlug'
   id:
     | '__root__'
     | '/'
@@ -258,12 +323,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/unsubscribe'
     | '/app/settings'
+    | '/app/notes'
+    | '/app/posts'
+    | '/app/references'
     | '/app/search'
     | '/app/subscribers'
     | '/subscribe/confirm'
     | '/write/$docId'
     | '/app/'
     | '/app/documents/'
+    | '/app/books/$bookId'
     | '/app/newsletters/$campaignId'
     | '/app/settings/account'
     | '/app/settings/api-keys'
@@ -271,9 +340,11 @@ export interface FileRouteTypes {
     | '/app/settings/newsletter'
     | '/app/settings/profile'
     | '/u/$username/$slug'
+    | '/app/books/'
     | '/app/newsletters/'
     | '/app/settings/'
     | '/u/$username/'
+    | '/u/$username/b/$bookSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -285,6 +356,7 @@ export interface RootRouteChildren {
   WriteDocIdRoute: typeof WriteDocIdRoute
   UUsernameSlugRoute: typeof UUsernameSlugRoute
   UUsernameIndexRoute: typeof UUsernameIndexRoute
+  UUsernameBBookSlugRoute: typeof UUsernameBBookSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -352,6 +424,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSearchRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/references': {
+      id: '/app/references'
+      path: '/references'
+      fullPath: '/app/references'
+      preLoaderRoute: typeof AppReferencesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/posts': {
+      id: '/app/posts'
+      path: '/posts'
+      fullPath: '/app/posts'
+      preLoaderRoute: typeof AppPostsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/notes': {
+      id: '/app/notes'
+      path: '/notes'
+      fullPath: '/app/notes'
+      preLoaderRoute: typeof AppNotesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -378,6 +471,13 @@ declare module '@tanstack/react-router' {
       path: '/newsletters'
       fullPath: '/app/newsletters'
       preLoaderRoute: typeof AppNewslettersIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/books/': {
+      id: '/app/books/'
+      path: '/books'
+      fullPath: '/app/books'
+      preLoaderRoute: typeof AppBooksIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/u/$username/$slug': {
@@ -429,12 +529,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewslettersCampaignIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/books/$bookId': {
+      id: '/app/books/$bookId'
+      path: '/books/$bookId'
+      fullPath: '/app/books/$bookId'
+      preLoaderRoute: typeof AppBooksBookIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/documents/': {
       id: '/app/documents/'
       path: '/documents'
       fullPath: '/app/documents'
       preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/u/$username/b/$bookSlug': {
+      id: '/u/$username/b/$bookSlug'
+      path: '/u/$username/b/$bookSlug'
+      fullPath: '/u/$username/b/$bookSlug'
+      preLoaderRoute: typeof UUsernameBBookSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -457,32 +571,41 @@ const AppSettingsRouteRouteChildren: AppSettingsRouteRouteChildren = {
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 
-const AppSettingsRouteRouteWithChildren =
-  AppSettingsRouteRoute._addFileChildren(AppSettingsRouteRouteChildren)
+const AppSettingsRouteRouteWithChildren = AppSettingsRouteRoute._addFileChildren(
+  AppSettingsRouteRouteChildren
+)
 
 interface AppRouteRouteChildren {
   AppSettingsRouteRoute: typeof AppSettingsRouteRouteWithChildren
+  AppNotesRoute: typeof AppNotesRoute
+  AppPostsRoute: typeof AppPostsRoute
+  AppReferencesRoute: typeof AppReferencesRoute
   AppSearchRoute: typeof AppSearchRoute
   AppSubscribersRoute: typeof AppSubscribersRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
+  AppBooksBookIdRoute: typeof AppBooksBookIdRoute
   AppNewslettersCampaignIdRoute: typeof AppNewslettersCampaignIdRoute
+  AppBooksIndexRoute: typeof AppBooksIndexRoute
   AppNewslettersIndexRoute: typeof AppNewslettersIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppSettingsRouteRoute: AppSettingsRouteRouteWithChildren,
+  AppNotesRoute: AppNotesRoute,
+  AppPostsRoute: AppPostsRoute,
+  AppReferencesRoute: AppReferencesRoute,
   AppSearchRoute: AppSearchRoute,
   AppSubscribersRoute: AppSubscribersRoute,
   AppIndexRoute: AppIndexRoute,
   AppDocumentsRoute: AppDocumentsRoute,
+  AppBooksBookIdRoute: AppBooksBookIdRoute,
   AppNewslettersCampaignIdRoute: AppNewslettersCampaignIdRoute,
+  AppBooksIndexRoute: AppBooksIndexRoute,
   AppNewslettersIndexRoute: AppNewslettersIndexRoute,
 }
 
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
-  AppRouteRouteChildren,
-)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(AppRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -493,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   WriteDocIdRoute: WriteDocIdRoute,
   UUsernameSlugRoute: UUsernameSlugRoute,
   UUsernameIndexRoute: UUsernameIndexRoute,
+  UUsernameBBookSlugRoute: UUsernameBBookSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
@@ -500,6 +624,7 @@ export const routeTree = rootRouteImport
 
 import type { getRouter } from './router.tsx'
 import type { startInstance } from './start.tsx'
+
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true

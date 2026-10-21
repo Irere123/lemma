@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 // Phase B foundations: block ids, the schema-version gate, one undo history
 // for title/subtitle/body, and revision history (capture, preview, restore,
 // publish, owner-only). Truth is the server.
@@ -16,6 +18,13 @@ import {
   trpcQuery,
   waitSaved,
 } from './lib.mjs'
+
+// The schema version editors and documents are at (packages/content/src/yjs.ts).
+const SCHEMA_VERSION = Number(
+  /export const SCHEMA_VERSION = (\d+)/.exec(
+    readFileSync(new URL('../../../packages/content/src/yjs.ts', import.meta.url), 'utf8')
+  )?.[1]
+)
 
 const { check, finish } = checks('foundations')
 const blockIds = (page) =>
@@ -82,7 +91,7 @@ const ctx = await newSignedInContext(browser)
   const page = await ctx.newPage()
   await page.goto(`${APP}/app`)
   const codes = await page.evaluate(
-    async ({ api, id }) => {
+    async ({ api, id, current }) => {
       const url = (v) => `${api.replace('http', 'ws')}/realtime/documents/${id}?schema=${v}`
       const closeCode = (v) =>
         new Promise((resolve) => {
@@ -98,9 +107,9 @@ const ctx = await newSignedInContext(browser)
             ws.close()
           }, 3000)
         })
-      return Promise.all([closeCode(0), closeCode(1), closeCode(99)])
+      return Promise.all([closeCode(current - 1), closeCode(current), closeCode(99)])
     },
-    { api: API, id: doc.id }
+    { api: API, id: doc.id, current: SCHEMA_VERSION }
   )
   check('an editor older than the document is turned away (4426)', codes[0].code === 4426, {
     codes,
