@@ -125,6 +125,18 @@ jobs:
         working-directory: apps/web
         run: node e2e/editor-ui.mjs
 
+      - name: Notes (capture, offline, [[ links, backlinks, today, search)
+        working-directory: apps/web
+        run: node e2e/notes.mjs
+
+      - name: Books (chapters, reorder, split/merge/move, replace, export, publishing)
+        working-directory: apps/web
+        run: node e2e/books.mjs
+
+      - name: Research (library, citations, styles, numbering, cross-refs, exports)
+        working-directory: apps/web
+        run: node e2e/research.mjs
+
       - name: Typing latency
         working-directory: apps/web
         run: bun run bench:build && node e2e/latency.mjs
