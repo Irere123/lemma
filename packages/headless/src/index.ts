@@ -7,6 +7,7 @@ export {
   type NodeViewProps,
   NodeViewWrapper,
   ReactNodeViewRenderer,
+  ReactRenderer,
   useEditorState,
 } from '@tiptap/react'
 
