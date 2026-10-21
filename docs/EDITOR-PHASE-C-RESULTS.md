@@ -148,7 +148,9 @@ The workspace was a list of titles under a bare icon rail. Now:
 
 ## Bugs found on the way (fixed)
 
-- **Slash menu:** Enter typed right after the last letter ran the item for the previous letter (e.g. `/todo` gave a callout). Enter now waits for the menu to catch up.
+- **Slash menu:**
+  - Enter typed right after the last letter ran the item for the previous letter (e.g. `/todo` gave a callout). Enter now waits for the menu to catch up, and keys typed meanwhile are held, then land in the new block.
+  - `/code` ran Callout: cmdk ranks items but never re-sorts sections, so a weak match in the first section won. Once something is typed, the menu is one ranked list.
 - **Paste:** a `<figure>` without an image or table made ProseMirror invent an empty image, and a sub-figure grid's caption became a stray caption. Both now stay plain blocks.
 - **Book target dialog:** it wiped what was typed when its opening animation ended.
 - **Excerpts:** they began with a heading, and kept a space where a citation had been ("1990s , and").
