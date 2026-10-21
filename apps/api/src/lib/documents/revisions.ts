@@ -25,6 +25,9 @@ export type RevisionReason =
   | 'publish'
   | 'before-restore'
   | 'before-migration'
+  | 'before-replace'
+  | 'before-split'
+  | 'before-merge'
 
 export type RevisionSummary = {
   id: number

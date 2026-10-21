@@ -43,6 +43,13 @@
       "when": 1792476683043,
       "tag": "0005_document_rooms",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792541766870,
+      "tag": "0006_writing_modes",
+      "breakpoints": true
     }
   ]
 }

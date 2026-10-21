@@ -10,13 +10,16 @@ import {
   MESSAGE_QUERY_AWARENESS,
   MESSAGE_SAVED,
   MESSAGE_SYNC,
+  META_FIELD,
   migrateYDoc,
   readFields,
   readSchemaVersion,
   SCHEMA_VERSION,
   SCHEMA_VERSION_PARAM,
+  SUBTITLE_FIELD,
   SYNC_STEP_2,
   SYNC_UPDATE,
+  TITLE_FIELD,
   writeFields,
 } from '@lemma/content/yjs'
 import { and, eq, isNull } from 'drizzle-orm'
@@ -40,6 +43,7 @@ import {
   type RevisionSummary,
   revisionsToPrune,
 } from '@api/lib/documents/revisions'
+import { searchPattern, type TextSearch } from '@api/lib/documents/text-search'
 import { DurableObject } from 'cloudflare:workers'
 
 /**
@@ -70,6 +74,8 @@ const LARGE_UPDATE_BYTES = 512 * 1024
 const FLUSH_IDLE_MS = 2_000
 const FLUSH_MAX_DELAY_MS = 15_000
 const SEARCH_MIN_INTERVAL_MS = 60_000
+const SHORT_SEARCH_INTERVAL_MS = 3_000
+const SHORT_DOCUMENT_WORDS = 5_000
 
 const ORIGIN_SERVER = 'server'
 
@@ -156,12 +162,23 @@ export class DocumentRoom extends DurableObject<CloudflareBindings> {
    * written as a minimal diff, so open editors merge it like a remote edit.
    * Returns once D1 reflects it.
    */
-  async applyEdit(fields: Partial<DocumentFields>): Promise<void> {
+  async applyEdit(
+    fields: Partial<DocumentFields>,
+    options: { revisionBefore?: RevisionReason } = {}
+  ): Promise<void> {
     const doc = await this.ready()
     if (readSchemaVersion(doc) > SCHEMA_VERSION) {
       throw new Error('This document was written by a newer version of Lemma')
     }
-    writeFields(doc, fields, ORIGIN_SERVER)
+    // Structural edits (split, merge, move) keep the state before them.
+    if (options.revisionBefore)
+      await this.captureRevision(doc, options.revisionBefore, { force: true })
+    this.capturingExplicitly = Boolean(options.revisionBefore)
+    try {
+      writeFields(doc, fields, ORIGIN_SERVER)
+    } finally {
+      this.capturingExplicitly = false
+    }
     await this.flush({ touch: true, forceSearch: true })
   }
 
@@ -221,6 +238,52 @@ export class DocumentRoom extends DurableObject<CloudflareBindings> {
     }
     await this.flush({ touch: true, forceSearch: true })
     return true
+  }
+
+  /** Fields plus what rendering needs from the room's meta (the citation style). */
+  async readForRender(): Promise<{ fields: DocumentFields; citationStyle: string | null }> {
+    const doc = await this.ready()
+    const style = doc.getMap(META_FIELD).get('citationStyle')
+    return { fields: readFields(doc), citationStyle: typeof style === 'string' ? style : null }
+  }
+
+  /**
+   * Replace every match of `find` in the title, subtitle and body, keeping
+   * each match's formatting. The state before is kept as a revision, so the
+   * whole replace can be undone by restoring it. Returns the number replaced.
+   */
+  async replaceText(input: TextSearch & { replace: string }): Promise<number> {
+    const doc = await this.ready()
+    if (readSchemaVersion(doc) > SCHEMA_VERSION) {
+      throw new Error('This document was written by a newer version of Lemma')
+    }
+    const pattern = searchPattern(input)
+    if (!pattern) return 0
+    const runs = textRuns(doc)
+    let count = 0
+    for (const run of runs) count += [...plainOf(run).matchAll(pattern)].length
+    if (count === 0) return 0
+    await this.captureRevision(doc, 'before-replace', { force: true })
+    this.capturingExplicitly = true
+    try {
+      doc.transact(() => {
+        for (const run of runs) {
+          const delta = run.toDelta() as { insert: unknown; attributes?: Record<string, unknown> }[]
+          const plain = plainOf(run, delta)
+          // Back to front, so earlier offsets stay valid.
+          for (const match of [...plain.matchAll(pattern)].reverse()) {
+            const index = match.index ?? 0
+            const attributes = attributesAt(delta, index)
+            run.delete(index, match[0].length)
+            if (input.replace) run.insert(index, input.replace, attributes)
+          }
+        }
+      }, ORIGIN_SERVER)
+    } finally {
+      this.capturingExplicitly = false
+    }
+    await this.flush({ touch: true, forceSearch: true })
+    return count
   }
 
   /** The document was deleted: drop everything and disconnect editors. */
@@ -574,7 +637,13 @@ export class DocumentRoom extends DurableObject<CloudflareBindings> {
     const run = async () => {
       const doc = await this.ready()
       const lastSearch = Number(this.getMeta('lastSearchAt') ?? 0)
-      const reindexSearch = options.forceSearch || Date.now() - lastSearch >= SEARCH_MIN_INTERVAL_MS
+      // Short documents (notes, most posts) are searchable within seconds;
+      // re-indexing a long one is the costly part of a flush, so it waits.
+      const searchInterval =
+        Number(this.getMeta('words') ?? 0) < SHORT_DOCUMENT_WORDS
+          ? SHORT_SEARCH_INTERVAL_MS
+          : SEARCH_MIN_INTERVAL_MS
+      const reindexSearch = options.forceSearch || Date.now() - lastSearch >= searchInterval
 
       // Clear the dirty markers first: edits that land during the D1 writes
       // below schedule a fresh flush instead of being swallowed by this one.
@@ -591,7 +660,7 @@ export class DocumentRoom extends DurableObject<CloudflareBindings> {
       if (!reindexSearch) {
         // Search lags typing by at most SEARCH_MIN_INTERVAL_MS.
         this.setMeta('searchDirty', '1')
-        await this.scheduleAlarm(lastSearch + SEARCH_MIN_INTERVAL_MS)
+        await this.scheduleAlarm(lastSearch + searchInterval)
         this.setMeta('dirtySince', String(Date.now()))
       }
 
@@ -613,7 +682,9 @@ export class DocumentRoom extends DurableObject<CloudflareBindings> {
     // Skip the D1 writes (and the "last edited" bump) when nothing changed
     // since the last flush, e.g. an alarm firing after an API edit already
     // flushed, or a re-render request for an unchanged document.
-    const fingerprint = fingerprintOf(fields)
+    const citationStyle = doc.getMap(META_FIELD).get('citationStyle')
+    // A new citation style changes the rendered page, not the fields.
+    const fingerprint = `${fingerprintOf(fields)}:${String(citationStyle ?? '')}`
     const unchanged = fingerprint === this.getMeta('flushedFingerprint')
     if (unchanged && !options.force && !(options.reindexSearch && this.getMeta('searchDirty')))
       return null
@@ -621,7 +692,9 @@ export class DocumentRoom extends DurableObject<CloudflareBindings> {
     const updated = await persistDerived(db, this.documentId, fields, {
       ...options,
       touch: options.touch && !unchanged,
+      citationStyle,
     })
+    if (updated) this.setMeta('words', String(Number(updated.wordCount) || 0))
     this.setMeta('flushedFingerprint', fingerprint)
     if (!updated) {
       // The D1 row is gone: the document was deleted out from under us.
@@ -896,6 +969,40 @@ async function gunzip(data: Uint8Array): Promise<Uint8Array> {
 }
 
 // FNV-1a over the fields' JSON: cheap enough to run on every flush.
+/** Every text run a writer can see: title, subtitle and the body's paragraphs. */
+function textRuns(doc: Y.Doc): (Y.Text | Y.XmlText)[] {
+  const runs: (Y.Text | Y.XmlText)[] = [doc.getText(TITLE_FIELD), doc.getText(SUBTITLE_FIELD)]
+  const walk = (node: Y.XmlElement | Y.XmlFragment) => {
+    for (const child of node.toArray()) {
+      if (child instanceof Y.XmlText) runs.push(child)
+      else if (child instanceof Y.XmlElement) {
+        // Code is code; a find & replace across prose shouldn't rewrite it.
+        if (child.nodeName !== 'codeBlock') walk(child)
+      }
+    }
+  }
+  walk(doc.getXmlFragment(BODY_FIELD))
+  return runs
+}
+
+/** A run's text with each embed as one placeholder character, so offsets line up. */
+function plainOf(run: Y.Text | Y.XmlText, delta = run.toDelta() as { insert: unknown }[]): string {
+  return delta.map((part) => (typeof part.insert === 'string' ? part.insert : '\ufffc')).join('')
+}
+
+function attributesAt(
+  delta: { insert: unknown; attributes?: Record<string, unknown> }[],
+  index: number
+): Record<string, unknown> | undefined {
+  let offset = 0
+  for (const part of delta) {
+    const length = typeof part.insert === 'string' ? part.insert.length : 1
+    if (index < offset + length) return part.attributes
+    offset += length
+  }
+  return undefined
+}
+
 function fingerprintOf(fields: DocumentFields): string {
   const text = JSON.stringify(fields)
   let hash = 0x811c9dc5

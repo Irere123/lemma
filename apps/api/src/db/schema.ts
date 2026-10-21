@@ -89,6 +89,38 @@ export const verification = sqliteTable('verification', {
 // ('document_staus') is irrelevant on SQLite — the column is a plain text enum.
 export const documentStatus = ['DRAFT', 'PUBLISHED'] as const
 
+/**
+ * What a document is: a post (the default), a chapter of a book, a part
+ * divider in a book's outline (a title only; its body is unused), or a
+ * private note.
+ */
+export const documentKinds = ['post', 'chapter', 'part', 'note'] as const
+export type DocumentKind = (typeof documentKinds)[number]
+
+/** A book: an ordered set of chapter documents (see documents.bookId/position). */
+export const books = createTable(
+  'books',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title').notNull().default(''),
+    subtitle: text('subtitle'),
+    description: text('description'),
+    slug: text('slug'),
+    coverImage: text('cover_image'),
+    // PUBLISHED makes the book page public (it lists the published chapters).
+    status: text('status', { enum: documentStatus }).notNull().default('DRAFT'),
+    wordTarget: integer('word_target'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  },
+  (table) => [index('books_user_idx').on(table.userId), unique('books_slug_unique').on(table.slug)]
+)
+
+export type Book = typeof books.$inferSelect
+
 export const documents = createTable(
   'documents',
   {
@@ -127,8 +159,18 @@ export const documents = createTable(
     // Set the first time the post is published; the slug is frozen from then on
     // so shared and emailed links keep working when the title changes.
     firstPublishedAt: integer('first_published_at', { mode: 'timestamp' }),
+    kind: text('kind', { enum: documentKinds }).notNull().default('post'),
+    // Chapters (and parts) belong to a book, ordered by position.
+    bookId: text('book_id').references(() => books.id, { onDelete: 'set null' }),
+    position: integer('position'),
+    wordTarget: integer('word_target'),
+    // A daily note's day (YYYY-MM-DD), so "today's note" survives a rename.
+    journalDate: text('journal_date'),
   },
   (table) => [
+    index('documents_book_idx').on(table.bookId, table.position),
+    unique('documents_user_journal_unique').on(table.userId, table.journalDate),
+    index('documents_user_kind_idx').on(table.userId, table.kind, table.updatedAt),
     index('documents_user_id_idx').on(table.userId),
     index('documents_status_idx').on(table.status),
     index('documents_created_at_idx').on(table.createdAt),
@@ -181,6 +223,73 @@ export const documentSearch = createTable(
 
 // The pre-Yjs body columns of a document, kept verbatim when its room first
 // seeds from them, so the move is reversible.
+/**
+ * Links between documents (documentLink nodes), rebuilt by a document's room
+ * on each flush. Drives "Linked from" (backlinks) on notes.
+ */
+export const documentLinks = createTable(
+  'document_links',
+  {
+    sourceId: text('source_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    targetId: text('target_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    blockId: text('block_id'),
+    // The sentence around the link, for the backlinks panel.
+    context: text('context').notNull().default(''),
+    position: integer('position').notNull(),
+  },
+  (table) => [
+    index('document_links_target_idx').on(table.targetId),
+    index('document_links_source_idx').on(table.sourceId),
+  ]
+)
+
+/**
+ * A writer's reference library (Research mode): one CSL-JSON item per row.
+ * Citations in documents point at the row id, so fixing a reference once
+ * updates every citation of it.
+ */
+export const referenceItems = createTable(
+  'reference_items',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // The citation key (Pandoc/BibTeX), unique per writer.
+    key: text('key').notNull(),
+    csl: text('csl', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  },
+  (table) => [unique('reference_items_user_key').on(table.userId, table.key)]
+)
+
+export type ReferenceItem = typeof referenceItems.$inferSelect
+
+/**
+ * Which documents cite which references, rebuilt on each flush, so editing a
+ * reference re-renders the published posts that cite it.
+ */
+export const documentReferences = createTable(
+  'document_references',
+  {
+    documentId: text('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    referenceId: text('reference_id')
+      .notNull()
+      .references(() => referenceItems.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    unique('document_references_unique').on(table.documentId, table.referenceId),
+    index('document_references_reference_idx').on(table.referenceId),
+  ]
+)
+
 export const documentLegacyBodies = createTable('document_legacy_bodies', {
   documentId: text('document_id').primaryKey(),
   content: text('content'),

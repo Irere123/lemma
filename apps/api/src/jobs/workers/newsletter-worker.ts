@@ -9,7 +9,12 @@ import { getConfirmedSubscribers } from '@api/db/queries/subscribers'
 import { newsletterDeliveries, subscribers } from '@api/db/schema'
 import { env } from '@api/env-runtime'
 import { renderEmailHtml } from '@api/lib/documents/render'
-import { readDocumentContent } from '@api/lib/documents/room'
+import {
+  citationStyleOf,
+  citationsFor,
+  documentLinkResolver,
+} from '@api/lib/documents/render-context'
+import { openRoom } from '@api/lib/documents/room'
 import { sendBatchEmails } from '@api/lib/messaging/email/mailer'
 import { logger } from '@api/lib/observability'
 import { generateId } from '@api/lib/utils'
@@ -135,7 +140,13 @@ async function processBatch(data: ProcessNewsletterBatchJob, db: any): Promise<v
   const NewsletterTemplate = await getNewsletterTemplate()
 
   // Rendered once per batch from the document's current body.
-  const bodyHtml = renderEmailHtml(await readDocumentContent(document.id))
+  const { fields, citationStyle } = await (await openRoom(document.id)).readForRender()
+  const ownerId = document.userId ?? ''
+  const citations = await citationsFor(db, ownerId, fields.content, citationStyleOf(citationStyle))
+  const bodyHtml = renderEmailHtml(fields.content, {
+    citations: citations.rendered,
+    documentLink: await documentLinkResolver(db, ownerId, fields.content),
+  })
 
   const emails = await Promise.all(
     recipients.map(async (subscriber: any) => {
