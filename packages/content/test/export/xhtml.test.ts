@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderToHTML } from '../../src'
+import { lowerDocument, renderToHTML } from '../../src'
 import { htmlToXhtml, renderXhtml } from '../../src/export'
 import { kitchenSink } from '../fixtures'
 import { all, attr, NS, parseXml, textOf } from './helpers'
@@ -55,14 +55,16 @@ describe('htmlToXhtml', () => {
   test('turns the published HTML of every node type into well-formed XHTML', () => {
     const out = htmlToXhtml(renderToHTML(kitchenSink))
     const doc = parseXml(wrap(out))
-    expect(all(doc, NS.xhtml, 'img')).toHaveLength(1)
+    // The plain image and the figure's.
+    expect(all(doc, NS.xhtml, 'img')).toHaveLength(2)
     expect(all(doc, NS.xhtml, 'table')).toHaveLength(1)
   })
 })
 
 describe('renderXhtml', () => {
   test('renders every node type as strict XHTML with EPUB footnotes and MathML', () => {
-    const fragment = renderXhtml(kitchenSink, { headingOffset: 1 })
+    // Exports lower documents first (citations and the bibliography become text).
+    const fragment = renderXhtml(lowerDocument(kitchenSink) ?? kitchenSink, { headingOffset: 1 })
     const doc = parseXml(wrap(fragment.body + fragment.notes))
     expect(fragment.math).toBe(true)
     expect(fragment.remote).toBe(true)
@@ -82,7 +84,8 @@ describe('renderXhtml', () => {
     const back = all(aside as never, NS.xhtml, 'a')[0]
     expect(attr(back, null, 'href')).toBe(`#${noteref?.getAttribute('id')}`)
 
-    expect(all(doc, NS.mathml, 'math').length).toBe(2)
+    // Inline, display, and the two numbered equations.
+    expect(all(doc, NS.mathml, 'math').length).toBe(4)
     expect(fragment.body).not.toContain('application/x-tex')
     // Editor-only attributes and embeds don't survive.
     expect(fragment.body).not.toMatch(/colwidth|loading=|<iframe|target=/)
