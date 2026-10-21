@@ -25,6 +25,7 @@ export {
   EditorRoot,
   type JSONContent,
   useEditor,
+  useEditorCommandQuery,
 } from './components'
 // Extensions (editor UI only; the document model lives in @lemma/content/schema)
 export {
