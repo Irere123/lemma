@@ -55,11 +55,31 @@ const SECTIONS: { title: string; items: [string, string[]][] }[] = [
     ],
   },
   {
+    title: 'Research and notes',
+    items: [
+      ['Cite a source', ['[@']],
+      ['Link a note', ['[[']],
+      ['Number an equation', ['Enter', '|', 'click']],
+      ['Open a link or citation', ['click']],
+    ],
+  },
+  {
     title: 'Document',
     items: [
       ['Undo / redo', ['Mod', 'Z', '|', 'Mod', 'Shift', 'Z']],
       ['Title → subtitle → text', ['Enter']],
+      ['Find and replace', ['Mod', 'F']],
+      ['Go to a heading or chapter', ['Mod', 'P']],
+      ['Focus mode', ['Mod', 'Shift', 'F']],
       ['Keyboard shortcuts', ['Mod', '/']],
+    ],
+  },
+  {
+    title: 'Anywhere',
+    items: [
+      ['Search and commands', ['Mod', 'K']],
+      ['Quick note', ['Mod', 'Alt', 'N']],
+      ['Today’s note', ['Mod', 'Alt', 'D']],
     ],
   },
 ]

@@ -2,6 +2,7 @@ import katex from 'katex'
 import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '../ui/button'
+import { Checkbox } from '../ui/checkbox'
 import {
   Dialog,
   DialogDescription,
@@ -11,6 +12,7 @@ import {
   DialogPopup,
   DialogTitle,
 } from '../ui/dialog'
+import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 
 export type MathEdit = {
@@ -19,21 +21,26 @@ export type MathEdit = {
   display: boolean
   /** A new equation: inserted at `pos` on save, nothing on cancel. */
   isNew?: boolean
+  /** Display equations only: shown with "(n)" and can be cross-referenced. */
+  numbered?: boolean
 }
 
 type MathDialogProps = {
   edit: MathEdit | null
   onClose: () => void
-  onSave: (edit: MathEdit, latex: string) => void
+  onSave: (edit: MathEdit, latex: string, numbered: boolean) => void
   onDelete: (edit: MathEdit) => void
 }
 
 /** Edit an equation's LaTeX with a live preview. */
 export function MathDialog({ edit, onClose, onSave, onDelete }: MathDialogProps) {
   const [latex, setLatex] = useState('')
+  const [numbered, setNumbered] = useState(false)
 
   useEffect(() => {
-    if (edit) setLatex(edit.latex)
+    if (!edit) return
+    setLatex(edit.latex)
+    setNumbered(edit.numbered === true)
   }, [edit])
 
   const preview = useMemo(() => {
@@ -58,7 +65,7 @@ export function MathDialog({ edit, onClose, onSave, onDelete }: MathDialogProps)
 
   const save = () => {
     if (!edit) return
-    if (latex.trim()) onSave(edit, latex.trim())
+    if (latex.trim()) onSave(edit, latex.trim(), numbered)
     else onDelete(edit)
   }
 
@@ -91,6 +98,15 @@ export function MathDialog({ edit, onClose, onSave, onDelete }: MathDialogProps)
               <p className='text-destructive text-xs'>{preview.error}</p>
             )}
           </div>
+          {edit?.display ? (
+            <Label className='flex items-center gap-2 font-normal text-[13px] text-muted-foreground'>
+              <Checkbox
+                checked={numbered}
+                onCheckedChange={(value) => setNumbered(value === true)}
+              />
+              Number this equation, so it can be referred to as “Eq. (n)”
+            </Label>
+          ) : null}
         </DialogPanel>
         <DialogFooter>
           <Button type='button' variant='ghost' onClick={() => edit && onDelete(edit)}>

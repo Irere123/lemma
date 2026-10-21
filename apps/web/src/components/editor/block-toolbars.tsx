@@ -8,6 +8,7 @@ import {
   ArrowLeftToLine,
   ArrowRightToLine,
   ArrowUpToLine,
+  Captions,
   Columns3,
   Rows3,
   Sheet,
@@ -31,6 +32,44 @@ const TABLE_OPTIONS = {
   shift: { padding: 8 },
   flip: {},
 } as const
+
+/** Is the selection inside a figure (an image or table with a caption)? */
+const inFigure = (editor: Editor) => {
+  const { $from } = editor.state.selection
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if ($from.node(depth).type.name === 'figure') return true
+  }
+  // A selected image directly in a figure.
+  return editor.state.doc.resolve(editor.state.selection.from).parent.type.name === 'figure'
+}
+
+type FigureChain = ReturnType<Editor['chain']> & {
+  wrapInFigure: () => ReturnType<Editor['chain']>
+  unwrapFigure: () => ReturnType<Editor['chain']>
+}
+
+/** Add a numbered caption (wrap in a figure) or take it away. */
+function toggleCaption(editor: Editor) {
+  const chain = editor.chain().focus() as FigureChain
+  if (inFigure(editor)) {
+    chain.unwrapFigure().run()
+    return
+  }
+  chain.wrapInFigure().run()
+  // Put the caret in the new caption.
+  const { state } = editor
+  const { $from } = state.selection
+  for (let depth = $from.depth; depth >= 0; depth--) {
+    const node = $from.node(depth)
+    if (node.type.name !== 'figure') continue
+    const start = $from.before(depth)
+    editor.commands.setTextSelection(start + node.nodeSize - 2)
+    return
+  }
+  const after = state.doc.resolve(state.selection.from).nodeAfter
+  if (after?.type.name === 'figure')
+    editor.commands.setTextSelection(state.selection.from + after.nodeSize - 2)
+}
 
 const BAR =
   'flex items-center gap-0.5 rounded-lg border border-border/80 bg-popover p-1 text-sm shadow-lg'
@@ -179,6 +218,17 @@ export function ImageToolbar() {
             <span className='text-xs'>Alt</span>
           </ToolButton>
           <ToolButton
+            label={
+              inFigure(editor as unknown as Editor)
+                ? 'Remove caption'
+                : 'Add a caption (numbered figure)'
+            }
+            active={inFigure(editor as unknown as Editor)}
+            onClick={() => toggleCaption(editor as unknown as Editor)}
+          >
+            <Captions />
+          </ToolButton>
+          <ToolButton
             label='Delete image'
             onClick={() => editor.chain().focus().deleteSelection().run()}
           >
@@ -254,6 +304,17 @@ export function TableToolbar() {
       </ToolButton>
       <ToolButton label='Header row on / off' onClick={run((c) => c.toggleHeaderRow())}>
         <Sheet />
+      </ToolButton>
+      <ToolButton
+        label={
+          inFigure(editor as unknown as Editor)
+            ? 'Remove caption'
+            : 'Add a caption (numbered table)'
+        }
+        active={inFigure(editor as unknown as Editor)}
+        onClick={() => toggleCaption(editor as unknown as Editor)}
+      >
+        <Captions />
       </ToolButton>
       <span aria-hidden='true' className='mx-0.5 h-5 w-px bg-border' />
       <ToolButton label='Delete table' onClick={run((c) => c.deleteTable())}>

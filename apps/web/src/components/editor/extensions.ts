@@ -1,7 +1,8 @@
 import { contentExtensions, MathBlock, MathInline, PasteCleanup } from '@lemma/content/schema'
 import { BODY_FIELD } from '@lemma/content/yjs'
 import { ReactNodeViewRenderer, UploadImagesPlugin } from '@lemma/headless'
-import { type AnyExtension, Extension } from '@tiptap/core'
+import type { Editor } from '@tiptap/core'
+import { type AnyExtension, Extension, InputRule, mergeAttributes } from '@tiptap/core'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { ListKeymap } from '@tiptap/extension-list'
@@ -13,9 +14,14 @@ import { common, createLowlight } from 'lowlight'
 import type * as Y from 'yjs'
 
 import { CalloutView, CodeBlockView } from './block-views'
+import { type DocLinkOptions, DocLinkSuggestion } from './doc-link-suggestion'
+import { Find } from './find'
 import type { MathEdit } from './math-dialog'
 import { MoveBlock } from './move-block'
+import { Research, type ResearchStorage } from './research'
+import { bibliographyView } from './research-views'
 import { slashCommand } from './slash-command'
+import { Typewriter } from './typewriter'
 
 /**
  * Placeholder on the empty block holding the caret (and on an empty document).
@@ -144,6 +150,56 @@ const LinkShortcut = Extension.create<{ onOpenLink: () => void }>({
   },
 })
 
+/**
+ * Typing "[@" opens the citation picker where it was typed (Pandoc's
+ * citation syntax, familiar to academic writers).
+ */
+const CiteTrigger = Extension.create<{ onCite: (pos: number) => void }>({
+  name: 'citeTrigger',
+  addOptions() {
+    return { onCite: () => {} }
+  },
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /\[@$/,
+        handler: ({ range, chain }) => {
+          chain().deleteRange(range).run()
+          this.options.onCite(range.from)
+        },
+      }),
+    ]
+  },
+})
+
+/** Editor-wide shortcuts that open React UI: find, go to, focus mode. */
+const WorkspaceShortcuts = Extension.create<{
+  onFind: () => void
+  onGoTo: () => void
+  onFocusMode: () => void
+}>({
+  name: 'workspaceShortcuts',
+  addOptions() {
+    return { onFind: () => {}, onGoTo: () => {}, onFocusMode: () => {} }
+  },
+  addKeyboardShortcuts() {
+    return {
+      'Mod-f': () => {
+        this.options.onFind()
+        return true
+      },
+      'Mod-p': () => {
+        this.options.onGoTo()
+        return true
+      },
+      'Mod-Shift-f': () => {
+        this.options.onFocusMode()
+        return true
+      },
+    }
+  },
+})
+
 export type EditorExtensionOptions = {
   doc: Y.Doc
   /** Shared with the title and subtitle (see createUndoManager). */
@@ -152,6 +208,14 @@ export type EditorExtensionOptions = {
   /** ⌘K: open the link field for the selection. */
   onOpenLink?: () => void
   onDroppedImages?: (count: number) => void
+  /** Open a cited source's picker (insert at pos), or edit the citation at pos. */
+  onOpenCitation: (pos: number, editing: boolean) => void
+  onOpenCrossReference: (pos: number) => void
+  onOpenDocument: (id: string, blockId: string | null) => void
+  onFind: () => void
+  onGoTo: () => void
+  onFocusMode: () => void
+  linkDocuments: DocLinkOptions
 }
 
 const lowlight = createLowlight(common)
@@ -164,6 +228,12 @@ const lowlight = createLowlight(common)
 export function createEditorExtensions(options: EditorExtensionOptions): AnyExtension[] {
   const sharedImage = contentExtensions.find((extension) => extension.name === 'image')
   const sharedCallout = contentExtensions.find((extension) => extension.name === 'callout')
+  const sharedBibliography = contentExtensions.find(
+    (extension) => extension.name === 'bibliography'
+  )
+  const sharedDocumentLink = contentExtensions.find(
+    (extension) => extension.name === 'documentLink'
+  )
 
   const overrides: Record<string, AnyExtension | undefined> = {
     codeBlock: CodeBlockLowlight.extend({
@@ -187,7 +257,27 @@ export function createEditorExtensions(options: EditorExtensionOptions): AnyExte
     }),
     blockMath: MathBlock.configure({
       katexOptions: { throwOnError: false, displayMode: true },
-      onClick: (node, pos) => options.onEditMath({ latex: node.attrs.latex, pos, display: true }),
+      onClick: (node, pos) =>
+        options.onEditMath({
+          latex: node.attrs.latex,
+          pos,
+          display: true,
+          numbered: node.attrs.numbered === true,
+        }),
+    }),
+    bibliography: sharedBibliography?.extend({
+      addNodeView() {
+        return ({ node, editor }: { node: PMNode; editor: Editor }) =>
+          bibliographyView((editor.storage as unknown as { research: ResearchStorage }).research)({
+            node,
+          })
+      },
+    }),
+    // The label (the target's current title) is a decoration; no stored text in the DOM.
+    documentLink: sharedDocumentLink?.extend({
+      renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, unknown> }) {
+        return ['a', mergeAttributes(HTMLAttributes, { 'data-document-link': '' })]
+      },
     }),
   }
 
@@ -212,5 +302,28 @@ export function createEditorExtensions(options: EditorExtensionOptions): AnyExte
     MoveBlock,
     LinkShortcut.configure({ onOpenLink: options.onOpenLink ?? (() => {}) }),
     slashCommand,
+    Research.configure({
+      onOpenDocument: options.onOpenDocument,
+      onEditCitation: (pos) => options.onOpenCitation(pos, true),
+    }).extend({
+      // Slash commands reach the pickers through the extension's storage.
+      onCreate() {
+        const storage = this.storage as ResearchStorage & {
+          openCitation?: (pos: number) => void
+          openCrossReference?: (pos: number) => void
+        }
+        storage.openCitation = (pos) => options.onOpenCitation(pos, false)
+        storage.openCrossReference = options.onOpenCrossReference
+      },
+    }),
+    CiteTrigger.configure({ onCite: (pos) => options.onOpenCitation(pos, false) }),
+    DocLinkSuggestion.configure(options.linkDocuments),
+    Find,
+    Typewriter,
+    WorkspaceShortcuts.configure({
+      onFind: options.onFind,
+      onGoTo: options.onGoTo,
+      onFocusMode: options.onFocusMode,
+    }),
   ]
 }

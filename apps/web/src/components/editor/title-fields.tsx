@@ -30,6 +30,8 @@ export const TitleFields = memo(function TitleFields({
   titleRef,
   subtitleRef,
   onExitToBody,
+  showSubtitle = true,
+  titlePlaceholder = 'Title',
 }: {
   sync: DocumentSync
   undoManager: UndoManager
@@ -38,6 +40,9 @@ export const TitleFields = memo(function TitleFields({
   subtitleRef: RefObject<Field | null>
   /** Move the caret into the body (at its start). */
   onExitToBody: () => void
+  /** Notes have a title only. */
+  showSubtitle?: boolean
+  titlePlaceholder?: string
 }) {
   const [title, setTitle] = useYText(sync.title)
   const [subtitle, setSubtitle] = useYText(sync.subtitle)
@@ -66,11 +71,15 @@ export const TitleFields = memo(function TitleFields({
       const field = event.currentTarget
       if (event.key === 'Enter' || (event.key === 'ArrowDown' && atEnd(field))) {
         event.preventDefault()
+        if (!showSubtitle) {
+          onExitToBody()
+          return
+        }
         subtitleRef.current?.focus()
         subtitleRef.current?.setSelectionRange(0, 0)
       }
     },
-    [subtitleRef, undoKeys]
+    [onExitToBody, showSubtitle, subtitleRef, undoKeys]
   )
 
   const onSubtitleKeyDown = useCallback(
@@ -106,7 +115,7 @@ export const TitleFields = memo(function TitleFields({
         rows={1}
         aria-label='Document title'
         className='block w-full resize-none overflow-hidden border-0 bg-transparent p-0 font-semibold text-4xl text-foreground leading-[1.12] tracking-tight [field-sizing:content] placeholder:text-muted-foreground/45 focus:outline-none md:text-[2.75rem]'
-        placeholder='Title'
+        placeholder={titlePlaceholder}
         value={title}
         disabled={disabled}
         onChange={(event) => setTitle(event.currentTarget.value.replace(/\n/g, ' '))}
@@ -115,6 +124,7 @@ export const TitleFields = memo(function TitleFields({
       />
       <textarea
         ref={subtitleRef}
+        hidden={!showSubtitle}
         rows={1}
         aria-label='Document subtitle'
         className='block w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-lg text-muted-foreground leading-relaxed [field-sizing:content] placeholder:text-muted-foreground/45 focus:outline-none md:text-xl'
