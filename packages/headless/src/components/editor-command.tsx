@@ -10,6 +10,7 @@ import type {
 } from 'react'
 import { createContext, forwardRef, useEffect } from 'react'
 import type tunnel from 'tunnel-rat'
+
 import { queryAtom, rangeAtom } from '../utils/atoms'
 import { headlessStore } from '../utils/store'
 
@@ -39,16 +40,20 @@ export const EditorCommandOut: FC<EditorCommandOutProps> = ({ query, range }) =>
     const onKeyDown = (e: KeyboardEvent) => {
       if (navigationKeys.includes(e.key)) {
         e.preventDefault()
-        const commandRef = document.querySelector('#slash-command')
-
-        if (commandRef)
-          commandRef.dispatchEvent(
+        const forward = () =>
+          document.querySelector('#slash-command')?.dispatchEvent(
             new KeyboardEvent('keydown', {
               key: e.key,
               cancelable: true,
               bubbles: true,
             })
           )
+        // The query and range reach the menu through React effects, a frame
+        // or so after the keystroke that changed them. Enter typed right
+        // after the last letter must run the item that letter selected, with
+        // the range that covers it, so it waits for them.
+        if (e.key === 'Enter') requestAnimationFrame(() => requestAnimationFrame(forward))
+        else forward()
 
         return false
       }
