@@ -204,6 +204,14 @@ await sleep(800)
 await page.locator('.ProseMirror').click()
 await page.keyboard.press(`${mod}+Shift+KeyF`)
 const focusOn = await page.locator('.writer-editor.is-focus-mode').count()
+// The bar fades out over 0.3 s.
+await page
+  .waitForFunction(
+    () => Number(getComputedStyle(document.querySelector('.editor-top-bar')).opacity) < 0.5,
+    null,
+    { timeout: 3000 }
+  )
+  .catch(() => {})
 const barOpacity = await page
   .locator('.editor-top-bar')
   .evaluate((el) => getComputedStyle(el).opacity)
