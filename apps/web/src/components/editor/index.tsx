@@ -12,6 +12,7 @@ import {
   handleCommandNavigation,
   handleImageDrop,
   handleImagePaste,
+  useEditorCommandQuery,
 } from '@lemma/headless'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -100,6 +101,48 @@ const SLASH_GROUPS = (() => {
   }
   return [...groups]
 })()
+
+const slashItem = (item: (typeof suggestionItems)[number]) => (
+  <EditorCommandItem
+    key={item.title}
+    value={item.title}
+    keywords={item.searchTerms}
+    onCommand={(val) => item.command?.(val)}
+    className='flex w-full cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm aria-selected:bg-accent'
+  >
+    <span className='flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground [&_svg]:size-4'>
+      {item.icon}
+    </span>
+    <span className='min-w-0 flex-1'>
+      <span className='block font-medium leading-5'>{item.title}</span>
+      <span className='block truncate text-muted-foreground text-xs'>{item.description}</span>
+    </span>
+    {item.shortcut ? (
+      <kbd className='ms-2 shrink-0 rounded border border-border/70 px-1 font-mono text-[0.7rem] text-muted-foreground'>
+        {item.shortcut}
+      </kbd>
+    ) : null}
+  </EditorCommandItem>
+)
+
+/**
+ * The slash menu's items: in sections while nothing is typed after the slash,
+ * then as one list ranked by match (cmdk ranks items, but never re-sorts
+ * sections, so a weak match in an early section would come first).
+ */
+function SlashItems() {
+  const query = useEditorCommandQuery()
+  if (query) return <>{suggestionItems.map(slashItem)}</>
+  return (
+    <>
+      {SLASH_GROUPS.map(([group, items]) => (
+        <EditorCommandGroup key={group} heading={group}>
+          {items.map(slashItem)}
+        </EditorCommandGroup>
+      ))}
+    </>
+  )
+}
 
 // Counting walks the whole document, so it waits for a pause in typing.
 const STATS_DELAY_MS = 800
@@ -899,34 +942,7 @@ const AdvancedEditor = ({
                 No blocks match
               </EditorCommandEmpty>
               <EditorCommandList>
-                {SLASH_GROUPS.map(([group, items]) => (
-                  <EditorCommandGroup key={group} heading={group}>
-                    {items.map((item) => (
-                      <EditorCommandItem
-                        key={item.title}
-                        value={item.title}
-                        keywords={item.searchTerms}
-                        onCommand={(val) => item.command?.(val)}
-                        className='flex w-full cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm aria-selected:bg-accent'
-                      >
-                        <span className='flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground [&_svg]:size-4'>
-                          {item.icon}
-                        </span>
-                        <span className='min-w-0 flex-1'>
-                          <span className='block font-medium leading-5'>{item.title}</span>
-                          <span className='block truncate text-muted-foreground text-xs'>
-                            {item.description}
-                          </span>
-                        </span>
-                        {item.shortcut ? (
-                          <kbd className='ms-2 shrink-0 rounded border border-border/70 px-1 font-mono text-[0.7rem] text-muted-foreground'>
-                            {item.shortcut}
-                          </kbd>
-                        ) : null}
-                      </EditorCommandItem>
-                    ))}
-                  </EditorCommandGroup>
-                ))}
+                <SlashItems />
               </EditorCommandList>
             </EditorCommand>
             <BlockHandle blockUrl={blockUrl} chapterTools={chapterTools} />
